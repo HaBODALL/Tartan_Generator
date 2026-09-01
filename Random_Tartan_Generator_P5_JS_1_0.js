@@ -1025,35 +1025,42 @@ function redrawTartan() {
     // 4. BOUCLE DE TISSAGE (Twill 2/2)
     // C'est ici que la magie opère.
     // L'algorithme standard du tartan est un sergé (twill) 2/2 : 2 dessus, 2 dessous, décalé de 1 à chaque ligne.
-    // La formule mathématique est : ((x + y) % 4) < 2
-    
-    for (let y = 0; y < rows; y++) {
-        // La couleur de trame (Weft - Horizontal) suit la même séquence que la chaîne
-        let weftColor = warpSeq[y % seqLen];
-        
-        for (let x = 0; x < cols; x++) {
-            // Déterminer qui est dessus : Chaîne (Vertical) ou Trame (Horizontal) ?
-            // x+y crée la diagonale. %4 crée le cycle de 4 fils. <2 prend les 2 premiers.
-            let isWarpOnTop;
-            
-            if (isZTwist) {
-                // Z-Twist (Standard) : Diagonale / (Montante droite)
-                isWarpOnTop = ((x + y) % 4) < 2;
-            } else {
-                // S-Twist (Inverse) : Diagonale \ (Descendante droite)
-                // On inverse la logique de coordonnée
-                isWarpOnTop = ((x - y) % 4 + 4) % 4 < 2;
+
+    // ⚡ Bolt Optimization: Pre-calculate warp sequence colors for each column to avoid per-pixel modulo operations
+    let warpColors = new Array(cols);
+    for (let x = 0; x < cols; x++) {
+        warpColors[x] = warpSeq[x % seqLen];
+    }
+
+    // ⚡ Bolt Optimization: Hoist the weave direction check outside the rendering loops
+    if (isZTwist) {
+        // Z-Twist (Standard) : Diagonale / (Montante droite)
+        for (let y = 0; y < rows; y++) {
+            let weftColor = warpSeq[y % seqLen];
+            let yZoom = y * zoom; // Pre-calculate Y position
+            let yMod = y & 3;     // Bitwise & 3 is equivalent to % 4 but faster
+
+            for (let x = 0; x < cols; x++) {
+                let isWarpOnTop = ((x + yMod) & 3) < 2;
+                fill(isWarpOnTop ? warpColors[x] : weftColor);
+                rect(x * zoom, yZoom, zoom, zoom);
             }
-            
-            // Si Warp dessus -> couleur de la séquence à la position X
-            // Si Weft dessus -> couleur de la ligne actuelle Y
-            fill(isWarpOnTop ? warpSeq[x % seqLen] : weftColor);
-            
-            // Dessin du "pixel" de fil
-            rect(x * zoom, y * zoom, zoom, zoom);
+        }
+    } else {
+        // S-Twist (Inverse) : Diagonale \ (Descendante droite)
+        for (let y = 0; y < rows; y++) {
+            let weftColor = warpSeq[y % seqLen];
+            let yZoom = y * zoom;
+            let yMod = y & 3;
+
+            for (let x = 0; x < cols; x++) {
+                let isWarpOnTop = ((x - yMod + 4) & 3) < 2;
+                fill(isWarpOnTop ? warpColors[x] : weftColor);
+                rect(x * zoom, yZoom, zoom, zoom);
+            }
         }
     }
-    
+
     // Mise à jour des infos textuelles (Dimensions réelles)
     updateScaleInfo(seqLen);
     updateActualValues();

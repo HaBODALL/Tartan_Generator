@@ -1,0 +1,3 @@
+## 2025-03-09 - p5.js Core Rendering Loop Optimization
+**Learning:** In a p5.js sketch rendering a grid pixel-by-pixel (like a weave simulation), per-pixel mathematical operations like modulo (`% 4`) and branch evaluation inside inner loops create a significant performance bottleneck. JavaScript engines execute bitwise operations (`& 3`) noticeably faster than modulos for power-of-two bases.
+**Action:** When optimizing tight nested loops iterating over millions of pixels, always hoist constant conditions outside the loops (loop unswitching), pre-calculate arrays for sequences to avoid runtime lookups, and replace modulo arithmetic with bitwise AND when the divisor is a power of 2.
