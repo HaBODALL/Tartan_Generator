@@ -678,7 +678,7 @@ function updateUserPaletteUI() {
         chip.onclick = () => openColorPicker(idx); 
         
         let delBtn = document.createElement('div');
-        delBtn.innerHTML = "&times;"; 
+        delBtn.textContent = "\u00D7";
         delBtn.style.cssText = "color:#666; font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
         delBtn.title = "Retirer de la palette";
         delBtn.onmouseenter = () => delBtn.style.color = "red";
@@ -725,7 +725,21 @@ function updateGeneratedListUI() {
         if(container) {
             let row = document.createElement('div');
             row.style.cssText = 'display:flex; align-items:center; margin-bottom:2px; font-size:11px; color:#aaa;';
-            row.innerHTML = `<div style="width:12px; height:12px; background-color:${s.hex}; margin-right:8px; border:1px solid #333;"></div><b>${s.code}</b> : ${s.count} fils`;
+
+            let colorBox = document.createElement('div');
+            colorBox.style.width = '12px';
+            colorBox.style.height = '12px';
+            colorBox.style.backgroundColor = s.hex;
+            colorBox.style.marginRight = '8px';
+            colorBox.style.border = '1px solid #333';
+
+            let codeBold = document.createElement('b');
+            codeBold.textContent = s.code;
+
+            row.appendChild(colorBox);
+            row.appendChild(codeBold);
+            row.appendChild(document.createTextNode(` : ${s.count} fils`));
+
             container.appendChild(row);
         }
     });
@@ -1240,7 +1254,21 @@ function updateGeneratedListUI() {
         if(container) {
             let row = document.createElement('div');
             row.style.cssText = 'display:flex; align-items:center; margin-bottom:2px; font-size:11px; color:#aaa;';
-            row.innerHTML = `<div style="width:12px; height:12px; background-color:${s.hex}; margin-right:8px; border:1px solid #333;"></div><b>${s.code}</b> : ${s.count} fils`;
+
+            let colorBox = document.createElement('div');
+            colorBox.style.width = '12px';
+            colorBox.style.height = '12px';
+            colorBox.style.backgroundColor = s.hex;
+            colorBox.style.marginRight = '8px';
+            colorBox.style.border = '1px solid #333';
+
+            let codeBold = document.createElement('b');
+            codeBold.textContent = s.code;
+
+            row.appendChild(colorBox);
+            row.appendChild(codeBold);
+            row.appendChild(document.createTextNode(` : ${s.count} fils`));
+
             container.appendChild(row);
         }
     });
