@@ -14,7 +14,7 @@
     }
 
     /* ZONE CANVAS */
-    #canvas-container { 
+    #canvas-container {
         position: absolute; top: 0; left: 0; bottom: 0; right: 400px;
         display: flex; align-items: center; justify-content: center;
         background: #050505;
@@ -27,7 +27,7 @@
       width: 400px; height: 100vh;
       background: #181818;
       border-left: 1px solid #333;
-      overflow-y: auto; 
+      overflow-y: auto;
       padding: 12px; padding-bottom: 60px;
       box-shadow: -10px 0 30px rgba(0,0,0,0.8);
     }
@@ -57,14 +57,14 @@
     flex: 2;  /* Prend 2/3 de l'espace */
     padding: 10px;
     background: linear-gradient(135deg, #e74c3c, #c0392b);
-    color: white; 
-    border: none; 
+    color: white;
+    border: none;
     border-radius: 6px;
-    font-size: 16px; 
-    font-weight: bold; 
-    text-transform: uppercase; 
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
     letter-spacing: 1px;
-    cursor: pointer; 
+    cursor: pointer;
     transition: 0.3s;
     box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
 }
@@ -83,8 +83,8 @@
     cursor: pointer;
     transition: 0.2s;
 }
-.btn-undo:hover:not(:disabled) { 
-    background: #444; 
+.btn-undo:hover:not(:disabled) {
+    background: #444;
     color: #fff;
     border-color: #666;
 }
@@ -112,30 +112,29 @@
     .control-group { background: #222; padding: 10px; border-radius: 7px; border: 1px solid #333; }
     .control-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-right: 15px;}
     .control-row label { font-size: 14px; color: #aaa; }
-    
-    /*input[type=number] { 
-        width: 60px; padding: 4px; background: #111; border: 1px solid #444; color: #fff; 
+
+    /*input[type=number] {
+        width: 60px; padding: 4px; background: #111; border: 1px solid #444; color: #fff;
         border-radius: 3px; text-align: right; font-family: monospace;*/
-        
-    input[type=number] { 
-        width: 65px;            
-        padding: 6px 6px;      
-        background: #111; 
-        border: 1px solid #444; 
-        color: #fff; 
-        border-radius: 2px; 
-        text-align: center;     
+
+    input[type=number] {
+        width: 65px;
+        padding: 6px 6px;
+        background: #111;
+        border: 1px solid #444;
+        color: #fff;
+        border-radius: 2px;
+        text-align: center;
         font-family: monospace;
-        font-weight: classic;     
+        font-weight: classic;
     }
-    
+
     /* Ajout optionnel : Changement de couleur au survol pour bien voir la case */
     input[type=number]:focus {
         border-color: #888;
         background-color: #1a1a1a;
         outline: none;
     }
-  }
 
     /* PALETTE LIST */
     #color-list { display: flex; flex-direction: column; gap: 3px; border: 1px solid #333; padding: 5px; background: #121212; border-radius: 4px; min-height: 50px;}
@@ -213,9 +212,9 @@
     /* IMPORT / EXPORT */
     .import-box { display: flex; gap: 5px; margin-bottom: 20px; }
     .import-input { flex-grow: 1; background: #111; border: 1px solid #444; color: #0f0; padding: 5px; font-family: monospace; font-size: 11px; }
-    
+
     .srt-display { width: 100%; background: #000; border: 1px solid #444; color: #3498db; font-family: monospace; font-size: 12px; padding: 10px; resize: none; margin-bottom: 10px; }
-    
+
     .btn-secondary { padding: 8px 12px; background: #333; color: #fff; border: 1px solid #444; cursor: pointer; border-radius: 3px; font-size: 11px; white-space: nowrap;}
     .btn-secondary:hover { background: #444; }
 
@@ -228,7 +227,7 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #1a1a1a; }
     ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-    
+
     /* Style select type de fil */
 #thread-type {
     background: #222;
@@ -254,17 +253,17 @@
   <div id="canvas-container"></div>
 
   <div class="sidebar">
-      <button class="lang-toggle" onclick="toggleLanguage()">EN/FR</button>
+      <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Toggle Language (EN/FR)">EN/FR</button>
       <h1>Random Tartan Generator<span style="font-size:0.7em; color:#666;">v1.0</span></h1>
 
       <!-- SECTION: IMPORT -->
       <div class="import-box">
-          <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)...">
-          <button class="btn-secondary" onclick="importSRT()" data-i18n="btn_import">IMPORTER</button>
+          <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." aria-label="Code SRT à importer">
+          <button class="btn-secondary" onclick="importSRT()" data-i18n="btn_import" aria-label="Importer le code SRT">IMPORTER</button>
       </div>
-      
+
       <div style="margin-bottom: 15px;">
-          <select id="srt-examples" onchange="loadExample(this.value)" style="width:100%; background:#222; color:#ccc; border:1px solid #444; padding:5px; border-radius:3px;">
+          <select id="srt-examples" onchange="loadExample(this.value)" style="width:100%; background:#222; color:#ccc; border:1px solid #444; padding:5px; border-radius:3px;" aria-label="Charger un exemple de tartan">
               <option value="" data-i18n="opt_load_example">-- Charger un exemple --</option>
               <option value="R/72 B8 K12 Y2 K12 W2 K12 G24 R8 K2 R/4">Royal Stewart (Sym)</option>
               <option value="B/24 K4 B4 K4 B4 K20 G24 K6 G24 K4 G4 K4 G/24">Black Watch (Sym)</option>
@@ -280,20 +279,20 @@
 
    <!-- SECTION: GENERATION -->
 <div class="generate-row">
-    <button class="btn-generate" onclick="handleGenerateClick()">
+    <button class="btn-generate" onclick="handleGenerateClick()" aria-label="Générer un nouveau tartan">
         <span data-i18n="btn_generate">GÉNÉRER</span>
     </button>
-    <button class="btn-undo" id="btn-undo" onclick="undo()" disabled title="Aucun historique">
+    <button class="btn-undo" id="btn-undo" onclick="undo()" disabled title="Aucun historique" aria-label="Annuler la dernière action">
         ↩️ <span data-i18n="btn_undo">Annuler</span>
     </button>
 </div>
-   
-      
+
+
       <div class="locks-container">
-          <label class="checkbox-lock">
+          <label class="checkbox-lock" for="lock-colors">
               <input type="checkbox" id="lock-colors"> <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
           </label>
-          <label class="checkbox-lock">
+          <label class="checkbox-lock" for="lock-structure">
               <input type="checkbox" id="lock-structure"> <span data-i18n="chk_keep_struct">Conserver Structure</span>
           </label>
       </div>
@@ -302,73 +301,73 @@
        <h2 data-i18n="sec_structure">Structure du Motif</h2>
       <div class="control-group">
        <div class="control-row">
-             <label class="checkbox-lock" style="font-size:15px;">
+             <label class="checkbox-lock" for="check-sym" style="font-size:15px;">
                  <input type="checkbox" id="check-sym" checked onchange="updateSymmetry()"> <span data-i18n="chk_symmetry">Symétrie</span>
              </label>
-             <label class="checkbox-lock" style="font-size:15px; color:#888;">
+             <label class="checkbox-lock" for="check-mode-check" style="font-size:15px; color:#888;">
                  <input type="checkbox" id="check-mode-check"> <span data-i18n="chk_check_mode"> Damier (bandes de même largeurs)</span>
              </label>
-          </div>    
-          
+          </div>
+
   <div class="control-row" style="justify-content: flex-start; gap: 15px;">
-    <label data-i18n="lbl_weave_dir">Sens du tissage</label>
+    <label id="lbl-weave-dir" data-i18n="lbl_weave_dir">Sens du tissage</label>
     <label class="checkbox-lock" style="font-size:15px;">
-        <input type="radio" name="weave-dir" value="Z" checked onchange="updateZoom()"> Twist Z
+        <input type="radio" name="weave-dir" value="Z" checked onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> Twist Z
     </label>
     <label class="checkbox-lock" style="font-size:15px;">
-        <input type="radio" name="weave-dir" value="S" onchange="updateZoom()"> Twist S
+        <input type="radio" name="weave-dir" value="S" onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> Twist S
     </label>
 </div>
 
           <hr style="border:0; border-top:1px solid #333; margin:3px 0;">
-          
+
           <!-- Nombre de bandes -->
 <div class="control-row">
-    <label data-i18n="lbl_stripes">Nombre de bandes (Cible)</label>
+    <label for="in-stripes" data-i18n="lbl_stripes">Nombre de bandes (Cible)</label>
     <div style="display:flex; align-items:center; gap:10px;">
-        <input type="number" id="in-stripes" value="6" min="2" max="20" style="width:60px;">
+        <input type="number" id="in-stripes" value="6" min="2" max="20" style="width:60px;" aria-label="Nombre de bandes">
         <span id="stripes-actual" style="color:#888; font-size:11px;"></span>
     </div>
 </div>
           <div class="control-row">
-              <label data-i18n="lbl_limits">Limites de fils par bande (Min/Max)</label>
+              <label id="lbl-limits" data-i18n="lbl_limits">Limites de fils par bande (Min/Max)</label>
               <div style="display:flex; gap:10px;">
-                <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum">
-                <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum">
+                <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum" aria-label="Minimum fils par bande">
+                <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum" aria-label="Maximum fils par bande">
               </div>
           </div>
   <!-- Sett / Densité -->
 <div class="control-row">
-    <label data-i18n="lbl_sett">Densité (Sett)</label>
+    <label for="in-sett" data-i18n="lbl_sett">Densité (Sett)</label>
     <div style="display:flex; align-items:center; gap:10px;">
-        <input type="number" id="in-sett" value="260" min="150" max="300" step="02" style="width:70px;">
+        <input type="number" id="in-sett" value="260" min="150" max="300" step="02" style="width:70px;" aria-label="Densité Sett">
         <span id="sett-actual" style="color:#888; font-size:11px;"></span>
     </div>
-</div>        
+</div>
 
       <!-- SECTION: ZOOM & ECHELLE -->
 <h2 data-i18n="sec_zoom">Zoom et Échelle</h2>
 <div class="control-group">
-    
+
     <!-- Type de fil + Diamètre sur la même ligne -->
 <div class="control-group">
     <div class="control-row">
-        <label data-i18n="lbl_thread_type">Type de fil</label>
+        <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
         <div style="display:flex; gap:10px; align-items:center;">
-            <select id="thread-type" onchange="updateThreadDiameter()">
+            <select id="thread-type" onchange="updateThreadDiameter()" aria-label="Type de fil">
             <option value="custom" data-i18n="opt_custom">Personnalisé</option>
                 <option value="0.69" data-i18n="opt_merino">Mérinos</option>
                 <option value="0.83" data-i18n="opt_cotton">Coton</option>
                  <option value="1.11" data-i18n="opt_wool">Laine</option>
             </select>
-            <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;" oninput="updateScaleInfo()">
+            <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;" oninput="updateScaleInfo()" aria-label="Diamètre du fil en mm">
             <span style="color:#666; font-size:11px;">mm</span>
         </div>
     </div>
 
     <div class="control-row">
-        <label data-i18n="lbl_zoom">Zoom Visuel</label>
-        <input type="number" id="in-zoom" value="2.0" step="0.5" min="0.5" max="12" oninput="updateZoom()">
+        <label for="in-zoom" data-i18n="lbl_zoom">Zoom Visuel</label>
+        <input type="number" id="in-zoom" value="2.0" step="0.5" min="0.5" max="12" oninput="updateZoom()" aria-label="Zoom Visuel">
     </div>
 
     <!-- Le texte d'info en bas -->
@@ -383,16 +382,15 @@
 
       <!-- SECTION: EXPORT -->
       <h2 data-i18n="sec_srt">Code SRT du Tartan</h2>
-      <textarea id="srt-display" class="srt-display" readonly></textarea>
-      
+      <textarea id="srt-display" class="srt-display" readonly aria-label="Code SRT du Tartan"></textarea>
+
       <h2>Export</h2>
       <div class="export-buttons">
-          <button class="btn-export" onclick="exportPNG()">Image</button>
-          <button class="btn-export" onclick="exportTXT()" data-i18n="btn_details">Détails</button>
-          <button class="btn-export btn-primary" onclick="exportAll()" data-i18n="btn_export_all">
-    Exporter tout</button>
+          <button class="btn-export" onclick="exportPNG()" aria-label="Exporter en image PNG">Image</button>
+          <button class="btn-export" onclick="exportTXT()" data-i18n="btn_details" aria-label="Exporter les détails en texte">Détails</button>
+          <button class="btn-export btn-primary" onclick="exportAll()" data-i18n="btn_export_all" aria-label="Tout exporter">Exporter tout</button>
       </div>
-      
+
       <div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
 
   </div>
