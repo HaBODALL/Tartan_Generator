@@ -1026,38 +1026,48 @@ function redrawTartan() {
     // C'est ici que la magie opère.
     // L'algorithme standard du tartan est un sergé (twill) 2/2 : 2 dessus, 2 dessous, décalé de 1 à chaque ligne.
 
-    // ⚡ Bolt Optimization: Pre-calculate warp sequence colors for each column to avoid per-pixel modulo operations
+    // ⚡ Bolt Optimization: Pre-calculate warp sequence colors for each column
     let warpColors = new Array(cols);
     for (let x = 0; x < cols; x++) {
         warpColors[x] = warpSeq[x % seqLen];
     }
 
-    // ⚡ Bolt Optimization: Hoist the weave direction check outside the rendering loops
-    if (isZTwist) {
-        // Z-Twist (Standard) : Diagonale / (Montante droite)
-        for (let y = 0; y < rows; y++) {
-            let weftColor = warpSeq[y % seqLen];
-            let yZoom = y * zoom; // Pre-calculate Y position
-            let yMod = y & 3;     // Bitwise & 3 is equivalent to % 4 but faster
-
-            for (let x = 0; x < cols; x++) {
-                let isWarpOnTop = ((x + yMod) & 3) < 2;
-                fill(isWarpOnTop ? warpColors[x] : weftColor);
-                rect(x * zoom, yZoom, zoom, zoom);
+    // ⚡ Bolt Optimization: Draw entire warp vertically, grouping adjacent identical colors
+    if (cols > 0) {
+        let currentWarpColor = warpColors[0];
+        let warpStart = 0;
+        for (let x = 1; x <= cols; x++) {
+            if (x === cols || warpColors[x] !== currentWarpColor) {
+                fill(currentWarpColor);
+                rect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
+                if (x < cols) {
+                    currentWarpColor = warpColors[x];
+                    warpStart = x;
+                }
             }
         }
-    } else {
-        // S-Twist (Inverse) : Diagonale \ (Descendante droite)
-        for (let y = 0; y < rows; y++) {
-            let weftColor = warpSeq[y % seqLen];
-            let yZoom = y * zoom;
-            let yMod = y & 3;
+    }
 
-            for (let x = 0; x < cols; x++) {
-                let isWarpOnTop = ((x - yMod + 4) & 3) < 2;
-                fill(isWarpOnTop ? warpColors[x] : weftColor);
-                rect(x * zoom, yZoom, zoom, zoom);
-            }
+    // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads, grouping pairs
+    for (let y = 0; y < rows; y++) {
+        let weftColor = warpSeq[y % seqLen];
+        let yZoom = y * zoom;
+        let yMod = y & 3; // Bitwise & 3 is equivalent to % 4 but faster
+
+        fill(weftColor);
+
+        // Determine starting x-index for visible weft based on twist direction
+        let xStart = isZTwist ? (6 - yMod) & 3 : (yMod + 2) & 3;
+
+        // The first group might be cut off on the left edge
+        if (xStart === 3) {
+            rect(0, yZoom, zoom, zoom);
+        }
+
+        // Draw the rest in pairs (since it's a 2/2 twill weave, weft is visible for 2 threads)
+        for (let x = xStart; x < cols; x += 4) {
+            let w = x + 2 > cols ? cols - x : 2;
+            rect(x * zoom, yZoom, w * zoom, zoom);
         }
     }
 
