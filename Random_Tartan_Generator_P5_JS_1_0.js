@@ -1033,13 +1033,14 @@ function redrawTartan() {
     }
 
     // ⚡ Bolt Optimization: Draw entire warp vertically, grouping adjacent identical colors
+    // ⚡ Bolt Optimization: Use native drawingContext API to bypass p5.js wrappers
     if (cols > 0) {
         let currentWarpColor = warpColors[0];
         let warpStart = 0;
         for (let x = 1; x <= cols; x++) {
             if (x === cols || warpColors[x] !== currentWarpColor) {
-                fill(currentWarpColor);
-                rect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
+                drawingContext.fillStyle = currentWarpColor;
+                drawingContext.fillRect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
                 if (x < cols) {
                     currentWarpColor = warpColors[x];
                     warpStart = x;
@@ -1055,10 +1056,11 @@ function redrawTartan() {
         let yZoom = y * zoom;
         let yMod = y & 3; // Bitwise & 3 is equivalent to % 4 but faster
 
-        // ⚡ Bolt Optimization: Only call fill() if color actually changes.
+        // ⚡ Bolt Optimization: Only update fillStyle if color actually changes.
         // Prevents ~90%+ of expensive canvas 2d context updates and hex color parsing per row
+        // ⚡ Bolt Optimization: Use native drawingContext API to bypass p5.js wrappers
         if (weftColor !== currentWeftColor) {
-            fill(weftColor);
+            drawingContext.fillStyle = weftColor;
             currentWeftColor = weftColor;
         }
 
@@ -1067,13 +1069,13 @@ function redrawTartan() {
 
         // The first group might be cut off on the left edge
         if (xStart === 3) {
-            rect(0, yZoom, zoom, zoom);
+            drawingContext.fillRect(0, yZoom, zoom, zoom);
         }
 
         // Draw the rest in pairs (since it's a 2/2 twill weave, weft is visible for 2 threads)
         for (let x = xStart; x < cols; x += 4) {
             let w = x + 2 > cols ? cols - x : 2;
-            rect(x * zoom, yZoom, w * zoom, zoom);
+            drawingContext.fillRect(x * zoom, yZoom, w * zoom, zoom);
         }
     }
 
