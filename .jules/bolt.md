@@ -12,3 +12,6 @@
 ## 2024-05-30 - p5.js fill() overhead in render loops
 **Learning:** In p5.js, calling `fill(hexString)` is relatively expensive because it requires parsing the hex string and updating the underlying Canvas 2D context state, even if the color hasn't changed. In dense rendering loops (like row-by-row weft drawing), this redundant state update becomes a noticeable bottleneck.
 **Action:** When rendering rows or shapes that often share the same color consecutively, manually track the `currentColor` and wrap the `fill()` call in an `if (newColor !== currentColor)` condition. This prevents unnecessary canvas context updates and parsing, significantly improving render speed.
+## 2025-02-12 - Using Native Canvas API for Tight Rendering Loops
+**Learning:** In tight rendering loops (like row-by-row and cell-by-cell rendering), standard p5.js wrappers such as `fill()` and `rect()` incur a relatively high overhead due to state management.
+**Action:** Bypass p5.js wrappers by directly using native HTML5 Canvas API calls like `drawingContext.fillStyle` and `drawingContext.fillRect()` to perform these operations significantly faster.
