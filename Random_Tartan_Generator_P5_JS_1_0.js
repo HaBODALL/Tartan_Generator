@@ -1038,8 +1038,10 @@ function redrawTartan() {
         let warpStart = 0;
         for (let x = 1; x <= cols; x++) {
             if (x === cols || warpColors[x] !== currentWarpColor) {
-                fill(currentWarpColor);
-                rect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
+                // ⚡ Bolt: Bypass p5.js overhead (fill/rect) and use native canvas API
+                // This avoids internal p5 state checks and wrapper overhead in this tight loop.
+                drawingContext.fillStyle = currentWarpColor;
+                drawingContext.fillRect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
                 if (x < cols) {
                     currentWarpColor = warpColors[x];
                     warpStart = x;
@@ -1055,6 +1057,9 @@ function redrawTartan() {
         let yZoom = y * zoom;
         let yMod = y & 3; // Bitwise & 3 is equivalent to % 4 but faster
 
+        // ⚡ Bolt: Bypass p5.js overhead (fill) and use native canvas API
+        // Significantly faster when called thousands of times per frame.
+        drawingContext.fillStyle = weftColor;
         // ⚡ Bolt Optimization: Only call fill() if color actually changes.
         // Prevents ~90%+ of expensive canvas 2d context updates and hex color parsing per row
         if (weftColor !== currentWeftColor) {
@@ -1067,13 +1072,15 @@ function redrawTartan() {
 
         // The first group might be cut off on the left edge
         if (xStart === 3) {
-            rect(0, yZoom, zoom, zoom);
+            // ⚡ Bolt: Native canvas API for drawing
+            drawingContext.fillRect(0, yZoom, zoom, zoom);
         }
 
         // Draw the rest in pairs (since it's a 2/2 twill weave, weft is visible for 2 threads)
         for (let x = xStart; x < cols; x += 4) {
             let w = x + 2 > cols ? cols - x : 2;
-            rect(x * zoom, yZoom, w * zoom, zoom);
+            // ⚡ Bolt: Native canvas API for drawing in tight loop
+            drawingContext.fillRect(x * zoom, yZoom, w * zoom, zoom);
         }
     }
 
