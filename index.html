@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Random Tartan Generator V1.0</title>
+  <title>Random Tartan Generator V1.0.0</title>
   <style>
     /* ==================== BASE DARK ==================== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -11,6 +11,96 @@
       background-color: #000;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER BAR */
+    .app-header {
+      height: 50px;
+      width: 100%;
+      background: #111;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title h1 {
+      font-size: 16px;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-weight: 700;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+
+    .version-badge {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
+    }
+
+    /* LANG SWITCH IN HEADER */
+    .lang-switch {
+      display: flex;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      overflow: hidden;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .lang-btn {
+      background: transparent;
+      color: #888;
+      border: none;
+      padding: 5px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .lang-btn.active {
+      background: #333;
+      color: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    .lang-btn:hover:not(.active) {
+      color: #ccc;
+      background: #252525;
+    }
+
+    /* MAIN CONTAINER */
+    .app-main {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: calc(100vh - 50px);
+      overflow: hidden;
     }
 
     /* ZONE CANVAS */
@@ -24,27 +114,15 @@
     /* SIDEBAR DROITE */
     .sidebar {
       position: absolute; top: 0; right: 0;
-      width: 400px; height: 100vh;
+      width: 400px; height: 100%;
       background: #181818;
       border-left: 1px solid #333;
       overflow-y: auto;
-      padding: 12px; padding-bottom: 60px;
+      padding: 16px; padding-bottom: 60px;
       box-shadow: -10px 0 30px rgba(0,0,0,0.8);
     }
 
-    h1 { font-size: 18px; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; border-bottom: 2px solid #e74c3c; padding-bottom: 5px; display: inline-block;}
     h2 { font-size: 12px; margin-top: 20px; margin-bottom: 10px; color: #888; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 3px;}
-
-    /* LANG TOGGLE */
-    .lang-switch {
-        position: absolute; top: 12px; right: 12px;
-        display: flex; background: #111; border: 1px solid #333; border-radius: 4px; overflow: hidden;
-    }
-    .lang-btn {
-        background: #111; color: #666; border: none; padding: 4px 8px; font-size: 10px; cursor: pointer; font-weight: bold;
-    }
-    .lang-btn.active { background: #111; color: #fff; }
-    .lang-btn:hover { color: #ddd; }
 
 /* BUTTONS GENERATE + UNDO */
 .generate-row {
@@ -113,10 +191,6 @@
     .control-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-right: 15px;}
     .control-row label { font-size: 14px; color: #aaa; }
 
-    /*input[type=number] {
-        width: 60px; padding: 4px; background: #111; border: 1px solid #444; color: #fff;
-        border-radius: 3px; text-align: right; font-family: monospace;*/
-
     input[type=number] {
         width: 65px;
         padding: 6px 6px;
@@ -126,10 +200,8 @@
         border-radius: 2px;
         text-align: center;
         font-family: monospace;
-        font-weight: classic;
     }
 
-    /* Ajout optionnel : Changement de couleur au survol pour bien voir la case */
     input[type=number]:focus {
         border-color: #888;
         background-color: #1a1a1a;
@@ -147,68 +219,70 @@
 
     .btn-add { width: 100%; background: #222; color: #888; border: 1px dashed #444; padding: 5px; font-size: 11px; cursor: pointer; margin-top: 5px; }
     .btn-add:hover { color: #fff; border-color: #666; }
-.picker-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #1a1a1a;
-    padding: 20px;
-    border-radius: 12px;
-    z-index: 9999;
-    max-width: 500px;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-    border: 1px solid #444;
-}
 
-.picker-modal h3 {
-    color: #fff;
-    margin-bottom: 15px;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
+    .picker-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #1a1a1a;
+        padding: 20px;
+        border-radius: 12px;
+        z-index: 9999;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+        border: 1px solid #444;
+    }
 
-.picker-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 30px);
-    gap: 4px;
-    margin: 10px 0;
-}
+    .picker-modal h3 {
+        color: #fff;
+        margin-bottom: 15px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
 
-.picker-chip {
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: transform 0.1s, border-color 0.1s;
-}
+    .picker-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 30px);
+        gap: 4px;
+        margin: 10px 0;
+    }
 
-.picker-chip:hover {
-    border-color: #fff;
-    transform: scale(1.3);
-    z-index: 10;
-    position: relative;
-}
+    .picker-chip {
+        width: 30px;
+        height: 30px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: transform 0.1s, border-color 0.1s;
+    }
 
-.picker-close {
-    display: block;
-    margin-top: 15px;
-    padding: 8px 20px;
-    background: #333;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-}
+    .picker-chip:hover {
+        border-color: #fff;
+        transform: scale(1.3);
+        z-index: 10;
+        position: relative;
+    }
 
-.picker-close:hover {
-    background: #e74c3c;
-}
+    .picker-close {
+        display: block;
+        margin-top: 15px;
+        padding: 8px 20px;
+        background: #333;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .picker-close:hover {
+        background: #e74c3c;
+    }
+
     /* IMPORT / EXPORT */
     .import-box { display: flex; gap: 5px; margin-bottom: 20px; }
     .import-input { flex-grow: 1; background: #111; border: 1px solid #444; color: #0f0; padding: 5px; font-family: monospace; font-size: 11px; }
@@ -229,33 +303,48 @@
     ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
     /* Style select type de fil */
-#thread-type {
-    background: #222;
-    color: #ccc;
-    border: 1px solid #444;
-    padding: 5px 8px;
-    border-radius: 3px;
-    font-size: 12px;
-    cursor: pointer;
-}
-#thread-type:hover {
-    border-color: #666;
-}
-#thread-type:focus {
-    outline: none;
-    border-color: #e74c3c;
-}
+    #thread-type {
+        background: #222;
+        color: #ccc;
+        border: 1px solid #444;
+        padding: 5px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    #thread-type:hover {
+        border-color: #666;
+    }
+    #thread-type:focus {
+        outline: none;
+        border-color: #e74c3c;
+    }
 
   </style>
 </head>
 <body>
 
-  <div id="canvas-container"></div>
+  <!-- HEADER BAR -->
+  <header class="app-header">
+    <div class="header-title">
+      <h1>Random Tartan Generator</h1>
+      <span class="version-badge">v1.0.0</span>
+    </div>
+    <div class="lang-switch">
+      <button id="lang-btn-fr" class="lang-btn active" onclick="setLanguage('fr')" aria-label="Passer en français">
+        🇫🇷 FR
+      </button>
+      <button id="lang-btn-en" class="lang-btn" onclick="setLanguage('en')" aria-label="Switch to English">
+        🇬🇧 EN
+      </button>
+    </div>
+  </header>
 
-  <div class="sidebar">
-      <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Toggle Language (EN/FR)">EN/FR</button>
-      <h1>Random Tartan Generator<span style="font-size:0.7em; color:#666;">v1.0</span></h1>
+  <!-- MAIN AREA -->
+  <div class="app-main">
+    <div id="canvas-container"></div>
 
+    <div class="sidebar">
       <!-- SECTION: IMPORT -->
       <div class="import-box">
           <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." aria-label="Code SRT à importer">
@@ -268,7 +357,6 @@
               <option value="R/72 B8 K12 Y2 K12 W2 K12 G24 R8 K2 R/4">Royal Stewart (Sym)</option>
               <option value="B/24 K4 B4 K4 B4 K20 G24 K6 G24 K4 G4 K4 G/24">Black Watch (Sym)</option>
               <option value="K/3 W14 K52 DR18 K8 DR18 K8 DR18 K52 W14 K/6">Knights Breton (Sym)</option>
-              /*<option value="...B24 K4 B4 K4 B4 K20 G24 K6 G24 K4 G4 K4 G24...">Black Watch (Asym Var.)</option>*/
               <option value="...K10 W10...">Shepherd Check (Asym)</option>
               <option value="...R20 G20...">Simple Check (Asym)</option>
               <option value="...R20 O20 Y20 G20 B20 DB20 P20...">Rainbow Check (Asym)</option>
@@ -277,16 +365,15 @@
           </select>
       </div>
 
-   <!-- SECTION: GENERATION -->
-<div class="generate-row">
-    <button class="btn-generate" onclick="handleGenerateClick()" aria-label="Générer un nouveau tartan">
-        <span data-i18n="btn_generate">GÉNÉRER</span>
-    </button>
-    <button class="btn-undo" id="btn-undo" onclick="undo()" disabled title="Aucun historique" aria-label="Annuler la dernière action">
-        ↩️ <span data-i18n="btn_undo">Annuler</span>
-    </button>
-</div>
-
+      <!-- SECTION: GENERATION -->
+      <div class="generate-row">
+          <button class="btn-generate" onclick="handleGenerateClick()" aria-label="Générer un nouveau tartan">
+              <span data-i18n="btn_generate">GÉNÉRER</span>
+          </button>
+          <button class="btn-undo" id="btn-undo" onclick="undo()" disabled title="Aucun historique" aria-label="Annuler la dernière action">
+              ↩️ <span data-i18n="btn_undo">Annuler</span>
+          </button>
+      </div>
 
       <div class="locks-container">
           <label class="checkbox-lock" for="lock-colors">
@@ -298,84 +385,83 @@
       </div>
 
       <!-- SECTION: STRUCTURE -->
-       <h2 data-i18n="sec_structure">Structure du Motif</h2>
+      <h2 data-i18n="sec_structure">Structure du Motif</h2>
       <div class="control-group">
-       <div class="control-row">
+        <div class="control-row">
              <label class="checkbox-lock" for="check-sym" style="font-size:15px;">
                  <input type="checkbox" id="check-sym" checked onchange="updateSymmetry()"> <span data-i18n="chk_symmetry">Symétrie</span>
              </label>
              <label class="checkbox-lock" for="check-mode-check" style="font-size:15px; color:#888;">
                  <input type="checkbox" id="check-mode-check"> <span data-i18n="chk_check_mode"> Damier (bandes de même largeurs)</span>
              </label>
-          </div>
+        </div>
 
-  <div class="control-row" style="justify-content: flex-start; gap: 15px;">
-    <label id="lbl-weave-dir" data-i18n="lbl_weave_dir">Sens du tissage</label>
-    <label class="checkbox-lock" style="font-size:15px;">
-        <input type="radio" name="weave-dir" value="Z" checked onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> Twist Z
-    </label>
-    <label class="checkbox-lock" style="font-size:15px;">
-        <input type="radio" name="weave-dir" value="S" onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> Twist S
-    </label>
-</div>
+        <div class="control-row" style="justify-content: flex-start; gap: 15px;">
+            <label id="lbl-weave-dir" data-i18n="lbl_weave_dir">Sens du tissage</label>
+            <label class="checkbox-lock" style="font-size:15px;">
+                <input type="radio" name="weave-dir" value="Z" checked onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> Twist Z
+            </label>
+            <label class="checkbox-lock" style="font-size:15px;">
+                <input type="radio" name="weave-dir" value="S" onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> Twist S
+            </label>
+        </div>
 
-          <hr style="border:0; border-top:1px solid #333; margin:3px 0;">
+        <hr style="border:0; border-top:1px solid #333; margin:3px 0;">
 
-          <!-- Nombre de bandes -->
-<div class="control-row">
-    <label for="in-stripes" data-i18n="lbl_stripes">Nombre de bandes (Cible)</label>
-    <div style="display:flex; align-items:center; gap:10px;">
-        <input type="number" id="in-stripes" value="6" min="2" max="20" style="width:60px;" aria-label="Nombre de bandes">
-        <span id="stripes-actual" style="color:#888; font-size:11px;"></span>
-    </div>
-</div>
-          <div class="control-row">
-              <label id="lbl-limits" data-i18n="lbl_limits">Limites de fils par bande (Min/Max)</label>
-              <div style="display:flex; gap:10px;">
-                <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum" aria-label="Minimum fils par bande">
-                <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum" aria-label="Maximum fils par bande">
-              </div>
-          </div>
-  <!-- Sett / Densité -->
-<div class="control-row">
-    <label for="in-sett" data-i18n="lbl_sett">Densité (Sett)</label>
-    <div style="display:flex; align-items:center; gap:10px;">
-        <input type="number" id="in-sett" value="260" min="150" max="300" step="02" style="width:70px;" aria-label="Densité Sett">
-        <span id="sett-actual" style="color:#888; font-size:11px;"></span>
-    </div>
-</div>
+        <!-- Nombre de bandes -->
+        <div class="control-row">
+            <label for="in-stripes" data-i18n="lbl_stripes">Nombre de bandes (Cible)</label>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <input type="number" id="in-stripes" value="6" min="2" max="20" style="width:60px;" aria-label="Nombre de bandes">
+                <span id="stripes-actual" style="color:#888; font-size:11px;"></span>
+            </div>
+        </div>
+        <div class="control-row">
+            <label id="lbl-limits" data-i18n="lbl_limits">Limites de fils par bande (Min/Max)</label>
+            <div style="display:flex; gap:10px;">
+              <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum" aria-label="Minimum fils par bande">
+              <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum" aria-label="Maximum fils par bande">
+            </div>
+        </div>
+        <!-- Sett / Densité -->
+        <div class="control-row">
+            <label for="in-sett" data-i18n="lbl_sett">Densité (Sett)</label>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <input type="number" id="in-sett" value="260" min="150" max="300" step="2" style="width:70px;" aria-label="Densité Sett">
+                <span id="sett-actual" style="color:#888; font-size:11px;"></span>
+            </div>
+        </div>
+      </div>
 
       <!-- SECTION: ZOOM & ECHELLE -->
-<h2 data-i18n="sec_zoom">Zoom et Échelle</h2>
-<div class="control-group">
+      <h2 data-i18n="sec_zoom">Zoom et Échelle</h2>
+      <div class="control-group">
 
-    <!-- Type de fil + Diamètre sur la même ligne -->
-<div class="control-group">
-    <div class="control-row">
-        <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <select id="thread-type" onchange="updateThreadDiameter()" aria-label="Type de fil">
-            <option value="custom" data-i18n="opt_custom">Personnalisé</option>
-                <option value="0.69" data-i18n="opt_merino">Mérinos</option>
-                <option value="0.83" data-i18n="opt_cotton">Coton</option>
-                 <option value="1.11" data-i18n="opt_wool">Laine</option>
-            </select>
-            <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;" oninput="updateScaleInfo()" aria-label="Diamètre du fil en mm">
-            <span style="color:#666; font-size:11px;">mm</span>
+        <div class="control-row">
+            <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="thread-type" onchange="updateThreadDiameter()" aria-label="Type de fil">
+                    <option value="custom" data-i18n="opt_custom">Personnalisé</option>
+                    <option value="0.69" data-i18n="opt_merino">Mérinos</option>
+                    <option value="0.83" data-i18n="opt_cotton">Coton</option>
+                    <option value="1.11" data-i18n="opt_wool">Laine</option>
+                </select>
+                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;" oninput="updateScaleInfo()" aria-label="Diamètre du fil en mm">
+                <span style="color:#666; font-size:11px;">mm</span>
+            </div>
         </div>
-    </div>
 
-    <div class="control-row">
-        <label for="in-zoom" data-i18n="lbl_zoom">Zoom Visuel</label>
-        <input type="number" id="in-zoom" value="2.0" step="0.5" min="0.5" max="12" oninput="updateZoom()" aria-label="Zoom Visuel">
-    </div>
+        <div class="control-row">
+            <label for="in-zoom" data-i18n="lbl_zoom">Zoom Visuel</label>
+            <input type="number" id="in-zoom" value="2.0" step="0.5" min="0.5" max="12" oninput="updateZoom()" aria-label="Zoom Visuel">
+        </div>
 
-    <!-- Le texte d'info en bas -->
-    <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
-        <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span> cm
-    </div>
+        <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
+            <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
+        </div>
 
-</div>
+      </div>
+
       <!-- SECTION: PALETTE -->
       <h2 data-i18n="sec_palette">Palette de couleurs sélectionnées (Max 8)</h2>
       <div id="color-list"></div>
@@ -393,6 +479,7 @@
 
       <div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
 
+    </div>
   </div>
 
   <script src="p5.min.js"></script>
