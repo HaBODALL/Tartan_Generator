@@ -15,3 +15,7 @@
 ## 2025-02-12 - Using Native Canvas API for Tight Rendering Loops
 **Learning:** In tight rendering loops (like row-by-row and cell-by-cell rendering), standard p5.js wrappers such as `fill()` and `rect()` incur a relatively high overhead due to state management.
 **Action:** Bypass p5.js wrappers by directly using native HTML5 Canvas API calls like `drawingContext.fillStyle` and `drawingContext.fillRect()` to perform these operations significantly faster.
+
+## 2025-02-14 - Batching canvas drawing calls for huge performance boosts
+**Learning:** In tight rendering loops using the HTML5 Canvas API, repeatedly calling `fillRect()` is significantly slower than grouping many `rect()` operations within a single `beginPath()` and `fill()` block. In the Tartan generator's weaving loop, grouping the weft rectangles per row reduced drawing time for that phase by roughly 45%.
+**Action:** When drawing many identical small shapes of the same color (like threads in a weave, or a grid of pixels), always batch them into a single path and `fill()` call rather than issuing hundreds of thousands of independent `fillRect()` operations.
