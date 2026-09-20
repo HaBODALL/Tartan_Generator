@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Random Tartan Generator V1.0.0</title>
+  <title>Random Tartan Generator V1.1.0</title>
   <style>
     /* ==================== BASE DARK ==================== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -328,7 +328,7 @@
   <header class="app-header">
     <div class="header-title">
       <h1>Random Tartan Generator</h1>
-      <span class="version-badge">v1.0.0</span>
+      <span class="version-badge">v1.1.0</span>
     </div>
     <div class="lang-switch">
       <button id="lang-btn-fr" class="lang-btn active" onclick="setLanguage('fr')" aria-label="Passer en français">
@@ -398,12 +398,12 @@
 
         <div class="control-row" style="justify-content: flex-start; gap: 15px;">
             <label id="lbl-weave-dir" data-i18n="lbl_weave_dir">Sens du tissage</label>
-            <label class="checkbox-lock" style="font-size:15px;">
-                <input type="radio" name="weave-dir" value="Z" checked onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> Twist Z
-            </label>
-            <label class="checkbox-lock" style="font-size:15px;">
-                <input type="radio" name="weave-dir" value="S" onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> Twist S
-            </label>
+            <div class="checkbox-lock" style="font-size:15px;">
+                <input type="radio" id="weave-z" name="weave-dir" value="Z" checked onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> <label for="weave-z" style="cursor:pointer;">Twist Z</label>
+            </div>
+            <div class="checkbox-lock" style="font-size:15px;">
+                <input type="radio" id="weave-s" name="weave-dir" value="S" onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> <label for="weave-s" style="cursor:pointer;">Twist S</label>
+            </div>
         </div>
 
         <hr style="border:0; border-top:1px solid #333; margin:3px 0;">
@@ -470,7 +470,7 @@
       <h2 data-i18n="sec_srt">Code SRT du Tartan</h2>
       <textarea id="srt-display" class="srt-display" readonly aria-label="Code SRT du Tartan"></textarea>
 
-      <h2>Export</h2>
+      <h2 data-i18n="sec_export">Export</h2>
       <div class="export-buttons">
           <button class="btn-export" onclick="exportPNG()" aria-label="Exporter en image PNG">Image</button>
           <button class="btn-export" onclick="exportTXT()" data-i18n="btn_details" aria-label="Exporter les détails en texte">Détails</button>
@@ -483,6 +483,6 @@
   </div>
 
   <script src="p5.min.js"></script>
-  <script src="Random_Tartan_Generator_P5_JS_1_0.js"></script>
+  <script src="Random_Tartan_Generator.js"></script>
 </body>
 </html>
