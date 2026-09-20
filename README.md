@@ -16,6 +16,7 @@ The project repository includes the following files:
 
 ```
 .
+├── landing.html                           # Presentation landing page
 ├── index.html                             # Main HTML entry point loading p5.js and sketch scripts
 ├── p5.min.js                              # p5.js core library (standalone minified build)
 ├── Random_Tartan_Generator.js   # Main p5.js sketch logic for generating Tartan patterns
@@ -96,7 +97,7 @@ Below are key recommendations and optimization avenues to improve performance, r
 ## 🛠️ Local Development & Running
 
 1. Clone or download the repository files.
-2. Open `index.html` in any modern web browser, or serve it using a local HTTP server (e.g. `npx serve`, VS Code Live Server, or `python -m http.server`).
+2. Open `landing.html` (or `index.html`) in any modern web browser, or serve it using a local HTTP server (e.g. `npx serve`, VS Code Live Server, or `python -m http.server`).
 3. View and interact with the Tartan generator.
 
 ---

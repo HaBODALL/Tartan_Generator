@@ -16,6 +16,7 @@ Le dépôt contient les fichiers suivants :
 
 ```
 .
+├── landing.html                           # Presentation landing page
 ├── index.html                             # Point d'entrée HTML chargeant p5.js et le sketch
 ├── p5.min.js                              # Bibliothèque p5.js principale (build minifié autonome)
 ├── Random_Tartan_Generator.js   # Logique p5.js principale pour la génération de Tartans
@@ -96,7 +97,7 @@ Voici une analyse détaillée des pistes d'optimisation et des fonctionnalités 
 ## 🛠️ Installation & Exécution Locale
 
 1. Clonez ou téléchargez les fichiers du dépôt.
-2. Ouvrez `index.html` dans un navigateur web moderne, ou lancez un serveur HTTP local (ex: `npx serve`, VS Code Live Server ou `python -m http.server`).
+2. Ouvrez `landing.html` (ou `index.html`) dans un navigateur web moderne, ou lancez un serveur HTTP local (ex: `npx serve`, VS Code Live Server ou `python -m http.server`).
 3. Visualisez et interagissez avec le générateur de Tartan.
 
 ---
