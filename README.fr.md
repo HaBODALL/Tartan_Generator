@@ -6,6 +6,10 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 
 ---
 
+> **Note:** Ce projet a été partiellement codé par "vibe coding" (programmation assistée par IA de manière intuitive). Notez qu'une version précédente du logiciel est disponible sur [itch.io](https://habod.itch.io/random-tartan-generator).
+
+---
+
 ## 📁 Structure du Dépôt
 
 Le dépôt contient les fichiers suivants :
@@ -14,7 +18,7 @@ Le dépôt contient les fichiers suivants :
 .
 ├── index.html                             # Point d'entrée HTML chargeant p5.js et le sketch
 ├── p5.min.js                              # Bibliothèque p5.js principale (build minifié autonome)
-├── Random_Tartan_Generator_P5_JS_1_0.js   # Logique p5.js principale pour la génération de Tartans
+├── Random_Tartan_Generator.js   # Logique p5.js principale pour la génération de Tartans
 ├── sketch.properties                      # Métadonnées du sketch et configuration Processing/p5
 └── libraries/                             # Dossier contenant des bibliothèques p5.js ou utilitaires
 ```
@@ -99,4 +103,4 @@ Voici une analyse détaillée des pistes d'optimisation et des fonctionnalités 
 
 ## 📄 Licence
 
-Distribué sous licence MIT (ou licence par défaut du projet). Consultez le dépôt pour plus de détails.
+Distribué sous la licence Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).

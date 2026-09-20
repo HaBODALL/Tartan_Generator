@@ -1,5 +1,5 @@
 // =====================================================
-//  RANDOM TARTAN GENERATOR V1.0.0 - P5.JS VERSION
+//  RANDOM TARTAN GENERATOR V1.1.0 - P5.JS VERSION
 //  By HaBOD, 2025 - CC BY-SA 4.0
 //  Based on a Sketch from steven kay, 2011 (https://openprocessing.org/sketch/25876) - CC BY-SA 2.0
 //  Complete rewrite with constraint-based workflow
@@ -10,7 +10,7 @@
 // =====================================================
 
 /* ==========================================
-   SECTION 1 : Défintion de la palette
+   SECTION 1 : Palette definition
    ========================================== */
 
 const SRT_PALETTE = [
@@ -110,37 +110,37 @@ const SRT_PALETTE = [
   { code: 'DT', name: 'Dark Brown', variant: 1, hex: '#4C3428' }, { code: 'DT', name: 'Dark Brown', variant: 2, hex: '#441800' }, { code: 'DT', name: 'Dark Brown', variant: 3, hex: '#230D00' }
 ];
 
-console.log(`[OK] 1. Palette SRT Chargée : ${SRT_PALETTE.length} couleurs disponibles.`);
+console.log(`[OK] 1. Palette SRT Chargée : ${SRT_PALETTE.length} available colors.`);
 
 /* ==========================================
-   SECTION 2 : VARIABLES GLOBALES
+   SECTION 2 : GLOBAL VARIABLES
    ========================================== */
 
 let canvas;
 let pixelDensity_val = 1;
 
-// État du tartan
-let tartanStripes = [];      // Bandes générées [{color, width, colorCode}, ...]
-let userPalette = [];        // Palette utilisateur [{hex, code, name}, ...]
-let isSymmetric = true;      // Mode symétrique activé
+// Tartan state
+let tartanStripes = [];      // Generated stripes [{color, width, colorCode}, ...]
+let userPalette = [];        // User palette [{hex, code, name}, ...]
+let isSymmetric = true;      // Symmetric mode enabled
 
-// Paramètres de rendu
-let threadSize = 2.0;        // Taille pixel d'un fil (zoom)
-let threadMM = 0.3;          // Diamètre réel fil en mm
-let settValue = 260;         // Sett (fils par 10cm)
+// Rendering parameters
+let threadSize = 2.0;        // Pixel size of a thread (zoom)
+let threadMM = 0.3;          // Actual thread diameter in mm
+let settValue = 260;         // Sett (threads per 10cm)
 
-// Identifiant de génération
+// Generation ID
 let generationID = 0;
 
-// HISTORIQUE (UNDO)
-let historyStack = [];       // Pile des états précédents
-const MAX_HISTORY = 10;      // Nombre max d'états conservés
+// HISTORY (UNDO)
+let historyStack = [];       // Stack of previous states
+const MAX_HISTORY = 10;      // Max number of states kept
 
-// Graphiques off-screen pour performance
+// Off-screen graphics for performance
 let patternBuffer = null;
 let needsRedraw = true;
 
-// Gestion multilingue
+// Multilingual management
 let currentLang = 'fr';
 const TRANSLATIONS = {
     fr: {
@@ -153,21 +153,22 @@ const TRANSLATIONS = {
         sec_structure: "Structure du Motif",
         chk_symmetry: "Symétrie",
         lbl_stripes: "Nombres de bandes (Cible)",
-        lbl_limits: "Limites de fils par bande (Min/Max)",
+        lbl_limits: "Limites de threads par bande (Min/Max)",
         chk_check_mode: "Damier (bande de largeurs égales)",
-        lbl_sett: "Densité (Sett cible)",
+        lbl_sett: "Density (Sett cible)",
         sec_zoom: "Zoom et Échelle",
-        lbl_thread_mm: "Diamètre fil (mm)",
+        lbl_thread_mm: "Thread diameter (mm)",
         lbl_zoom: "Zoom Visuel",
         lbl_width_cm: "Largeur motif",
         sec_palette: "Palette de couleurs sélectionnées (Max 8)",
         sec_srt: "Code SRT du Tartan",
+        sec_export: "Export",
         btn_details: "Détails",
-        msg_palette_max: "Max 8 couleurs.",
+        msg_palette_max: "Max 8 colors.",
         msg_palette_dup: "Cette couleur est déjà présente !",
         msg_palette_min: "La palette doit contenir au minimum 2 couleurs !",
         msg_import_ok: "Import réussi",
-        msg_import_err: "Aucun code valide détecté.",
+        msg_import_err: "No valid code detected.",
         lbl_add_nuance: "AJOUTER UNE NUANCE",
         lbl_mod_nuance: "MODIFIER LA NUANCE",
         btn_cancel: "ANNULER",
@@ -178,11 +179,11 @@ const TRANSLATIONS = {
         opt_cotton: "Coton",
         opt_custom: "Personnalisé",
         lbl_weave_dir: "Sens du tissage",
-        btn_undo: "Annuler",
+        btn_undo: "Undo",
         btn_export_all: "Exporter tout"
     },
     en: {
-        ph_import: "Paste SRT code here (e.g., K4 R32)...",
+        ph_import: "Paste SRT code here (e.g. K4 R32)...",
         btn_import: "IMPORT",
         opt_load_example: "-- Load Example --",
         btn_generate: "GENERATE",
@@ -200,6 +201,7 @@ const TRANSLATIONS = {
         lbl_width_cm: "Pattern Width",
         sec_palette: "Selected Color Palette (Max 8)",
         sec_srt: "Tartan SRT Code",
+        sec_export: "Export",
         btn_details: "Details",
         msg_palette_max: "Max 8 colors.",
         msg_palette_dup: "Color already in palette!",
@@ -220,17 +222,17 @@ const TRANSLATIONS = {
         btn_export_all: "Export all"
     }
 };
-console.log("[OK] 2. Variables Globales Initialisées");
+console.log("[OK] 2. Global Variables Initialized");
 
 /* ==========================================
-   SECTION 3 : INITIALISATION P5.JS
+   SECTION 3 : P5.JS INITIALIZATION
    ========================================== */
 
 function setup() {
-    // A. Initialisation du Canvas dans le conteneur
+    // A. Canvas initialization in the container
     let container = document.getElementById('canvas-container');
     if (!container) {
-        console.error("❌ Erreur : #canvas-container introuvable dans le HTML.");
+        console.error("❌ Error : #canvas-container not found in HTML.");
         return;
     }
 
@@ -240,68 +242,68 @@ function setup() {
     let canvas = createCanvas(w, h);
     canvas.parent('canvas-container');
 
-    noLoop();    // On ne dessine que sur demande (économie de ressources)
-    noSmooth();  // Rendu net pour l'aspect "fil" (pixel perfect)
+    noLoop();    // Draw only on demand (resource saving)
+    noSmooth();  // Sharp rendering for "thread" aspect (pixel perfect)
 
-    // B. Ajout de la Réactivité (Event Listeners)
-    // Liste des IDs HTML qui doivent déclencher une mise à jour
-    // Note : On utilise 'input' pour une réaction immédiate, ou 'change' selon besoin
+    // B. Add Reactivity (Event Listeners)
+    // List of HTML IDs that should trigger an update
+    // Note: Using 'input' for immediate reaction, or 'change' as needed
     let inputsToWatch = [
-        'in-stripes',   // Nombre de bandes cibles
-        'in-maxwidth',  // Largeur max fil
-        'in-sett',      // Densité
-        'in-zoom',      // Zoom visuel
-        'in-threadmm',  // Diamètre fil
-        'check-sym'     // Checkbox Symétrie
+        'in-stripes',   // Target number of stripes
+        'in-maxwidth',  // Max thread width
+        'in-sett',      // Density
+        'in-zoom',      // Visual zoom
+        'in-threadmm',  // Thread diameter
+        'check-sym'     // Symmetry Checkbox
     ];
 
     inputsToWatch.forEach(id => {
         let el = document.getElementById(id);
         if(el) {
             el.addEventListener('input', () => {
-                // Si la fonction n'est pas encore définie (sections suivantes), on évite le crash
+                // If the function is not yet defined (next sections), avoid crash
                 if (window.handleGenerateClick) {
-                    // Pour les sliders purement visuels (zoom), on peut juste redraw,
-                    // mais pour simplifier ici on relance la logique centrale
-                    window.handleGenerateClick(true); // true = mode "update paramètres"
+                    // For purely visual sliders (zoom), we can just redraw,
+                    // but to simplify here we restart the central logic
+                    window.handleGenerateClick(true); // true = "update parameters" mode
                 }
             });
         }
     });
 
-    // C. Démarrage Initial
-    // On laisse un petit délai pour s'assurer que le DOM est prêt et les polices chargées
+    // C. Initial Startup
+    // Leave a small delay to ensure DOM is ready and fonts are loaded
     setTimeout(() => {
-        console.log("[Info] Démarrage de la première génération...");
+        console.log("[Info] Starting first generation...");
 
-        // Note: Ces fonctions seront définies dans les sections 3 et 4.
-        // On simule une génération complète aléatoire au départ.
+        // Note: These functions will be defined in sections 3 and 4.
+        // Simulate a complete random generation at startup.
         if (window.randomizeUserPalette && window.handleGenerateClick) {
             randomizeUserPalette();
             window.handleGenerateClick();
         }
 
-        // Initialiser la langue
+        // Initialize language
         setLanguage('fr');
 
     }, 100);
 
 }
 document.addEventListener('keydown', (e) => {
-    // Ignorer si focus dans un input
+    // Ignore if focus is in an input
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
     switch(e.key.toLowerCase()) {
-        case ' ':       // Espace = Générer
+        case ' ':       // Space = Generate
         case 'g':
             e.preventDefault();
             handleGenerateClick();  // ← CORRIGÉ
             break;
-        case 's':       // S = Export tout
+        case 's':       // S = Export all
             e.preventDefault();
             exportAll();
             break;
-        case 'p':       // P = Export PNG seul
+        case 'p':       // P = Export PNG only
             e.preventDefault();
             exportPNG();
             break;
@@ -313,7 +315,7 @@ document.addEventListener('keydown', (e) => {
             break;
     }
 });
-// --- GESTION LANGUE ---
+// --- LANGUAGE MANAGEMENT ---
 window.toggleLanguage = function() {
     setLanguage(currentLang === 'fr' ? 'en' : 'fr');
 }
@@ -349,10 +351,10 @@ function setLanguage(lang) {
         }
     }
 
-    // Rafraîchir l'UI qui dépend de la langue (Palette, Modale...)
+    // Refresh language-dependent UI (Palette, Modal...)
     updateUserPaletteUI();
 }
-console.log("[OK] 3. Setup P5.JS terminé")
+console.log("[OK] 3. P5.JS Setup complete")
 // ================= 4. Palette UI =================
 
 function windowResized() {
@@ -382,7 +384,7 @@ function randomizeUserPalette() {
     }
 
     updateUserPaletteUI();
-    console.log(`[Info] Palette aléatoire générée : ${userPalette.length} couleurs.`);
+    console.log(`[Info] Random palette generated : ${userPalette.length} colors.`);
 }
 
 function addToPalette(srtIndex) {
@@ -432,7 +434,7 @@ function modifyPalette(userIndex, srtIndex) {
 
 function removeFromPalette(index) {
     if (userPalette.length <= 2) {
-        alert("Minimum 2 couleurs requises");
+        alert("Minimum 2 colors required");
         return;
     }
 
@@ -465,7 +467,7 @@ function regenerateColorsOnly() {
     updateGeneratedListUI();
     redrawTartan();
 }
-// === AFFICHAGE VALEURS RÉELLES ===
+// === DISPLAY ACTUAL VALUES ===
 
 function updateActualValues() {
     updateActualStripes();
@@ -479,9 +481,14 @@ function updateActualStripes() {
 
     if (display) {
         if (actual !== target) {
-            display.innerHTML = `→ <span style="color:#e74c3c;">${actual}</span>`;
+            display.textContent = '';
+            let span = document.createElement('span');
+            span.style.color = '#e74c3c';
+            span.textContent = actual;
+            display.appendChild(document.createTextNode('→ '));
+            display.appendChild(span);
         } else {
-            display.textContent = '';  // Masquer si égal
+            display.textContent = '';  // Hide if equal
         }
     }
 }
@@ -490,50 +497,55 @@ function updateActualSett() {
     const display = document.getElementById('sett-actual');
     if (!display) return;
 
-    // Si pas de stripes, masquer l'affichage
+    // If no stripes, hide display
     if (!tartanStripes || tartanStripes.length === 0) {
         display.textContent = '';
         return;
     }
 
-    // Calcul du nombre total de fils
+    // Calculate total number of threads
     let totalThreads = 0;
     for (let s of tartanStripes) {
         totalThreads += s.count || 0;
     }
 
-    // Éviter division par zéro
+    // Avoid division by zero
     if (totalThreads === 0 || threadMM <= 0) {
         display.textContent = '';
         return;
     }
 
-    // Calcul du sett réel (fils par 10cm)
+    // Calculate actual sett (threads per 10cm)
     let widthCm = totalThreads * threadMM / 10;
     let actualSett = Math.round(totalThreads / widthCm * 10);
 
-    // Comparaison avec la cible
+    // Comparison with target
     let targetSett = parseInt(document.getElementById('in-sett')?.value) || 260;
 
     if (actualSett !== targetSett) {
-        display.innerHTML = `→ <span style="color:#e74c3c;">${actualSett}</span>`;
+        display.textContent = '';
+        let span = document.createElement('span');
+        span.style.color = '#e74c3c';
+        span.textContent = actualSett;
+        display.appendChild(document.createTextNode('→ '));
+        display.appendChild(span);
     } else {
         display.textContent = '';
     }
 }
 
-// === SÉLECTEUR TYPE DE FIL ===
+// === THREAD TYPE SELECTOR ===
 function updateThreadDiameter() {
     const select = document.getElementById('thread-type');
     const input = document.getElementById('in-threadmm');
 
     if (select.value === 'custom') {
-        // Mode personnalisé : activer le champ
+        // Custom mode: enable field
         input.disabled = false;
         input.style.opacity = '1';
         input.style.cursor = 'text';
     } else {
-        // Mode prédéfini : désactiver et mettre la valeur
+        // Preset mode: disable and set value
         input.disabled = true;
         input.style.opacity = '0.6';
         input.style.cursor = 'not-allowed';
@@ -544,7 +556,7 @@ function updateThreadDiameter() {
 }
 
 
-// === GESTION HISTORIQUE ===
+// === GESTION HISTORY ===
 
 function pushToHistory() {
     let state = {
@@ -562,12 +574,12 @@ function pushToHistory() {
     }
 
     updateUndoButton();
-    console.log(`📚 Historique: ${historyStack.length}/${MAX_HISTORY} états`);
+    console.log(`📚 History: ${historyStack.length}/${MAX_HISTORY} states`);
 }
 
 function undo() {
     if (historyStack.length === 0) {
-        console.log("{INFO] Rien à annuler");
+        console.log("{INFO] Nothing to undo");
         return;
     }
 
@@ -589,18 +601,18 @@ function undo() {
     redrawTartan();
     updateUndoButton();
     updateActualValues();
-    console.log(`↩️ Retour à génération #${generationID}. Reste: ${historyStack.length} états`);
+    console.log(`↩️ Return to generation #${generationID}. Remaining: ${historyStack.length} states`);
 }
 
 function updateUndoButton() {
     let btn = document.getElementById('btn-undo');
     if (btn) {
         btn.disabled = (historyStack.length === 0);
-        btn.title = `Annuler (${historyStack.length} étapes disponibles)`;
+        btn.title = `Undo (${historyStack.length} steps available)`;
     }
 }
 
-// Expose pour le HTML
+// Expose to HTML
 window.undo = undo;
 function openColorPicker(editIndex = -1) {
     let t = TRANSLATIONS[currentLang];
@@ -638,7 +650,7 @@ function openColorPicker(editIndex = -1) {
         };
 
        chip.onmouseenter = () => {
-    // Affiche Nom + Code + Hex
+    // Display Name + Code + Hex
     let label = `${formatColorLabel(p)} — ${p.hex}`;
     title.innerText = label;
     title.style.color = p.hex;
@@ -664,7 +676,12 @@ function updateUserPaletteUI() {
     let listContainer = document.getElementById('color-list');
     if(!listContainer) return;
 
-    listContainer.innerHTML = `<div style="font-size:10px; color:#666; margin-bottom:5px;"></div>`;
+    listContainer.textContent = '';
+    let div = document.createElement('div');
+    div.style.fontSize = '10px';
+    div.style.color = '#666';
+    div.style.marginBottom = '5px';
+    listContainer.appendChild(div);
 
     let paletteRow = document.createElement('div');
     paletteRow.style.display = 'flex';
@@ -683,13 +700,13 @@ function updateUserPaletteUI() {
         chip.style.border = '1px solid #555';
         chip.style.borderRadius = '4px';
         chip.style.cursor = 'pointer';
-        chip.title = formatColorLabel(p) + "\nCliquer pour changer";
+        chip.title = formatColorLabel(p) + "\nClick to change";
         chip.onclick = () => openColorPicker(idx);
 
         let delBtn = document.createElement('div');
         delBtn.textContent = "\u00D7";
         delBtn.style.cssText = "color:#666; font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
-        delBtn.title = "Retirer de la palette";
+        delBtn.title = "Remove from palette";
         delBtn.onmouseenter = () => delBtn.style.color = "red";
         delBtn.onmouseleave = () => delBtn.style.color = "#666";
         delBtn.onclick = () => removeFromPalette(idx);
@@ -721,15 +738,15 @@ function updateGeneratedListUI() {
     let idLabel = document.getElementById('gen-id');
 
     if(idLabel) idLabel.innerText = generationID;
-    if(container) container.innerHTML = "";
+    if(container) container.textContent = "";
 
-    // Récupérer le mode symétrique
+    // Retrieve symmetric mode
     let isSymmetric = document.getElementById('check-sym')?.checked || false;
 
-    // Construction de la chaîne SRT selon les règles officielles
+    // Construct SRT string according to official rules
     let srtString = buildSRTCode(tartanStripes, isSymmetric);
 
-    // Affichage visuel des bandes
+    // Visual display of stripes
     tartanStripes.forEach(s => {
         if(container) {
             let row = document.createElement('div');
@@ -747,7 +764,7 @@ function updateGeneratedListUI() {
 
             row.appendChild(colorBox);
             row.appendChild(codeBold);
-            row.appendChild(document.createTextNode(` : ${s.count} fils`));
+            row.appendChild(document.createTextNode(` : ${s.count} threads`));
 
             container.appendChild(row);
         }
@@ -756,7 +773,7 @@ function updateGeneratedListUI() {
     if(srtInput) srtInput.value = srtString;
 }
 
-// === CONSTRUCTION CODE SRT OFFICIEL ===
+// === OFFICIAL SRT CODE CONSTRUCTION ===
 function buildSRTCode(stripes, isSymmetric) {
     if (!stripes || stripes.length === 0) return "";
 
@@ -767,28 +784,28 @@ function buildSRTCode(stripes, isSymmetric) {
         let count = s.count;
 
         if (isSymmetric) {
-            // Premier et dernier = pivots avec /
+            // First and last = pivots with /
             if (index === 0 || index === stripes.length - 1) {
                 parts.push(`${code}/${count}`);
             } else {
                 parts.push(`${code}${count}`);
             }
         } else {
-            // Asymétrique : pas de /
+            // Asymmetric: no /
             parts.push(`${code}${count}`);
         }
     });
 
     if (isSymmetric) {
-        // Format : B/24 W4 K24 W/2
+        // Format: B/24 W4 K24 W/2
         return parts.join(' ');
     } else {
-        // Format : ...B24 W4 K24 W2...
+        // Format: ...B24 W4 K24 W2...
         return '...' + parts.join(' ') + '...';
     }
 }
 
-// === CONSTRUCTION CODE INK/STITCH ===
+// === INK/STITCH CODE CONSTRUCTION ===
 function buildInkStitchCode(stripes, isSymmetric) {
     if (!stripes || stripes.length === 0) return "";
 
@@ -799,7 +816,7 @@ function buildInkStitchCode(stripes, isSymmetric) {
         let count = s.count;
 
         if (isSymmetric) {
-            // Premier et dernier = pivots avec /
+            // First and last = pivots with /
             if (index === 0 || index === stripes.length - 1) {
                 parts.push(`(${hex})/${count}`);
             } else {
@@ -817,48 +834,48 @@ function buildInkStitchCode(stripes, isSymmetric) {
     }
 }
 
-// Expose pour export
+// Expose for export
 window.buildSRTCode = buildSRTCode;
 window.buildInkStitchCode = buildInkStitchCode;
 
 
-// Initialisation des styles au chargement
+// Initialize styles on load
 injectDynamicStyles();
 
-console.log("[OK] 4. Logique Palette et UI chargée");
+console.log("[OK] 4. Palette Logic and UI loaded");
 
-// ================= 5. LOGIQUE GÉNÉRATION MOTIF =================
+// ================= 5. PATTERN GENERATION LOGIC =================
 
-// --- Gestionnaire du Clic (Chef d'orchestre) ---
+// --- Click Handler (Conductor) ---
 window.handleGenerateClick = function(isUpdateOnly = false) {
 
-    // SAUVEGARDER L'ÉTAT ACTUEL AVANT TOUTE MODIFICATION
+    // SAVE CURRENT STATE BEFORE ANY MODIFICATION
     if (tartanStripes.length > 0 && !isUpdateOnly) {
         pushToHistory();
     }
 
-    // 1. Lire l'état des cases (UTILISE LES MÊMES IDs PARTOUT)
+    // 1. Read checkbox state (USE SAME IDs EVERYWHERE)
     let keepColors = document.getElementById('lock-colors')?.checked || false;
     let keepStructure = document.getElementById('lock-structure')?.checked || false;
 
-    // 2. Si on ne conserve PAS les couleurs → randomiser la palette
-    // Mais seulement si ce n'est pas une simple "mise à jour visuelle" (slider)
+    // 2. If colors are NOT kept → randomize palette
+    // But only if it's not a simple "visual update" (slider)
     if(!keepColors && !isUpdateOnly) {
         randomizeUserPalette();
     }
 
-    // 3. Vérification de sécurité
+    // 3. Security check
     if(userPalette.length <= 1) {
         alert(TRANSLATIONS[currentLang].msg_palette_min);
         return;
     }
 
-    // 4. Gestion de l'UI
+    // 4. UI Management
     drawLoadingScreen();
 
-    // 5. Génération avec délai
+    // 5. Generation with delay
     setTimeout(() => {
-        generateNewTartan(keepColors, keepStructure); // ← PASSER LES PARAMS
+        generateNewTartan(keepColors, keepStructure); // ← PASS PARAMS
 
         if(typeof redrawTartan === 'function') redrawTartan();
         if(typeof updateGeneratedListUI === 'function') updateGeneratedListUI();
@@ -867,16 +884,16 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
 }
 
 function generateNewTartan(lockColors = false, lockStructure = false) {
-    // 1. Récupération des paramètres HTML
+    // 1. Retrieve HTML parameters
     let minW = parseInt(document.getElementById('in-minwidth').value) || 2;
     let maxW = parseInt(document.getElementById('in-maxwidth').value) || 124;
     let targetStripes = parseInt(document.getElementById('in-stripes').value) || 12;
     let targetSett = parseInt(document.getElementById('in-sett').value) || 260;
 
-    // Option "Mode Check" (Largeurs égales)
+    // Option "Check Mode" (Equal widths)
     let isCheckMode = document.getElementById('check-mode-check')?.checked || false;
 
-    // Correction automatique : Min/Max doivent être pairs
+    // Automatic correction: Min/Max must be even
     if (minW % 2 !== 0) minW++;
     if (maxW % 2 !== 0) maxW++;
     if (minW < 2) minW = 2;
@@ -885,44 +902,43 @@ function generateNewTartan(lockColors = false, lockStructure = false) {
 
     generationID = Math.floor(Math.random() * 1000000);
 
-    // --- CAS A : TOUT EST VERROUILLÉ (Rien ne se passe) ---
+    // --- CASE A: ALL LOCKED (Nothing happens) ---
     if (lockColors && lockStructure) {
-        console.log("[INFO] Tout est verrouillé. Pas de changement.");
+        console.log("[INFO] All locked. No change.");
         return;
     }
 
-    // --- CAS B : GARDER STRUCTURE, CHANGER COULEURS ---
+    // --- CASE B: KEEP STRUCTURE, CHANGE COLORS ---
     if (lockStructure && tartanStripes.length > 0) {
-        // On garde les largeurs (count), on change juste les codes couleurs
+        // Keep widths (count), just change color codes
         tartanStripes.forEach(bande => {
-            // On prend une nouvelle couleur au hasard dans la palette utilisateur
+            // Pick a new random color from user palette
             let newColor = userPalette[Math.floor(Math.random() * userPalette.length)];
             bande.code = newColor.code;
             bande.hex = newColor.hex;
         });
-        console.log("[INFO] Structure gardée, Couleurs changées.");
+        console.log("[INFO] Structure kept, Colors changed.");
         return;
     }
 
-    // --- CAS C : GARDER COULEURS (La palette ne change pas, mais l'ordre et largeurs changent) ---
-    // Note : Dans votre code actuel, "Garder couleur" est implicite car on utilise 'userPalette'.
-    // Si la case n'est PAS cochée, on pourrait vouloir régénérer la palette entièrement ?
-    // Pour l'instant, on assume que "Garder Couleurs" signifie "Ne pas toucher à la liste de gauche".
-    // Si 'lock-palette' est FALSE, on pourrait relancer un randomizeUserPalette() ?
+    // --- CASE C: KEEP COLORS (Palette doesn't change, but order and widths change) ---
+    // Note: In current code, "Keep color" is implicit because 'userPalette' is used.
+    // If checkbox is NOT checked, we might want to regenerate palette entirely?
+    // For now, assume "Keep Colors" means "Do not touch the left list".
+    // If 'lock-palette' is FALSE, we could trigger a randomizeUserPalette()?
 
     if (!lockColors) {
         // Optionnel : Si l'utilisateur veut que le bouton génère aussi une nouvelle palette
-        // randomizeUserPalette();
         // Pour l'instant, on laisse l'utilisateur gérer sa palette manuellement.
     }
 
-    // --- CAS D : GÉNÉRATION STANDARD ---
+    // --- CASE D: STANDARD GENERATION ---
 
 let tempStripes = [];
 let previousColorCode = null;
-let totalThreads = 0; // ✅ Compteur de fils
+let totalThreads = 0; // ✅ Compteur de threads
 
-// Pré-calcul largeur fixe pour mode Check
+// Pre-calculate fixed width for Check mode
 let fixedCheckWidth = 0;
 if (isCheckMode) {
     let minPair = minW / 2;
@@ -930,17 +946,17 @@ if (isCheckMode) {
     fixedCheckWidth = (Math.floor(Math.random() * (maxPair - minPair + 1)) + minPair) * 2;
 }
 
-// On génère jusqu'à atteindre le sett cible (ou nombre max de bandes)
+// Generate until target sett is reached (or max number of stripes)
 for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
 
-    // 1. Choix de la couleur (éviter doublon adjacent)
+    // 1. Color choice (avoid adjacent duplicate)
     let availableColors = userPalette.filter(c => c.code !== previousColorCode);
     if (availableColors.length === 0) availableColors = userPalette;
 
     let selectedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
     previousColorCode = selectedColor.code;
 
-    // 2. Choix de la largeur
+    // 2. Width choice
     let finalWidth;
 
     if (isCheckMode) {
@@ -952,11 +968,11 @@ for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
         finalWidth = randomPair * 2;
     }
 
-    // ✅ Ajuster si on dépasse le sett
+    // ✅ Adjust if sett is exceeded
     if (totalThreads + finalWidth > targetSett) {
         finalWidth = targetSett - totalThreads;
-        if (finalWidth % 2 !== 0) finalWidth--; // Garder pair
-        if (finalWidth < minW) break; // Trop petit, on arrête
+        if (finalWidth % 2 !== 0) finalWidth--; // Keep even
+        if (finalWidth < minW) break; // Too small, stop
     }
 
     tempStripes.push({
@@ -965,75 +981,75 @@ for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
         count: finalWidth
     });
 
-    totalThreads += finalWidth; // ✅ Mise à jour du compteur
+    totalThreads += finalWidth; // ✅ Update counter
 }
 tartanStripes = tempStripes;
-console.log(`[INFO] Nouveau Tartan généré : ${tempStripes.length} bandes, Sett total: ${totalThreads}/${targetSett}`);
+console.log(`[INFO] New Tartan generated: ${tempStripes.length} stripes, Total Sett: ${totalThreads}/${targetSett}`);
 }
 
-// Fonction utilitaire de mélange (Fisher-Yates)
+// Utility shuffle function (Fisher-Yates)
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
-console.log("[OK] 5. LOGIQUE GÉNÉRATION MOTIF");
+console.log("[OK] 5. PATTERN GENERATION LOGIC");
 // =========================================================================
-// 6. RENDU (TISSAGE)
+// 6. RENDERING (WEAVING)
 // =========================================================================
 
 function redrawTartan() {
-    // Sécurité : Si pas de données, on ne dessine rien
+    // Security: If no data, draw nothing
     if(!tartanStripes || tartanStripes.length === 0) return;
 
-    // 1. Récupération des paramètres de rendu
-    // Le zoom définit la taille d'un "fil" en pixels à l'écran
+    // 1. Retrieve rendering parameters
+    // Zoom defines the size of a "thread" in pixels on screen
     let domZoom = document.getElementById('in-zoom');
     let zoom = domZoom ? (parseFloat(domZoom.value) || 2.0) : 2.0;
 
-    // Vérification de la symétrie
+    // Symmetry check
     let domSym = document.getElementById('check-sym');
     let isSymmetric = domSym ? domSym.checked : false;
 
-    // Récupération de la direction de tissage (Z ou S)
+    // Retrieve weaving direction (Z or S)
     let domWeaveZ = document.querySelector('input[name="weave-dir"][value="Z"]');
-    let isZTwist = domWeaveZ ? domWeaveZ.checked : true; // Par défaut Z
+    let isZTwist = domWeaveZ ? domWeaveZ.checked : true; // Default Z
 
-    // 2. Construction de la séquence de fils (WARP - Chaîne)
-    // On convertit "Rouge: 4 fils, Bleu: 6 fils" en un tableau [R,R,R,R, B,B,B,B,B,B]
+    // 2. Construction de la séquence de threads (WARP - Chaîne)
+    // On convertit "Rouge: 4 threads, Bleu: 6 threads" en un tableau [R,R,R,R, B,B,B,B,B,B]
     let warpSeq = [];
 
-    // Partie A (Aller)
+    // Part A (Forward)
     for(let s of tartanStripes) {
         for(let k=0; k<s.count; k++) warpSeq.push(s.hex);
     }
 
-    // Partie B (Retour - si symétrique)
-    // On ne répète pas le dernier bloc pour éviter un doublement (A-B-C-B-A et non A-B-C-C-B-A)
-    // Note: Dans les tartans complexes, la symétrie pivote parfois différemment. Ici pivot simple.
+    // Part B (Backward - if symmetric)
+    // Do not repeat last block to avoid doubling (A-B-C-B-A and not A-B-C-C-B-A)
+    // Note: In complex tartans, symmetry sometimes pivots differently. Simple pivot here.
     if (isSymmetric) {
         for(let i = tartanStripes.length - 2; i >= 0; i--) {
             let s = tartanStripes[i];
             for(let k=0; k<s.count; k++) warpSeq.push(s.hex);
         }
-        // NOTE: Si vous voulez une symétrie totale incluant la dernière bande : changer index à length-1
+        // NOTE: If you want total symmetry including last stripe: change index to length-1
     }
 
     let seqLen = warpSeq.length;
 
-    // 3. Préparation du Canvas
+    // 3. Canvas Preparation
     clear();
     background(20);
     noStroke();
 
-    // Calcul du nombre de fils à dessiner pour remplir l'écran
+    // Calcul du nombre de threads à dessiner pour remplir l'écran
     let cols = Math.ceil(width / zoom);
     let rows = Math.ceil(height / zoom);
 
-    // 4. BOUCLE DE TISSAGE (Twill 2/2)
-    // C'est ici que la magie opère.
-    // L'algorithme standard du tartan est un sergé (twill) 2/2 : 2 dessus, 2 dessous, décalé de 1 à chaque ligne.
+    // 4. WEAVING LOOP (Twill 2/2)
+    // This is where the magic happens.
+    // Standard tartan algorithm is a 2/2 twill: 2 over, 2 under, shifted by 1 each line.
 
     // ⚡ Bolt Optimization: Pre-calculate warp sequence colors for each column
     let warpColors = new Array(cols);
@@ -1100,12 +1116,12 @@ function redrawTartan() {
         drawingContext.fill(); // Render the final block
     }
 
-    // Mise à jour des infos textuelles (Dimensions réelles)
+    // Update textual info (Actual dimensions)
     updateScaleInfo(seqLen);
     updateActualValues();
 }
 
-// Fonction utilitaire : Écran de chargement
+// Utility function: Loading Screen
 function drawLoadingScreen() {
     background(0);
     fill(255);
@@ -1114,11 +1130,11 @@ function drawLoadingScreen() {
     text(TRANSLATIONS[currentLang].loading, width/2, height/2);
 }
 
-// Mise à jour des infos de taille (cm)
+// Update size info (cm)
 window.updateScaleInfo = function(totalThreadsOverride) {
     let domThread = document.getElementById('in-threadmm');
-    // Par défaut, threadThickness = 0.5mm (Grosse laine) ou on utilise un Sett
-    // Si on veut un Sett de 30 fils/cm => 1 fil = 0.33mm.
+    // By default, threadThickness = 0.5mm (Chunky wool) or use a Sett
+    // Si on veut un Sett de 30 threads/cm => 1 fil = 0.33mm.
     let threadMm = domThread ? (parseFloat(domThread.value) || 0.5) : 0.5;
 
     let totalThreads = 0;
@@ -1127,25 +1143,25 @@ window.updateScaleInfo = function(totalThreadsOverride) {
     } else {
         tartanStripes.forEach(s => totalThreads += s.count);
         let domSym = document.getElementById('check-sym');
-        if(domSym && domSym.checked) totalThreads = (totalThreads * 2) - tartanStripes[tartanStripes.length-1].count; // Approx symétrie
+        if(domSym && domSym.checked) totalThreads = (totalThreads * 2) - tartanStripes[tartanStripes.length-1].count; // Approx symmetry
     }
 
-    // Calcul largeur : (NbFils * Epaisseur mm) / 10 pour avoir des cm
+    // Calculate width: (NbThreads * Thickness mm) / 10 to get cm
     let sizeCm = (totalThreads * threadMm) / 10;
 
     let el = document.getElementById('real-width');
     if(el) el.innerText = sizeCm.toFixed(1) + " cm";
 
     let elCount = document.getElementById('thread-count');
-    if(elCount) elCount.innerText = totalThreads + " fils";
+    if(elCount) elCount.innerText = totalThreads + " threads";
 
     return { count: totalThreads, size: sizeCm.toFixed(2) };
 }
 
-// Handlers UI mappés globalement
+// Globally mapped UI handlers
 window.updateZoom = function() { redrawTartan(); }
 window.updateSymmetry = function() {
-    // On doit peut-être mettre à jour le texte SRT si la symétrie change l'affichage
+    // We might need to update SRT text if symmetry changes display
     redrawTartan();
 }
 console.log("[OK] 6. Rendu (TISSAGE)");
@@ -1170,14 +1186,14 @@ function getFilename(extension) {
 
 // --- EXPORT TXT ---
 function exportTXT() {
-    // Générer le nom de fichier
+    // Generate filename
     let date = new Date();
     let dateStr = date.getFullYear() + '-' +
                   String(date.getMonth() + 1).padStart(2, '0') + '-' +
                   String(date.getDate()).padStart(2, '0');
     let filename = `Tartan_${generationID}_${dateStr}.txt`;
 
-    // Construire le contenu
+    // Build content
     let content = `TARTAN GENERATOR - EXPORT\n`;
     content += `==========================\n\n`;
     content += `ID: ${generationID}\n`;
@@ -1192,7 +1208,7 @@ function exportTXT() {
     content += `\nCODE INK/STITCH:\n`;
     content += buildInkStitchCode(tartanStripes, isSymmetric);
     content += `\n\n`;
-    // Statistiques
+    // Statistics
     let totalThreads = tartanStripes.reduce((sum, s) => sum + (s.count || 0), 0);
     let threadMM = parseFloat(document.getElementById('in-threadmm')?.value) || 1.11;
     let sizeCM = ((totalThreads * 2 * threadMM) / 10).toFixed(1);
@@ -1203,13 +1219,13 @@ function exportTXT() {
     content += `- Largeur estimée: ${sizeCM} cm (fil ${threadMM}mm)\n`;
     content += `- Nombre de bandes: ${tartanStripes.length}\n\n`;
 
-    // Palette utilisée
+    // Palette used
     content += `PALETTE:\n`;
     userPalette.forEach(c => {
         content += `- ${c.code}: ${c.name} (${c.hex})\n`;
     });
 
-    // Télécharger
+    // Download
     let blob = new Blob([content], { type: 'text/plain' });
     let url = URL.createObjectURL(blob);
     let a = document.createElement('a');
@@ -1221,14 +1237,14 @@ function exportTXT() {
 
 // --- EXPORT PNG ---
 function exportPNG() {
-    // Générer le nom de fichier
+    // Generate filename
     let date = new Date();
     let dateStr = date.getFullYear() + '-' +
                   String(date.getMonth() + 1).padStart(2, '0') + '-' +
                   String(date.getDate()).padStart(2, '0');
     let filename = `Tartan_${generationID}_${dateStr}.png`;
 
-    // Sauvegarder le canvas
+    // Save canvas
     saveCanvas(filename, 'png');
 }
 
@@ -1236,15 +1252,15 @@ function exportAll() {
     exportPNG();
     setTimeout(() => {
         exportTXT();
-    }, 500); // Délai pour éviter conflit navigateur
+    }, 500); // Delay to avoid browser conflict
 }
 
-// Expose pour le HTML
+// Expose to HTML
 window.exportAll = exportAll;
 
 
 
-// Styles dynamiques pour la modale
+// Dynamic styles for modal
 function injectDynamicStyles() {
     let css = `
         .picker-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; border: 1px solid #555; padding: 20px; z-index: 10000; width: 380px; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); color:white; font-family:sans-serif;}
@@ -1253,11 +1269,11 @@ function injectDynamicStyles() {
         .picker-chip:hover { transform: scale(1.2); border: 2px solid #fff; z-index:2; position:relative; }
     `;
     let style = document.createElement('style');
-    style.innerHTML = css;
+    style.textContent = css;
     document.head.appendChild(style);
 }
 
-// --- CHARGER UN EXEMPLE SRT ---
+// --- LOAD SRT EXAMPLE ---
 window.loadExample = function(val) {
     if(!val) return;
     let input = document.getElementById('import-text');
@@ -1267,29 +1283,29 @@ window.loadExample = function(val) {
     }
 }
 
-// --- IMPORT SRT (LOGIQUE OFFICIELLE) ---
+// --- IMPORT SRT (OFFICIAL LOGIC) ---
 window.importSRT = function() {
     let input = document.getElementById('import-text');
     if(!input) return;
     let text = input.value.trim().toUpperCase();
-    if(!text) { alert("Veuillez entrer un code SRT."); return; }
+    if(!text) { alert("Please enter an SRT code."); return; }
 
     let domSym = document.getElementById('check-sym');
     let isAsymmetricImport = false;
     let isSymmetricImport = false;
 
-    // Détection Asymétrie (...)
+    // Asymmetry Detection (...)
     if (text.includes('...')) {
         isAsymmetricImport = true;
         text = text.replace(/\.\.\./g, '');
     }
 
-    // Détection Symétrie (/)
+    // Symmetry Detection (/)
     if (text.includes('/')) {
         isSymmetricImport = true;
     }
 
-    // Mise à jour checkbox
+    // Update checkbox
     if (domSym) {
         if (isAsymmetricImport) {
             domSym.checked = false;
@@ -1298,7 +1314,7 @@ window.importSRT = function() {
         }
     }
 
-    // Regex pour Code/Nombre (accepte slash optionnel)
+    // Regex for Code/Number (accepts optional slash)
     let regex = /([A-Z]+)\/?(\d+)/g;
 
     let match;
@@ -1312,7 +1328,7 @@ window.importSRT = function() {
         let colorObj = SRT_PALETTE.find(c => c.code === code);
 
         if (!colorObj) {
-            console.warn(`Code couleur inconnu ignoré: ${code}`);
+            console.warn(`Unknown color code ignored: ${code}`);
             continue;
         }
 
@@ -1328,11 +1344,11 @@ window.importSRT = function() {
     }
 
     if (newStripes.length === 0) {
-        alert("Aucun code valide détecté.");
+        alert("No valid code detected.");
         return;
     }
 
-    // Sauvegarde historique avant modification
+    // Save history before modification
     if (typeof pushToHistory === 'function') {
         pushToHistory();
     }
@@ -1344,8 +1360,8 @@ window.importSRT = function() {
     redrawTartan();
     updateGeneratedListUI();
 
-    console.log(`[INFO] Import réussi : ${newStripes.length} bandes.`);
+    console.log(`[INFO] Import successful: ${newStripes.length} bandes.`);
 }
 
-console.log("[OK] 7. Export/Import chargée");
-console.log("[OK] Random Tartan Generator v1.0.0 Loaded.");
+console.log("[OK] 7. Export/Import loaded");
+console.log("[OK] Random Tartan Generator v1.1.0 Loaded.");
