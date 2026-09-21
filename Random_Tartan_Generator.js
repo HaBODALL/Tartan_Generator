@@ -1162,13 +1162,36 @@ function redrawTartan() {
 
             // The first group might be cut off on the left edge
             if (xStart === 3) {
-                drawingContext.rect(0, yZoom, zoom, zoom);
+                // ⚡ Bolt Optimization: skip drawing if identical to warp color underneath
+                if (weftColor !== warpColors[0]) {
+                    drawingContext.rect(0, yZoom, zoom, zoom);
+                }
             }
 
             // Draw the rest in pairs (since it's a 2/2 twill weave, weft is visible for 2 threads)
             for (let x = xStart; x < cols; x += 4) {
                 let w = x + 2 > cols ? cols - x : 2;
-                drawingContext.rect(x * zoom, yZoom, w * zoom, zoom);
+
+                // ⚡ Bolt Optimization: Skip drawing pixels that are the same color as the warp underneath.
+                // For a pair (w=2), test both threads individually to maximize omitted rectangles.
+                if (w === 2) {
+                    let match1 = weftColor === warpColors[x];
+                    let match2 = weftColor === warpColors[x + 1];
+
+                    if (!match1 && !match2) {
+                        drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
+                    } else if (!match1) {
+                        drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                    } else if (!match2) {
+                        drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                    }
+                    // if both match, draw nothing
+                } else {
+                    // For edges where w < 2
+                    if (weftColor !== warpColors[x]) {
+                        drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                    }
+                }
             }
         }
         drawingContext.fill(); // Render the final block
