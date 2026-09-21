@@ -140,6 +140,28 @@ const MAX_HISTORY = 10;      // Max number of states kept
 let patternBuffer = null;
 let needsRedraw = true;
 
+// DOM Element Caching for Performance
+let domElements = {
+    zoom: null,
+    sym: null,
+    weaveZ: null,
+    threadMm: null,
+    realWidth: null,
+    threadCount: null,
+    sett: null,
+    stripesActual: null,
+    settActual: null,
+    minWidth: null,
+    maxWidth: null,
+    targetStripes: null,
+    checkMode: null,
+    lockColors: null,
+    lockStructure: null,
+    genId: null,
+    srtDisplay: null,
+    undoBtn: null
+};
+
 // Multilingual management
 let currentLang = 'fr';
 const TRANSLATIONS = {
@@ -239,6 +261,26 @@ console.log("[OK] 2. Global Variables Initialized");
    ========================================== */
 
 function setup() {
+    // Cache DOM Elements for performance
+    domElements.zoom = document.getElementById('in-zoom');
+    domElements.sym = document.getElementById('check-sym');
+    domElements.weaveZ = document.querySelector('input[name="weave-dir"][value="Z"]');
+    domElements.threadMm = document.getElementById('in-threadmm');
+    domElements.realWidth = document.getElementById('real-width');
+    domElements.threadCount = document.getElementById('thread-count');
+    domElements.sett = document.getElementById('in-sett');
+    domElements.stripesActual = document.getElementById('stripes-actual');
+    domElements.settActual = document.getElementById('sett-actual');
+    domElements.minWidth = document.getElementById('in-minwidth');
+    domElements.maxWidth = document.getElementById('in-maxwidth');
+    domElements.targetStripes = document.getElementById('in-stripes');
+    domElements.checkMode = document.getElementById('check-mode-check');
+    domElements.lockColors = document.getElementById('lock-colors');
+    domElements.lockStructure = document.getElementById('lock-structure');
+    domElements.genId = document.getElementById('gen-id');
+    domElements.srtDisplay = document.getElementById('srt-display');
+    domElements.undoBtn = document.getElementById('btn-undo');
+
     // A. Canvas initialization in the container
     let container = document.getElementById('canvas-container');
     if (!container) {
@@ -485,9 +527,9 @@ function updateActualValues() {
 }
 
 function updateActualStripes() {
-    const target = parseInt(document.getElementById('in-stripes')?.value) || 6;
+    const target = parseInt(domElements.targetStripes?.value) || 6;
     const actual = tartanStripes.length;
-    const display = document.getElementById('stripes-actual');
+    const display = domElements.stripesActual;
 
     if (display) {
         if (actual !== target) {
@@ -504,7 +546,7 @@ function updateActualStripes() {
 }
 
 function updateActualSett() {
-    const display = document.getElementById('sett-actual');
+    const display = domElements.settActual;
     if (!display) return;
 
     // If no stripes, hide display
@@ -530,7 +572,7 @@ function updateActualSett() {
     let actualSett = Math.round(totalThreads / widthCm * 10);
 
     // Comparison with target
-    let targetSett = parseInt(document.getElementById('in-sett')?.value) || 260;
+    let targetSett = parseInt(domElements.sett?.value) || 260;
 
     if (actualSett !== targetSett) {
         display.textContent = '';
@@ -547,7 +589,7 @@ function updateActualSett() {
 // === THREAD TYPE SELECTOR ===
 function updateThreadDiameter() {
     const select = document.getElementById('thread-type');
-    const input = document.getElementById('in-threadmm');
+    const input = domElements.threadMm;
 
     if (select.value === 'custom') {
         // Custom mode: enable field
@@ -572,7 +614,7 @@ function pushToHistory() {
     let state = {
         stripes: JSON.parse(JSON.stringify(tartanStripes)),
         palette: JSON.parse(JSON.stringify(userPalette)),
-        symmetric: document.getElementById('check-sym')?.checked || false,
+        symmetric: domElements.sym?.checked || false,
         generationID: generationID,
         timestamp: Date.now()
     };
@@ -599,10 +641,10 @@ function undo() {
     userPalette = previousState.palette;
     generationID = previousState.generationID;
 
-    let symCheck = document.getElementById('check-sym');
+    let symCheck = domElements.sym;
     if (symCheck) symCheck.checked = previousState.symmetric;
 
-    let idDisplay = document.getElementById('gen-id');
+    let idDisplay = domElements.genId;
     if (idDisplay) idDisplay.textContent = generationID;
 
     // Rafraîchir l'UI
@@ -615,7 +657,7 @@ function undo() {
 }
 
 function updateUndoButton() {
-    let btn = document.getElementById('btn-undo');
+    let btn = domElements.undoBtn;
     if (btn) {
         btn.disabled = (historyStack.length === 0);
         btn.title = `Undo (${historyStack.length} steps available)`;
@@ -744,14 +786,14 @@ function updateUserPaletteUI() {
 
 function updateGeneratedListUI() {
     let container = document.getElementById('generated-stripes-list');
-    let srtInput = document.getElementById('srt-display');
-    let idLabel = document.getElementById('gen-id');
+    let srtInput = domElements.srtDisplay;
+    let idLabel = domElements.genId;
 
     if(idLabel) idLabel.innerText = generationID;
     if(container) container.textContent = "";
 
     // Retrieve symmetric mode
-    let isSymmetric = document.getElementById('check-sym')?.checked || false;
+    let isSymmetric = domElements.sym?.checked || false;
 
     // Construct SRT string according to official rules
     let srtString = buildSRTCode(tartanStripes, isSymmetric);
@@ -865,8 +907,8 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
     }
 
     // 1. Read checkbox state (USE SAME IDs EVERYWHERE)
-    let keepColors = document.getElementById('lock-colors')?.checked || false;
-    let keepStructure = document.getElementById('lock-structure')?.checked || false;
+    let keepColors = domElements.lockColors?.checked || false;
+    let keepStructure = domElements.lockStructure?.checked || false;
 
     // 2. If colors are NOT kept → randomize palette
     // But only if it's not a simple "visual update" (slider)
@@ -895,13 +937,13 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
 
 function generateNewTartan(lockColors = false, lockStructure = false) {
     // 1. Retrieve HTML parameters
-    let minW = parseInt(document.getElementById('in-minwidth').value) || 2;
-    let maxW = parseInt(document.getElementById('in-maxwidth').value) || 124;
-    let targetStripes = parseInt(document.getElementById('in-stripes').value) || 12;
-    let targetSett = parseInt(document.getElementById('in-sett').value) || 260;
+    let minW = parseInt(domElements.minWidth?.value) || 2;
+    let maxW = parseInt(domElements.maxWidth?.value) || 124;
+    let targetStripes = parseInt(domElements.targetStripes?.value) || 12;
+    let targetSett = parseInt(domElements.sett?.value) || 260;
 
     // Option "Check Mode" (Equal widths)
-    let isCheckMode = document.getElementById('check-mode-check')?.checked || false;
+    let isCheckMode = domElements.checkMode?.checked || false;
 
     // Automatic correction: Min/Max must be even
     if (minW % 2 !== 0) minW++;
@@ -1021,15 +1063,15 @@ function redrawTartan() {
 
     // 1. Retrieve rendering parameters
     // Zoom defines the size of a "thread" in pixels on screen
-    let domZoom = document.getElementById('in-zoom');
+    let domZoom = domElements.zoom;
     let zoom = domZoom ? (parseFloat(domZoom.value) || 2.0) : 2.0;
 
     // Symmetry check
-    let domSym = document.getElementById('check-sym');
+    let domSym = domElements.sym;
     let isSymmetric = domSym ? domSym.checked : false;
 
     // Retrieve weaving direction (Z or S)
-    let domWeaveZ = document.querySelector('input[name="weave-dir"][value="Z"]');
+    let domWeaveZ = domElements.weaveZ;
     let isZTwist = domWeaveZ ? domWeaveZ.checked : true; // Default Z
 
     // 2. Construction de la séquence de threads (WARP - Chaîne)
@@ -1148,7 +1190,7 @@ function drawLoadingScreen() {
 
 // Update size info (cm)
 window.updateScaleInfo = function(totalThreadsOverride) {
-    let domThread = document.getElementById('in-threadmm');
+    let domThread = domElements.threadMm;
     // By default, threadThickness = 0.5mm (Chunky wool) or use a Sett
     // Si on veut un Sett de 30 threads/cm => 1 fil = 0.33mm.
     let threadMm = domThread ? (parseFloat(domThread.value) || 0.5) : 0.5;
@@ -1158,27 +1200,32 @@ window.updateScaleInfo = function(totalThreadsOverride) {
         totalThreads = totalThreadsOverride;
     } else {
         tartanStripes.forEach(s => totalThreads += s.count);
-        let domSym = document.getElementById('check-sym');
+        let domSym = domElements.sym;
         if(domSym && domSym.checked) totalThreads = (totalThreads * 2) - tartanStripes[tartanStripes.length-1].count; // Approx symmetry
     }
 
     // Calculate width: (NbThreads * Thickness mm) / 10 to get cm
     let sizeCm = (totalThreads * threadMm) / 10;
 
-    let el = document.getElementById('real-width');
+    let el = domElements.realWidth;
     if(el) el.innerText = sizeCm.toFixed(1) + " cm";
 
-    let elCount = document.getElementById('thread-count');
+    let elCount = domElements.threadCount;
     if(elCount) elCount.innerText = totalThreads + " threads";
 
     return { count: totalThreads, size: sizeCm.toFixed(2) };
 }
 
 // Globally mapped UI handlers
-window.openAboutModal = function() { document.getElementById('about-modal').style.display = 'flex'; }
+let aboutModalElement = null;
+window.openAboutModal = function() {
+    if (!aboutModalElement) aboutModalElement = document.getElementById('about-modal');
+    if (aboutModalElement) aboutModalElement.style.display = 'flex';
+}
 window.closeAboutModal = function(e) {
     if(e && e.target !== e.currentTarget) return; // Ignore clicks inside modal content if handled differently, but we use stopPropagation so this is safe
-    document.getElementById('about-modal').style.display = 'none';
+    if (!aboutModalElement) aboutModalElement = document.getElementById('about-modal');
+    if (aboutModalElement) aboutModalElement.style.display = 'none';
 }
 window.updateZoom = function() { redrawTartan(); }
 window.updateSymmetry = function() {
@@ -1222,16 +1269,16 @@ function exportTXT() {
 
     // Code SRT
     content += `CODE SRT:\n`;
-    content += document.getElementById('srt-display')?.value || 'N/A';
+    content += domElements.srtDisplay?.value || 'N/A';
     content += `\n\n`;
     // Code Ink/Stitch
-    let isSymmetric = document.getElementById('check-sym')?.checked || false;
+    let isSymmetric = domElements.sym?.checked || false;
     content += `\nCODE INK/STITCH:\n`;
     content += buildInkStitchCode(tartanStripes, isSymmetric);
     content += `\n\n`;
     // Statistics
     let totalThreads = tartanStripes.reduce((sum, s) => sum + (s.count || 0), 0);
-    let threadMM = parseFloat(document.getElementById('in-threadmm')?.value) || 1.11;
+    let threadMM = parseFloat(domElements.threadMm?.value) || 1.11;
     let sizeCM = ((totalThreads * 2 * threadMM) / 10).toFixed(1);
 
     content += `STATISTIQUES:\n`;
@@ -1295,23 +1342,25 @@ function injectDynamicStyles() {
 }
 
 // --- LOAD SRT EXAMPLE ---
+let importInputElement = null;
 window.loadExample = function(val) {
     if(!val) return;
-    let input = document.getElementById('import-text');
-    if(input) {
-        input.value = val;
+    if (!importInputElement) importInputElement = document.getElementById('import-text');
+    if(importInputElement) {
+        importInputElement.value = val;
         importSRT();
     }
 }
 
 // --- IMPORT SRT (OFFICIAL LOGIC) ---
 window.importSRT = function() {
-    let input = document.getElementById('import-text');
+    if (!importInputElement) importInputElement = document.getElementById('import-text');
+    let input = importInputElement;
     if(!input) return;
     let text = input.value.trim().toUpperCase();
     if(!text) { alert("Please enter an SRT code."); return; }
 
-    let domSym = document.getElementById('check-sym');
+    let domSym = domElements.sym;
     let isAsymmetricImport = false;
     let isSymmetricImport = false;
 
