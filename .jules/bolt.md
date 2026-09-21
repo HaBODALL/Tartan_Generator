@@ -26,3 +26,7 @@
 ## 2026-09-21 - Caching DOM element lookups in render loops
 **Learning:** Querying the DOM via `document.getElementById()` and `document.querySelector()` inside frequent rendering loops (like `redrawTartan()`) adds unnecessary lookup overhead and garbage collection pressure in JavaScript.
 **Action:** Always cache references to static DOM elements in global variables during initialization (e.g., inside `setup()`). Then, reference those cached elements directly in your render or update loops to improve execution speed and reduce CPU usage.
+
+## 2025-02-23 - Avoid intermediate array allocations in tight loops
+**Learning:** Using `Array.prototype.filter()` repeatedly inside a loop creates intermediate arrays which causes unnecessary memory allocation and garbage collection overhead. This can be problematic in hot paths like generation loops.
+**Action:** Instead of filtering the whole array, use a `do...while` loop with random selection and check against the constraints. Before starting the `do...while` loop, always use `Array.prototype.some()` to verify that a valid condition exists to avoid infinite loops.

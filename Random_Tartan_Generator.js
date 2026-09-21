@@ -935,7 +935,7 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
     }, 50);
 }
 
-function generateNewTartan(lockColors = false, lockStructure = false) {
+window.generateNewTartan = function generateNewTartan(lockColors = false, lockStructure = false) {
     // 1. Retrieve HTML parameters
     let minW = parseInt(domElements.minWidth?.value) || 2;
     let maxW = parseInt(domElements.maxWidth?.value) || 124;
@@ -961,10 +961,16 @@ function generateNewTartan(lockColors = false, lockStructure = false) {
 
         tartanStripes.forEach(bande => {
             // Pick a new random color from user palette, avoiding the same adjacent color
-            let availableColors = userPalette.filter(c => c.code !== previousColorCode);
-            if (availableColors.length === 0) availableColors = userPalette; // Fallback if palette is 1 color
+            let newColor;
+            let hasDifferentColor = userPalette.some(c => c.code !== previousColorCode);
 
-            let newColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+            if (!hasDifferentColor) {
+                newColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+            } else {
+                do {
+                    newColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+                } while (newColor.code === previousColorCode);
+            }
 
             bande.code = newColor.code;
             bande.hex = newColor.hex;
@@ -1008,10 +1014,17 @@ if (isCheckMode) {
 for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
 
     // 1. Color choice (avoid adjacent duplicate)
-    let availableColors = userPalette.filter(c => c.code !== previousColorCode);
-    if (availableColors.length === 0) availableColors = userPalette;
+    let selectedColor;
+    let hasDifferentColor = userPalette.some(c => c.code !== previousColorCode);
 
-    let selectedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+    if (!hasDifferentColor) {
+        selectedColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+    } else {
+        do {
+            selectedColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+        } while (selectedColor.code === previousColorCode);
+    }
+
     previousColorCode = selectedColor.code;
 
     // 2. Width choice
