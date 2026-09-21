@@ -799,8 +799,9 @@ function updateGeneratedListUI() {
     let srtString = buildSRTCode(tartanStripes, isSymmetric);
 
     // Visual display of stripes
-    tartanStripes.forEach(s => {
-        if(container) {
+    if (container) {
+        let fragment = document.createDocumentFragment();
+        tartanStripes.forEach(s => {
             let row = document.createElement('div');
             row.style.cssText = 'display:flex; align-items:center; margin-bottom:2px; font-size:11px; color:#aaa;';
 
@@ -818,9 +819,10 @@ function updateGeneratedListUI() {
             row.appendChild(codeBold);
             row.appendChild(document.createTextNode(` : ${s.count} threads`));
 
-            container.appendChild(row);
-        }
-    });
+            fragment.appendChild(row);
+        });
+        container.appendChild(fragment);
+    }
 
     if(srtInput) srtInput.value = srtString;
 }
