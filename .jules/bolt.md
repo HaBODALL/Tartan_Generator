@@ -22,3 +22,7 @@
 ## 2024-05-20 - [Multi-Row Weft Color Batching]
 **Learning:** [In HTML5 Canvas, path state changes (`beginPath`, `fillStyle`, `fill`) are incredibly expensive compared to adding simple geometry (`rect`). In iterative row-by-row rendering like weavers/grids, contiguous bands of the same color can be grouped across multiple rows to reduce state changes by 90%+. Furthermore, Node.js `canvas` benchmarking drastically differs from actual browser performance; always test canvas performance inside an actual browser.]
 **Action:** [When drawing large grids or iterative lines with repeating colors, avoid changing `fillStyle` or calling `beginPath()/fill()` every row. Instead, group geometry by color blocks. Always use Puppeteer to benchmark Canvas drawing optimizations, not Node.js directly.]
+
+## 2026-09-21 - Caching DOM element lookups in render loops
+**Learning:** Querying the DOM via `document.getElementById()` and `document.querySelector()` inside frequent rendering loops (like `redrawTartan()`) adds unnecessary lookup overhead and garbage collection pressure in JavaScript.
+**Action:** Always cache references to static DOM elements in global variables during initialization (e.g., inside `setup()`). Then, reference those cached elements directly in your render or update loops to improve execution speed and reduce CPU usage.
