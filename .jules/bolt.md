@@ -26,3 +26,6 @@
 ## 2026-09-21 - Caching DOM element lookups in render loops
 **Learning:** Querying the DOM via `document.getElementById()` and `document.querySelector()` inside frequent rendering loops (like `redrawTartan()`) adds unnecessary lookup overhead and garbage collection pressure in JavaScript.
 **Action:** Always cache references to static DOM elements in global variables during initialization (e.g., inside `setup()`). Then, reference those cached elements directly in your render or update loops to improve execution speed and reduce CPU usage.
+## 2025-10-24 - Skipping invisible drawing operations in generative grids
+**Learning:** When rendering layered visual grids (like weaving a pattern where over-threads cross under-threads), drawing an over-thread element is visually redundant if its color perfectly matches the under-thread element directly beneath it.
+**Action:** Always check if the foreground element's state (e.g. color) matches the background element's state. If they match, skip issuing the canvas `rect()` drawing call entirely. By testing individual threads within a pair before rendering, we drastically reduce the number of rectangles drawn, resulting in measurably faster rendering times.
