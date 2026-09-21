@@ -33,3 +33,8 @@
 ## 2025-10-24 - Skipping invisible drawing operations in generative grids
 **Learning:** When rendering layered visual grids (like weaving a pattern where over-threads cross under-threads), drawing an over-thread element is visually redundant if its color perfectly matches the under-thread element directly beneath it.
 **Action:** Always check if the foreground element's state (e.g. color) matches the background element's state. If they match, skip issuing the canvas `rect()` drawing call entirely. By testing individual threads within a pair before rendering, we drastically reduce the number of rectangles drawn, resulting in measurably faster rendering times.
+## 2023-10-27 - DocumentFragment DOM Batching
+
+**Learning:** When generating a large number of DOM elements dynamically, injecting them directly into the live DOM on each iteration of a loop causes expensive, synchronous layout/style recalculations (thrashing). Grouping these items into a `DocumentFragment` outside the DOM and appending it once eliminates layout thrashing.
+
+**Action:** Whenever iterating and creating > 5 DOM elements for insertion into the same container, wrap the creation in a `document.createDocumentFragment()`, append to the fragment in the loop, and insert the fragment to the container once at the end.
