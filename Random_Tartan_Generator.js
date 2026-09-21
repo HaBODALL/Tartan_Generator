@@ -153,22 +153,22 @@ const TRANSLATIONS = {
         sec_structure: "Structure du Motif",
         chk_symmetry: "Symétrie",
         lbl_stripes: "Nombres de bandes (Cible)",
-        lbl_limits: "Limites de threads par bande (Min/Max)",
-        chk_check_mode: "Damier (bande de largeurs égales)",
-        lbl_sett: "Density (Sett cible)",
+        lbl_limits: "Limites de fils par bande (Min/Max)",
+        chk_check_mode: "Damier (bandes de largeurs égales)",
+        lbl_sett: "Densité (Sett cible)",
         sec_zoom: "Zoom et Échelle",
-        lbl_thread_mm: "Thread diameter (mm)",
+        lbl_thread_mm: "Diamètre du fil (mm)",
         lbl_zoom: "Zoom Visuel",
         lbl_width_cm: "Largeur motif",
         sec_palette: "Palette de couleurs sélectionnées (Max 8)",
         sec_srt: "Code SRT du Tartan",
         sec_export: "Export",
         btn_details: "Détails",
-        msg_palette_max: "Max 8 colors.",
+        msg_palette_max: "Max 8 couleurs.",
         msg_palette_dup: "Cette couleur est déjà présente !",
         msg_palette_min: "La palette doit contenir au minimum 2 couleurs !",
         msg_import_ok: "Import réussi",
-        msg_import_err: "No valid code detected.",
+        msg_import_err: "Aucun code valide détecté.",
         lbl_add_nuance: "AJOUTER UNE NUANCE",
         lbl_mod_nuance: "MODIFIER LA NUANCE",
         btn_cancel: "ANNULER",
@@ -179,8 +179,13 @@ const TRANSLATIONS = {
         opt_cotton: "Coton",
         opt_custom: "Personnalisé",
         lbl_weave_dir: "Sens du tissage",
-        btn_undo: "Undo",
-        btn_export_all: "Exporter tout"
+        btn_undo: "Annuler",
+        btn_export_all: "Exporter tout",
+        btn_about: "ℹ️ À propos",
+        title_about: "À propos",
+        txt_about_p1: "Random Tartan Generator est un outil open-source (CC BY-SA 4.0) permettant de créer des motifs de tartan. Il s'appuie sur le format du Scottish Register of Tartans (SRT).",
+        txt_about_p2: "Vous pouvez l'utiliser pour la conception, ou exporter les motifs pour Ink/Stitch.",
+        btn_close: "Fermer"
     },
     en: {
         ph_import: "Paste SRT code here (e.g. K4 R32)...",
@@ -219,7 +224,12 @@ const TRANSLATIONS = {
         opt_custom: "Custom",
         lbl_weave_dir: "Weave direction",
         btn_undo: "Undo",
-        btn_export_all: "Export all"
+        btn_export_all: "Export All",
+        btn_about: "ℹ️ About",
+        title_about: "About",
+        txt_about_p1: "Random Tartan Generator is an open-source tool (CC BY-SA 4.0) to create tartan patterns. It uses the Scottish Register of Tartans (SRT) format.",
+        txt_about_p2: "You can use it for design, or export patterns for Ink/Stitch.",
+        btn_close: "Close"
     }
 };
 console.log("[OK] 2. Global Variables Initialized");
@@ -902,22 +912,28 @@ function generateNewTartan(lockColors = false, lockStructure = false) {
 
     generationID = Math.floor(Math.random() * 1000000);
 
-    // --- CASE A: ALL LOCKED (Nothing happens) ---
-    if (lockColors && lockStructure) {
-        console.log("[INFO] All locked. No change.");
-        return;
-    }
-
-    // --- CASE B: KEEP STRUCTURE, CHANGE COLORS ---
+    // --- CASE A/B: KEEP STRUCTURE, SHUFFLE COLORS ---
     if (lockStructure && tartanStripes.length > 0) {
-        // Keep widths (count), just change color codes
+        // We keep the widths (count) but assign new colors from the current palette
+        let previousColorCode = null;
+
         tartanStripes.forEach(bande => {
-            // Pick a new random color from user palette
-            let newColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+            // Pick a new random color from user palette, avoiding the same adjacent color
+            let availableColors = userPalette.filter(c => c.code !== previousColorCode);
+            if (availableColors.length === 0) availableColors = userPalette; // Fallback if palette is 1 color
+
+            let newColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+
             bande.code = newColor.code;
             bande.hex = newColor.hex;
+            previousColorCode = newColor.code;
         });
-        console.log("[INFO] Structure kept, Colors changed.");
+
+        if (lockColors) {
+            console.log("[INFO] Structure and Colors locked: Shuffled colors across existing stripes.");
+        } else {
+            console.log("[INFO] Structure kept, Palette changed & colors assigned.");
+        }
         return;
     }
 
@@ -1159,6 +1175,11 @@ window.updateScaleInfo = function(totalThreadsOverride) {
 }
 
 // Globally mapped UI handlers
+window.openAboutModal = function() { document.getElementById('about-modal').style.display = 'flex'; }
+window.closeAboutModal = function(e) {
+    if(e && e.target !== e.currentTarget) return; // Ignore clicks inside modal content if handled differently, but we use stopPropagation so this is safe
+    document.getElementById('about-modal').style.display = 'none';
+}
 window.updateZoom = function() { redrawTartan(); }
 window.updateSymmetry = function() {
     // We might need to update SRT text if symmetry changes display
