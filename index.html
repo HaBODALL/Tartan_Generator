@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
   <title>Random Tartan Generator V1.1.0</title>
   <style>
     /* ==================== BASE DARK ==================== */
@@ -336,12 +337,12 @@
       <h1>Random Tartan Generator</h1>
       <span class="version-badge">v1.1.0</span>
     </div>
-    <button class="btn-about-header" onclick="openAboutModal()" data-i18n="btn_about" aria-label="About the app">ℹ️ À propos</button>
+    <button class="btn-about-header" id="btn-about" data-i18n="btn_about" aria-label="About the app">ℹ️ À propos</button>
     <div class="lang-switch">
-      <button id="lang-btn-fr" class="lang-btn active" onclick="setLanguage('fr')" aria-label="Passer en français">
+      <button id="lang-btn-fr" class="lang-btn active" aria-label="Passer en français">
         🇫🇷 FR
       </button>
-      <button id="lang-btn-en" class="lang-btn" onclick="setLanguage('en')" aria-label="Switch to English">
+      <button id="lang-btn-en" class="lang-btn" aria-label="Switch to English">
         🇬🇧 EN
       </button>
     </div>
@@ -351,13 +352,13 @@
   <div class="app-main">
 
     <!-- ABOUT MODAL -->
-    <div id="about-modal" class="modal-overlay" style="display:none;" onclick="closeAboutModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()">
+    <div id="about-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-content" id="modal-content-inner">
         <h3 id="about-title" data-i18n="title_about" style="margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px;">À propos</h3>
         <p id="about-p1" data-i18n="txt_about_p1" style="margin-bottom:10px; line-height:1.4; font-size:14px; color:#ddd;">Random Tartan Generator est un outil open-source (CC BY-SA 4.0) permettant de créer des motifs de tartan. Il s'appuie sur le format du Scottish Register of Tartans (SRT).</p>
         <p id="about-p2" data-i18n="txt_about_p2" style="margin-bottom:20px; line-height:1.4; font-size:14px; color:#ddd;">Vous pouvez l'utiliser pour la conception, ou exporter les motifs pour Ink/Stitch.</p>
         <div style="text-align:right;">
-          <button class="btn-cancel" onclick="closeAboutModal()" data-i18n="btn_close">Fermer</button>
+          <button class="btn-cancel" id="btn-close-about" data-i18n="btn_close">Fermer</button>
         </div>
       </div>
     </div>
@@ -367,11 +368,11 @@
       <!-- SECTION: IMPORT -->
       <div class="import-box">
           <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." aria-label="Code SRT à importer">
-          <button class="btn-secondary" onclick="importSRT()" data-i18n="btn_import" aria-label="Importer le code SRT">IMPORTER</button>
+          <button class="btn-secondary" id="btn-import-srt" data-i18n="btn_import" aria-label="Importer le code SRT">IMPORTER</button>
       </div>
 
       <div style="margin-bottom: 15px;">
-          <select id="srt-examples" onchange="loadExample(this.value)" style="width:100%; background:#222; color:#ccc; border:1px solid #444; padding:5px; border-radius:3px;" aria-label="Charger un exemple de tartan">
+          <select id="srt-examples" style="width:100%; background:#222; color:#ccc; border:1px solid #444; padding:5px; border-radius:3px;" aria-label="Charger un exemple de tartan">
               <option value="" data-i18n="opt_load_example">-- Charger un exemple --</option>
               <option value="R/72 B8 K12 Y2 K12 W2 K12 G24 R8 K2 R/4">Royal Stewart (Sym)</option>
               <option value="B/24 K4 B4 K4 B4 K20 G24 K6 G24 K4 G4 K4 G/24">Black Watch (Sym)</option>
@@ -386,10 +387,10 @@
 
       <!-- SECTION: GENERATION -->
       <div class="generate-row">
-          <button class="btn-generate" onclick="handleGenerateClick()" aria-label="Générer un nouveau tartan">
+          <button class="btn-generate" id="btn-generate" aria-label="Générer un nouveau tartan">
               <span data-i18n="btn_generate">GÉNÉRER</span>
           </button>
-          <button class="btn-undo" id="btn-undo" onclick="undo()" disabled title="Aucun historique" aria-label="Annuler la dernière action">
+          <button class="btn-undo" id="btn-undo" disabled title="Aucun historique" aria-label="Annuler la dernière action">
               ↩️ <span data-i18n="btn_undo">Annuler</span>
           </button>
       </div>
@@ -408,7 +409,7 @@
       <div class="control-group">
         <div class="control-row">
              <label class="checkbox-lock" for="check-sym" style="font-size:15px;">
-                 <input type="checkbox" id="check-sym" checked onchange="updateSymmetry()"> <span data-i18n="chk_symmetry">Symétrie</span>
+                 <input type="checkbox" id="check-sym" checked> <span data-i18n="chk_symmetry">Symétrie</span>
              </label>
              <label class="checkbox-lock" for="check-mode-check" style="font-size:15px; color:#888;">
                  <input type="checkbox" id="check-mode-check"> <span data-i18n="chk_check_mode"> Damier (bandes de même largeurs)</span>
@@ -418,10 +419,10 @@
         <div class="control-row" style="justify-content: flex-start; gap: 15px;">
             <label id="lbl-weave-dir" data-i18n="lbl_weave_dir">Sens du tissage</label>
             <div class="checkbox-lock" style="font-size:15px;">
-                <input type="radio" id="weave-z" name="weave-dir" value="Z" checked onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> <label for="weave-z" style="cursor:pointer;">Twist Z</label>
+                <input type="radio" id="weave-z" name="weave-dir" value="Z" checked aria-labelledby="lbl-weave-dir"> <label for="weave-z" style="cursor:pointer;">Twist Z</label>
             </div>
             <div class="checkbox-lock" style="font-size:15px;">
-                <input type="radio" id="weave-s" name="weave-dir" value="S" onchange="updateZoom()" aria-labelledby="lbl-weave-dir"> <label for="weave-s" style="cursor:pointer;">Twist S</label>
+                <input type="radio" id="weave-s" name="weave-dir" value="S" aria-labelledby="lbl-weave-dir"> <label for="weave-s" style="cursor:pointer;">Twist S</label>
             </div>
         </div>
 
@@ -459,20 +460,20 @@
         <div class="control-row">
             <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
             <div style="display:flex; gap:10px; align-items:center;">
-                <select id="thread-type" onchange="updateThreadDiameter()" aria-label="Type de fil">
+                <select id="thread-type" aria-label="Type de fil">
                     <option value="custom" data-i18n="opt_custom">Personnalisé</option>
                     <option value="0.69" data-i18n="opt_merino">Mérinos</option>
                     <option value="0.83" data-i18n="opt_cotton">Coton</option>
                     <option value="1.11" data-i18n="opt_wool">Laine</option>
                 </select>
-                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;" oninput="updateScaleInfo()" aria-label="Diamètre du fil en mm">
+                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;" aria-label="Diamètre du fil en mm">
                 <span style="color:#666; font-size:11px;">mm</span>
             </div>
         </div>
 
         <div class="control-row">
             <label for="in-zoom" data-i18n="lbl_zoom">Zoom Visuel</label>
-            <input type="number" id="in-zoom" value="2.0" step="0.5" min="0.5" max="12" oninput="updateZoom()" aria-label="Zoom Visuel">
+            <input type="number" id="in-zoom" value="2.0" step="0.5" min="0.5" max="12" aria-label="Zoom Visuel">
         </div>
 
         <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
@@ -491,9 +492,9 @@
 
       <h2 data-i18n="sec_export">Export</h2>
       <div class="export-buttons">
-          <button class="btn-export" onclick="exportPNG()" aria-label="Exporter en image PNG">Image</button>
-          <button class="btn-export" onclick="exportTXT()" data-i18n="btn_details" aria-label="Exporter les détails en texte">Détails</button>
-          <button class="btn-export btn-primary" onclick="exportAll()" data-i18n="btn_export_all" aria-label="Tout exporter">Exporter tout</button>
+          <button class="btn-export" id="btn-export-png" aria-label="Exporter en image PNG">Image</button>
+          <button class="btn-export" id="btn-export-txt" data-i18n="btn_details" aria-label="Exporter les détails en texte">Détails</button>
+          <button class="btn-export btn-primary" id="btn-export-all" data-i18n="btn_export_all" aria-label="Tout exporter">Exporter tout</button>
       </div>
 
       <div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>

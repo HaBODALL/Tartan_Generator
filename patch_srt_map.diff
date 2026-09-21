@@ -1,0 +1,65 @@
+<<<<<<< SEARCH
+    // Regex for Code/Number (accepts optional slash)
+    let regex = /([A-Z]+)\/?(\d+)/g;
+
+    let match;
+    let newStripes = [];
+    let newPaletteMap = new Map();
+
+    while ((match = regex.exec(text)) !== null) {
+        let code = match[1];
+        let count = parseInt(match[2]);
+
+        let colorObj = SRT_PALETTE.find(c => c.code === code);
+
+        if (!colorObj) {
+            console.warn(`Unknown color code ignored: ${code}`);
+            continue;
+        }
+
+        newStripes.push({
+            code: colorObj.code,
+            hex: colorObj.hex,
+            count: count
+        });
+
+        if (!newPaletteMap.has(code)) {
+            newPaletteMap.set(code, colorObj);
+        }
+    }
+=======
+    // Regex for Code/Number (accepts optional slash)
+    let regex = /([A-Z]+)\/?(\d+)/g;
+
+    let match;
+    let newStripes = [];
+    let newPaletteMap = new Map();
+
+    // O(1) lookup map for parsing
+    let srtLookup = new Map();
+    for (let c of SRT_PALETTE) {
+        if (!srtLookup.has(c.code)) srtLookup.set(c.code, c);
+    }
+
+    while ((match = regex.exec(text)) !== null) {
+        let code = match[1];
+        let count = parseInt(match[2]);
+
+        let colorObj = srtLookup.get(code);
+
+        if (!colorObj) {
+            console.warn(`Unknown color code ignored: ${code}`);
+            continue;
+        }
+
+        newStripes.push({
+            code: colorObj.code,
+            hex: colorObj.hex,
+            count: count
+        });
+
+        if (!newPaletteMap.has(code)) {
+            newPaletteMap.set(code, colorObj);
+        }
+    }
+>>>>>>> REPLACE

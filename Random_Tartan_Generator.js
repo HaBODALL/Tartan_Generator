@@ -110,7 +110,6 @@ const SRT_PALETTE = [
   { code: 'DT', name: 'Dark Brown', variant: 1, hex: '#4C3428' }, { code: 'DT', name: 'Dark Brown', variant: 2, hex: '#441800' }, { code: 'DT', name: 'Dark Brown', variant: 3, hex: '#230D00' }
 ];
 
-console.log(`[OK] 1. Palette SRT Chargée : ${SRT_PALETTE.length} available colors.`);
 
 /* ==========================================
    SECTION 2 : GLOBAL VARIABLES
@@ -254,14 +253,27 @@ const TRANSLATIONS = {
         btn_close: "Close"
     }
 };
-console.log("[OK] 2. Global Variables Initialized");
 
 /* ==========================================
    SECTION 3 : P5.JS INITIALIZATION
    ========================================== */
 
 function setup() {
-    // Cache DOM Elements for performance
+    cacheDomElements();
+    initCanvas();
+    bindEvents();
+
+    // Initial Startup
+    setTimeout(() => {
+        if (window.randomizeUserPalette && window.handleGenerateClick) {
+            randomizeUserPalette();
+            window.handleGenerateClick();
+        }
+        setLanguage('fr');
+    }, 100);
+}
+
+function cacheDomElements() {
     domElements.zoom = document.getElementById('in-zoom');
     domElements.sym = document.getElementById('check-sym');
     domElements.weaveZ = document.querySelector('input[name="weave-dir"][value="Z"]');
@@ -280,13 +292,11 @@ function setup() {
     domElements.genId = document.getElementById('gen-id');
     domElements.srtDisplay = document.getElementById('srt-display');
     domElements.undoBtn = document.getElementById('btn-undo');
+}
 
-    // A. Canvas initialization in the container
+function initCanvas() {
     let container = document.getElementById('canvas-container');
-    if (!container) {
-        console.error("❌ Error : #canvas-container not found in HTML.");
-        return;
-    }
+    if (!container) return;
 
     let w = container.offsetWidth;
     let h = container.offsetHeight;
@@ -294,52 +304,88 @@ function setup() {
     let canvas = createCanvas(w, h);
     canvas.parent('canvas-container');
 
-    noLoop();    // Draw only on demand (resource saving)
-    noSmooth();  // Sharp rendering for "thread" aspect (pixel perfect)
+    noLoop();
+    noSmooth();
+}
 
-    // B. Add Reactivity (Event Listeners)
-    // List of HTML IDs that should trigger an update
-    // Note: Using 'input' for immediate reaction, or 'change' as needed
+function bindEvents() {
     let inputsToWatch = [
-        'in-stripes',   // Target number of stripes
-        'in-maxwidth',  // Max thread width
-        'in-sett',      // Density
-        'in-zoom',      // Visual zoom
-        'in-threadmm',  // Thread diameter
-        'check-sym'     // Symmetry Checkbox
+        'in-stripes',
+        'in-maxwidth',
+        'in-sett',
+        'in-zoom',
+        'in-threadmm',
+        'check-sym'
     ];
 
     inputsToWatch.forEach(id => {
         let el = document.getElementById(id);
         if(el) {
             el.addEventListener('input', () => {
-                // If the function is not yet defined (next sections), avoid crash
                 if (window.handleGenerateClick) {
-                    // For purely visual sliders (zoom), we can just redraw,
-                    // but to simplify here we restart the central logic
-                    window.handleGenerateClick(true); // true = "update parameters" mode
+                    window.handleGenerateClick(true);
                 }
             });
         }
     });
 
-    // C. Initial Startup
-    // Leave a small delay to ensure DOM is ready and fonts are loaded
-    setTimeout(() => {
-        console.log("[Info] Starting first generation...");
+    // Move inline events to JS
+    const btnAbout = document.getElementById('btn-about');
+    if (btnAbout) btnAbout.addEventListener('click', openAboutModal);
 
-        // Note: These functions will be defined in sections 3 and 4.
-        // Simulate a complete random generation at startup.
-        if (window.randomizeUserPalette && window.handleGenerateClick) {
-            randomizeUserPalette();
-            window.handleGenerateClick();
-        }
+    const langBtnFr = document.getElementById('lang-btn-fr');
+    if (langBtnFr) langBtnFr.addEventListener('click', () => setLanguage('fr'));
 
-        // Initialize language
-        setLanguage('fr');
+    const langBtnEn = document.getElementById('lang-btn-en');
+    if (langBtnEn) langBtnEn.addEventListener('click', () => setLanguage('en'));
 
-    }, 100);
+    const aboutModal = document.getElementById('about-modal');
+    if (aboutModal) aboutModal.addEventListener('click', closeAboutModal);
 
+    const modalContentInner = document.getElementById('modal-content-inner');
+    if (modalContentInner) modalContentInner.addEventListener('click', (e) => e.stopPropagation());
+
+    const btnCloseAbout = document.getElementById('btn-close-about');
+    if (btnCloseAbout) btnCloseAbout.addEventListener('click', closeAboutModal);
+
+    const btnImportSrt = document.getElementById('btn-import-srt');
+    if (btnImportSrt) btnImportSrt.addEventListener('click', importSRT);
+
+    const srtExamples = document.getElementById('srt-examples');
+    if (srtExamples) srtExamples.addEventListener('change', (e) => loadExample(e.target.value));
+
+    const btnGenerate = document.getElementById('btn-generate');
+    if (btnGenerate) btnGenerate.addEventListener('click', () => handleGenerateClick());
+
+    const btnUndo = document.getElementById('btn-undo');
+    if (btnUndo) btnUndo.addEventListener('click', undo);
+
+    const weaveZ = document.getElementById('weave-z');
+    if (weaveZ) weaveZ.addEventListener('change', updateZoom);
+
+    const weaveS = document.getElementById('weave-s');
+    if (weaveS) weaveS.addEventListener('change', updateZoom);
+
+    const checkSym = document.getElementById('check-sym');
+    if (checkSym) checkSym.addEventListener('change', updateSymmetry);
+
+    const threadType = document.getElementById('thread-type');
+    if (threadType) threadType.addEventListener('change', updateThreadDiameter);
+
+    const inThreadMm = document.getElementById('in-threadmm');
+    if (inThreadMm) inThreadMm.addEventListener('input', updateScaleInfo);
+
+    const inZoom = document.getElementById('in-zoom');
+    if (inZoom) inZoom.addEventListener('input', updateZoom);
+
+    const btnExportPng = document.getElementById('btn-export-png');
+    if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
+
+    const btnExportTxt = document.getElementById('btn-export-txt');
+    if (btnExportTxt) btnExportTxt.addEventListener('click', exportTXT);
+
+    const btnExportAll = document.getElementById('btn-export-all');
+    if (btnExportAll) btnExportAll.addEventListener('click', exportAll);
 }
 document.addEventListener('keydown', (e) => {
     // Ignore if focus is in an input
@@ -368,10 +414,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 // --- LANGUAGE MANAGEMENT ---
-window.toggleLanguage = function() {
-    setLanguage(currentLang === 'fr' ? 'en' : 'fr');
-}
-
 function setLanguage(lang) {
     if(!TRANSLATIONS[lang]) return;
     currentLang = lang;
@@ -406,7 +448,6 @@ function setLanguage(lang) {
     // Refresh language-dependent UI (Palette, Modal...)
     updateUserPaletteUI();
 }
-console.log("[OK] 3. P5.JS Setup complete")
 // ================= 4. Palette UI =================
 
 function windowResized() {
@@ -436,7 +477,6 @@ function randomizeUserPalette() {
     }
 
     updateUserPaletteUI();
-    console.log(`[Info] Random palette generated : ${userPalette.length} colors.`);
 }
 
 function addToPalette(srtIndex) {
@@ -626,12 +666,10 @@ function pushToHistory() {
     }
 
     updateUndoButton();
-    console.log(`📚 History: ${historyStack.length}/${MAX_HISTORY} states`);
 }
 
 function undo() {
     if (historyStack.length === 0) {
-        console.log("{INFO] Nothing to undo");
         return;
     }
 
@@ -653,7 +691,6 @@ function undo() {
     redrawTartan();
     updateUndoButton();
     updateActualValues();
-    console.log(`↩️ Return to generation #${generationID}. Remaining: ${historyStack.length} states`);
 }
 
 function updateUndoButton() {
@@ -896,7 +933,6 @@ window.buildInkStitchCode = buildInkStitchCode;
 // Initialize styles on load
 injectDynamicStyles();
 
-console.log("[OK] 4. Palette Logic and UI loaded");
 
 // ================= 5. PATTERN GENERATION LOGIC =================
 
@@ -961,16 +997,20 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
         // We keep the widths (count) but assign new colors from the current palette
         let previousColorCode = null;
 
+        // Shuffle the palette to increase randomness before assigning colors
+        let shuffledPalette = [...userPalette];
+        shuffleArray(shuffledPalette);
+
         tartanStripes.forEach(bande => {
-            // Pick a new random color from user palette, avoiding the same adjacent color
+            // Pick a new random color from shuffled palette, avoiding the same adjacent color
             let newColor;
-            let hasDifferentColor = userPalette.some(c => c.code !== previousColorCode);
+            let hasDifferentColor = shuffledPalette.some(c => c.code !== previousColorCode);
 
             if (!hasDifferentColor) {
-                newColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+                newColor = shuffledPalette[Math.floor(Math.random() * shuffledPalette.length)];
             } else {
                 do {
-                    newColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+                    newColor = shuffledPalette[Math.floor(Math.random() * shuffledPalette.length)];
                 } while (newColor.code === previousColorCode);
             }
 
@@ -980,9 +1020,7 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
         });
 
         if (lockColors) {
-            console.log("[INFO] Structure and Colors locked: Shuffled colors across existing stripes.");
         } else {
-            console.log("[INFO] Structure kept, Palette changed & colors assigned.");
         }
         return;
     }
@@ -1057,7 +1095,6 @@ for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
     totalThreads += finalWidth; // ✅ Update counter
 }
 tartanStripes = tempStripes;
-console.log(`[INFO] New Tartan generated: ${tempStripes.length} stripes, Total Sett: ${totalThreads}/${targetSett}`);
 }
 
 // Utility shuffle function (Fisher-Yates)
@@ -1067,7 +1104,6 @@ function shuffleArray(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
-console.log("[OK] 5. PATTERN GENERATION LOGIC");
 // =========================================================================
 // 6. RENDERING (WEAVING)
 // =========================================================================
@@ -1270,7 +1306,6 @@ window.updateSymmetry = function() {
     // We might need to update SRT text if symmetry changes display
     redrawTartan();
 }
-console.log("[OK] 6. Rendu (TISSAGE)");
 
 // ==========================================
 //  7. EXPORT & IMPORT
@@ -1293,17 +1328,13 @@ function getFilename(extension) {
 // --- EXPORT TXT ---
 function exportTXT() {
     // Generate filename
-    let date = new Date();
-    let dateStr = date.getFullYear() + '-' +
-                  String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                  String(date.getDate()).padStart(2, '0');
-    let filename = `Tartan_${generationID}_${dateStr}.txt`;
+    let filename = getFilename('txt');
 
     // Build content
     let content = `TARTAN GENERATOR - EXPORT\n`;
     content += `==========================\n\n`;
     content += `ID: ${generationID}\n`;
-    content += `Date: ${dateStr}\n\n`;
+    content += `Date: ${getFormattedDate()}\n\n`;
 
     // Code SRT
     content += `CODE SRT:\n`;
@@ -1344,11 +1375,7 @@ function exportTXT() {
 // --- EXPORT PNG ---
 function exportPNG() {
     // Generate filename
-    let date = new Date();
-    let dateStr = date.getFullYear() + '-' +
-                  String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                  String(date.getDate()).padStart(2, '0');
-    let filename = `Tartan_${generationID}_${dateStr}.png`;
+    let filename = getFilename('png');
 
     // Save canvas
     saveCanvas(filename, 'png');
@@ -1429,11 +1456,18 @@ window.importSRT = function() {
     let newStripes = [];
     let newPaletteMap = new Map();
 
+    // ⚡ Bolt Optimization: O(1) lookup map for parsing
+    let srtLookup = new Map();
+    for (let c of SRT_PALETTE) {
+        if (!srtLookup.has(c.code)) srtLookup.set(c.code, c);
+    }
+
     while ((match = regex.exec(text)) !== null) {
         let code = match[1];
         let count = parseInt(match[2]);
 
-        let colorObj = SRT_PALETTE.find(c => c.code === code);
+        // ⚡ Bolt Optimization: Replace O(N) Array.find with O(1) Map.get
+        let colorObj = srtLookup.get(code);
 
         if (!colorObj) {
             console.warn(`Unknown color code ignored: ${code}`);
@@ -1468,8 +1502,5 @@ window.importSRT = function() {
     redrawTartan();
     updateGeneratedListUI();
 
-    console.log(`[INFO] Import successful: ${newStripes.length} bandes.`);
 }
 
-console.log("[OK] 7. Export/Import loaded");
-console.log("[OK] Random Tartan Generator v1.1.0 Loaded.");
