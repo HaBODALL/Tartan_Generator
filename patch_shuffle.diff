@@ -1,0 +1,51 @@
+<<<<<<< SEARCH
+    // --- CASE A/B: KEEP STRUCTURE, SHUFFLE COLORS ---
+    if (lockStructure && tartanStripes.length > 0) {
+        // We keep the widths (count) but assign new colors from the current palette
+        let previousColorCode = null;
+
+        tartanStripes.forEach(bande => {
+            // Pick a new random color from user palette, avoiding the same adjacent color
+            let newColor;
+            let hasDifferentColor = userPalette.some(c => c.code !== previousColorCode);
+
+            if (!hasDifferentColor) {
+                newColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+            } else {
+                do {
+                    newColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+                } while (newColor.code === previousColorCode);
+            }
+
+            bande.code = newColor.code;
+            bande.hex = newColor.hex;
+            previousColorCode = newColor.code;
+        });
+=======
+    // --- CASE A/B: KEEP STRUCTURE, SHUFFLE COLORS ---
+    if (lockStructure && tartanStripes.length > 0) {
+        // We keep the widths (count) but assign new colors from the current palette
+        let previousColorCode = null;
+
+        // Shuffle the palette to increase randomness before assigning colors
+        let shuffledPalette = [...userPalette];
+        shuffleArray(shuffledPalette);
+
+        tartanStripes.forEach(bande => {
+            // Pick a new random color from shuffled palette, avoiding the same adjacent color
+            let newColor;
+            let hasDifferentColor = shuffledPalette.some(c => c.code !== previousColorCode);
+
+            if (!hasDifferentColor) {
+                newColor = shuffledPalette[Math.floor(Math.random() * shuffledPalette.length)];
+            } else {
+                do {
+                    newColor = shuffledPalette[Math.floor(Math.random() * shuffledPalette.length)];
+                } while (newColor.code === previousColorCode);
+            }
+
+            bande.code = newColor.code;
+            bande.hex = newColor.hex;
+            previousColorCode = newColor.code;
+        });
+>>>>>>> REPLACE

@@ -1,0 +1,161 @@
+<<<<<<< SEARCH
+/* ==========================================
+   SECTION 3 : P5.JS INITIALIZATION
+   ========================================== */
+
+function setup() {
+    // Cache DOM Elements for performance
+    domElements.zoom = document.getElementById('in-zoom');
+    domElements.sym = document.getElementById('check-sym');
+    domElements.weaveZ = document.querySelector('input[name="weave-dir"][value="Z"]');
+    domElements.threadMm = document.getElementById('in-threadmm');
+    domElements.realWidth = document.getElementById('real-width');
+    domElements.threadCount = document.getElementById('thread-count');
+    domElements.sett = document.getElementById('in-sett');
+    domElements.stripesActual = document.getElementById('stripes-actual');
+    domElements.settActual = document.getElementById('sett-actual');
+    domElements.minWidth = document.getElementById('in-minwidth');
+    domElements.maxWidth = document.getElementById('in-maxwidth');
+    domElements.targetStripes = document.getElementById('in-stripes');
+    domElements.checkMode = document.getElementById('check-mode-check');
+    domElements.lockColors = document.getElementById('lock-colors');
+    domElements.lockStructure = document.getElementById('lock-structure');
+    domElements.genId = document.getElementById('gen-id');
+    domElements.srtDisplay = document.getElementById('srt-display');
+    domElements.undoBtn = document.getElementById('btn-undo');
+
+    // A. Canvas initialization in the container
+    let container = document.getElementById('canvas-container');
+    if (!container) {
+        console.error("❌ Error : #canvas-container not found in HTML.");
+        return;
+    }
+
+    let w = container.offsetWidth;
+    let h = container.offsetHeight;
+
+    let canvas = createCanvas(w, h);
+    canvas.parent('canvas-container');
+
+    noLoop();    // Draw only on demand (resource saving)
+    noSmooth();  // Sharp rendering for "thread" aspect (pixel perfect)
+
+    // B. Add Reactivity (Event Listeners)
+    // List of HTML IDs that should trigger an update
+    // Note: Using 'input' for immediate reaction, or 'change' as needed
+    let inputsToWatch = [
+        'in-stripes',   // Target number of stripes
+        'in-maxwidth',  // Max thread width
+        'in-sett',      // Density
+        'in-zoom',      // Visual zoom
+        'in-threadmm',  // Thread diameter
+        'check-sym'     // Symmetry Checkbox
+    ];
+
+    inputsToWatch.forEach(id => {
+        let el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('input', () => {
+                // If the function is not yet defined (next sections), avoid crash
+                if (window.handleGenerateClick) {
+                    // For purely visual sliders (zoom), we can just redraw,
+                    // but to simplify here we restart the central logic
+                    window.handleGenerateClick(true); // true = "update parameters" mode
+                }
+            });
+        }
+    });
+
+    // C. Initial Startup
+    // Leave a small delay to ensure DOM is ready and fonts are loaded
+    setTimeout(() => {
+        // Note: These functions will be defined in sections 3 and 4.
+        // Simulate a complete random generation at startup.
+        if (window.randomizeUserPalette && window.handleGenerateClick) {
+            randomizeUserPalette();
+            window.handleGenerateClick();
+        }
+
+        // Initialize language
+        setLanguage('fr');
+
+    }, 100);
+
+}
+=======
+/* ==========================================
+   SECTION 3 : P5.JS INITIALIZATION
+   ========================================== */
+
+function setup() {
+    cacheDomElements();
+    initCanvas();
+    bindEvents();
+
+    // Initial Startup
+    setTimeout(() => {
+        if (window.randomizeUserPalette && window.handleGenerateClick) {
+            randomizeUserPalette();
+            window.handleGenerateClick();
+        }
+        setLanguage('fr');
+    }, 100);
+}
+
+function cacheDomElements() {
+    domElements.zoom = document.getElementById('in-zoom');
+    domElements.sym = document.getElementById('check-sym');
+    domElements.weaveZ = document.querySelector('input[name="weave-dir"][value="Z"]');
+    domElements.threadMm = document.getElementById('in-threadmm');
+    domElements.realWidth = document.getElementById('real-width');
+    domElements.threadCount = document.getElementById('thread-count');
+    domElements.sett = document.getElementById('in-sett');
+    domElements.stripesActual = document.getElementById('stripes-actual');
+    domElements.settActual = document.getElementById('sett-actual');
+    domElements.minWidth = document.getElementById('in-minwidth');
+    domElements.maxWidth = document.getElementById('in-maxwidth');
+    domElements.targetStripes = document.getElementById('in-stripes');
+    domElements.checkMode = document.getElementById('check-mode-check');
+    domElements.lockColors = document.getElementById('lock-colors');
+    domElements.lockStructure = document.getElementById('lock-structure');
+    domElements.genId = document.getElementById('gen-id');
+    domElements.srtDisplay = document.getElementById('srt-display');
+    domElements.undoBtn = document.getElementById('btn-undo');
+}
+
+function initCanvas() {
+    let container = document.getElementById('canvas-container');
+    if (!container) return;
+
+    let w = container.offsetWidth;
+    let h = container.offsetHeight;
+
+    let canvas = createCanvas(w, h);
+    canvas.parent('canvas-container');
+
+    noLoop();
+    noSmooth();
+}
+
+function bindEvents() {
+    let inputsToWatch = [
+        'in-stripes',
+        'in-maxwidth',
+        'in-sett',
+        'in-zoom',
+        'in-threadmm',
+        'check-sym'
+    ];
+
+    inputsToWatch.forEach(id => {
+        let el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('input', () => {
+                if (window.handleGenerateClick) {
+                    window.handleGenerateClick(true);
+                }
+            });
+        }
+    });
+}
+>>>>>>> REPLACE
