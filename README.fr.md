@@ -63,6 +63,8 @@ Voici une analyse détaillée des pistes d'optimisation et des fonctionnalités 
   Ajoutez un outil d'analyse (*parser*) pour interpréter la notation textuelle SRT standard (ex: `K/24 R/8 W/4 B/32`). Cela permettra de copier-coller des formules officielles du registre écossais pour les visualiser instantanément.
 * **Gestion des Motifs Symétriques et Asymétriques** :
   Prenez en charge les motifs **symétriques** (où le motif s'inverse aux fils pivots, ex: `...A-B-C-B-A...`) et **asymétriques** (répétition séquentielle `...A-B-C-A-B-C...`).
+* **Préservation du Nombre de Couleurs** :
+  Améliorez l'option "Conserver Structure" afin de conserver le même nombre de couleurs différentes (appartenant à la structure), ou ajoutez une contrainte explicite pour le nombre de couleurs.
 
 ### 3. 🎛️ Interface Utilisateur & Ergonomie (UI/UX)
 
