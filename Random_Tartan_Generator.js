@@ -558,10 +558,22 @@ function removeFromPalette(index) {
 function regenerateColorsOnly() {
     if (tartanStripes.length === 0) return;
 
+    let previousColorCode = null;
     tartanStripes.forEach(stripe => {
-        let randomColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+        let randomColor;
+        let hasDifferentColor = userPalette.some(c => c.code !== previousColorCode);
+
+        if (!hasDifferentColor) {
+            randomColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+        } else {
+            do {
+                randomColor = userPalette[Math.floor(Math.random() * userPalette.length)];
+            } while (randomColor.code === previousColorCode);
+        }
+
         stripe.code = randomColor.code;
         stripe.hex = randomColor.hex;
+        previousColorCode = randomColor.code;
     });
 
     updateGeneratedListUI();
