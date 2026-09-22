@@ -175,7 +175,8 @@ const TRANSLATIONS = {
         chk_symmetry: "Symétrie",
         lbl_stripes: "Nombres de bandes (Cible)",
         lbl_limits: "Limites de fils par bande (Min/Max)",
-        chk_check_mode: "Damier (bandes de largeurs égales)",
+        chk_check_mode: "Damier",
+        desc_check_mode: "Génère des bandes de largeurs égales",
         lbl_sett: "Densité (Sett cible)",
         sec_zoom: "Zoom et Échelle",
         lbl_thread_mm: "Diamètre du fil (mm)",
@@ -219,7 +220,8 @@ const TRANSLATIONS = {
         chk_symmetry: "Symmetry",
         lbl_stripes: "Number of Stripes (Target)",
         lbl_limits: "Thread Limits per Stripe (Min/Max)",
-        chk_check_mode: "Checkers (Equal Widths)",
+        chk_check_mode: "Checkers",
+        desc_check_mode: "Generates stripes of equal widths",
         lbl_sett: "Density (Target Sett)",
         sec_zoom: "Zoom & Scale",
         lbl_thread_mm: "Thread Diameter (mm)",
@@ -430,6 +432,12 @@ function setLanguage(lang) {
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         let key = el.getAttribute('data-i18n-placeholder');
         if(t[key]) el.placeholder = t[key];
+    });
+
+    // Update titles
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        let key = el.getAttribute('data-i18n-title');
+        if(t[key]) el.title = t[key];
     });
 
     // Update language buttons active state
@@ -725,17 +733,28 @@ function openColorPicker(editIndex = -1) {
         let chip = document.createElement('div');
         chip.className = 'picker-chip';
         chip.style.backgroundColor = p.hex;
+        chip.setAttribute('role', 'button');
+        chip.setAttribute('tabindex', '0');
 
         let label = formatColorLabel(p);
         chip.title = label;
+        chip.setAttribute('aria-label', label);
 
-        chip.onclick = () => {
+        const onChipSelect = () => {
             if(editIndex >= 0) {
                 modifyPalette(editIndex, srtIndex);
             } else {
                 addToPalette(srtIndex);
             }
             document.body.removeChild(modal);
+        };
+
+        chip.onclick = onChipSelect;
+        chip.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onChipSelect();
+            }
         };
 
        chip.onmouseenter = () => {
@@ -789,16 +808,39 @@ function updateUserPaletteUI() {
         chip.style.border = '1px solid #555';
         chip.style.borderRadius = '4px';
         chip.style.cursor = 'pointer';
-        chip.title = formatColorLabel(p) + "\nClick to change";
+        chip.setAttribute('role', 'button');
+        chip.setAttribute('tabindex', '0');
+
+        let label = formatColorLabel(p) + "\nClick to change";
+        chip.title = label;
+        chip.setAttribute('aria-label', `Change color ${formatColorLabel(p)}`);
+
         chip.onclick = () => openColorPicker(idx);
+        chip.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openColorPicker(idx);
+            }
+        };
 
         let delBtn = document.createElement('div');
         delBtn.textContent = "\u00D7";
         delBtn.style.cssText = "color:#666; font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
         delBtn.title = "Remove from palette";
+        delBtn.setAttribute('role', 'button');
+        delBtn.setAttribute('tabindex', '0');
+        delBtn.setAttribute('aria-label', `Remove color ${formatColorLabel(p)}`);
         delBtn.onmouseenter = () => delBtn.style.color = "red";
         delBtn.onmouseleave = () => delBtn.style.color = "#666";
-        delBtn.onclick = () => removeFromPalette(idx);
+
+        const onDelSelect = () => removeFromPalette(idx);
+        delBtn.onclick = onDelSelect;
+        delBtn.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onDelSelect();
+            }
+        };
 
         itemWrapper.appendChild(chip);
         itemWrapper.appendChild(delBtn);
@@ -812,6 +854,7 @@ function updateUserPaletteUI() {
         let btnPlus = document.createElement('button');
         btnPlus.innerText = "+";
         btnPlus.style.cssText = "width:32px; height:32px; background:#222; color:#fff; border:1px dashed #666; cursor:pointer; border-radius:4px;";
+        btnPlus.setAttribute('aria-label', 'Add a color to the palette');
         btnPlus.onclick = () => openColorPicker(-1);
 
         addWrapper.appendChild(btnPlus);
