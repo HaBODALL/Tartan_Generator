@@ -7,6 +7,8 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 ---
 
 > **Note:** Ce projet a été partiellement codé par "vibe coding" (programmation assistée par IA de manière intuitive). Notez qu'une version précédente du logiciel est disponible sur [itch.io](https://habod.itch.io/random-tartan-generator).
+>
+> *Basé sur un Sketch original de steven kay, 2011 (https://openprocessing.org/sketch/25876) - CC BY-SA 2.0*
 
 ---
 

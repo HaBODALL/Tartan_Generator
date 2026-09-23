@@ -1,0 +1,103 @@
+<<<<<<< SEARCH
+function bindEvents() {
+    let inputsToWatch = [
+        'in-stripes',
+        'in-maxwidth',
+        'in-sett',
+        'in-zoom',
+        'in-threadmm',
+        'check-sym'
+    ];
+
+    inputsToWatch.forEach(id => {
+        let el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('input', () => {
+                if (window.handleGenerateClick) {
+                    window.handleGenerateClick(true);
+                }
+            });
+        }
+    });
+}
+=======
+function bindEvents() {
+    let inputsToWatch = [
+        'in-stripes',
+        'in-maxwidth',
+        'in-sett',
+        'in-zoom',
+        'in-threadmm',
+        'check-sym'
+    ];
+
+    inputsToWatch.forEach(id => {
+        let el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('input', () => {
+                if (window.handleGenerateClick) {
+                    window.handleGenerateClick(true);
+                }
+            });
+        }
+    });
+
+    // Move inline events to JS
+    const btnAbout = document.getElementById('btn-about');
+    if (btnAbout) btnAbout.addEventListener('click', openAboutModal);
+
+    const langBtnFr = document.getElementById('lang-btn-fr');
+    if (langBtnFr) langBtnFr.addEventListener('click', () => setLanguage('fr'));
+
+    const langBtnEn = document.getElementById('lang-btn-en');
+    if (langBtnEn) langBtnEn.addEventListener('click', () => setLanguage('en'));
+
+    const aboutModal = document.getElementById('about-modal');
+    if (aboutModal) aboutModal.addEventListener('click', closeAboutModal);
+
+    const modalContentInner = document.getElementById('modal-content-inner');
+    if (modalContentInner) modalContentInner.addEventListener('click', (e) => e.stopPropagation());
+
+    const btnCloseAbout = document.getElementById('btn-close-about');
+    if (btnCloseAbout) btnCloseAbout.addEventListener('click', closeAboutModal);
+
+    const btnImportSrt = document.getElementById('btn-import-srt');
+    if (btnImportSrt) btnImportSrt.addEventListener('click', importSRT);
+
+    const srtExamples = document.getElementById('srt-examples');
+    if (srtExamples) srtExamples.addEventListener('change', (e) => loadExample(e.target.value));
+
+    const btnGenerate = document.getElementById('btn-generate');
+    if (btnGenerate) btnGenerate.addEventListener('click', () => handleGenerateClick());
+
+    const btnUndo = document.getElementById('btn-undo');
+    if (btnUndo) btnUndo.addEventListener('click', undo);
+
+    const weaveZ = document.getElementById('weave-z');
+    if (weaveZ) weaveZ.addEventListener('change', updateZoom);
+
+    const weaveS = document.getElementById('weave-s');
+    if (weaveS) weaveS.addEventListener('change', updateZoom);
+
+    const checkSym = document.getElementById('check-sym');
+    if (checkSym) checkSym.addEventListener('change', updateSymmetry);
+
+    const threadType = document.getElementById('thread-type');
+    if (threadType) threadType.addEventListener('change', updateThreadDiameter);
+
+    const inThreadMm = document.getElementById('in-threadmm');
+    if (inThreadMm) inThreadMm.addEventListener('input', updateScaleInfo);
+
+    const inZoom = document.getElementById('in-zoom');
+    if (inZoom) inZoom.addEventListener('input', updateZoom);
+
+    const btnExportPng = document.getElementById('btn-export-png');
+    if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
+
+    const btnExportTxt = document.getElementById('btn-export-txt');
+    if (btnExportTxt) btnExportTxt.addEventListener('click', exportTXT);
+
+    const btnExportAll = document.getElementById('btn-export-all');
+    if (btnExportAll) btnExportAll.addEventListener('click', exportAll);
+}
+>>>>>>> REPLACE
