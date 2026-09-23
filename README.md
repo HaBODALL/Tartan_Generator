@@ -65,6 +65,8 @@ Below are key recommendations and optimization avenues to improve performance, r
   Add a parser for standard SRT threadcount strings (e.g., `K/24 R/8 W/4 B/32`). This allows users to paste official tartan formulas from the Scottish Register of Tartans database and instantly visualize them.
 * **Symmetrical & Asymmetrical Sett Logic**:
   Support both **symmetrical** tartans (where the pattern reflects at pivot threads, e.g. `...A-B-C-B-A...`) and **asymmetrical /'moving'** tartans (repeating sequentially `...A-B-C-A-B-C...`).
+* **Color Count Preservation**:
+  Enhance the "Keep Structure" feature so it preserves the exact number of unique colors from the previous structure, or introduce a new explicit constraint/control for the desired number of colors.
 
 ### 3. 🎛️ User Interface & Experience (UI/UX)
 

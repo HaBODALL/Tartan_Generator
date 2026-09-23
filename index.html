@@ -397,10 +397,10 @@
 
       <div class="locks-container">
           <label class="checkbox-lock" for="lock-colors">
-              <input type="checkbox" id="lock-colors"> <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
+              <input type="checkbox" id="lock-colors" aria-label="Conserver Couleurs"> <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
           </label>
           <label class="checkbox-lock" for="lock-structure">
-              <input type="checkbox" id="lock-structure"> <span data-i18n="chk_keep_struct">Conserver Structure</span>
+              <input type="checkbox" id="lock-structure" aria-label="Conserver Structure"> <span data-i18n="chk_keep_struct">Conserver Structure</span>
           </label>
       </div>
 
@@ -412,7 +412,9 @@
                  <input type="checkbox" id="check-sym" checked> <span data-i18n="chk_symmetry">Symétrie</span>
              </label>
              <label class="checkbox-lock" for="check-mode-check" style="font-size:15px; color:#888;">
-                 <input type="checkbox" id="check-mode-check"> <span data-i18n="chk_check_mode"> Damier (bandes de même largeurs)</span>
+                 <input type="checkbox" id="check-mode-check" aria-label="Mode damier">
+                 <span data-i18n="chk_check_mode"> Damier</span>
+                 <span class="info-icon" data-i18n-title="desc_check_mode" title="Génère des bandes de largeurs égales" style="margin-left: 5px; cursor: help; font-size: 12px; color: #555;">ⓘ</span>
              </label>
         </div>
 
