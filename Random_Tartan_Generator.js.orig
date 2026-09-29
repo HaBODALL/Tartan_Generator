@@ -1647,16 +1647,12 @@ window.importSRT = function() {
             isCheckModePattern = false;
         }
 
+        let variants = SRT_PALETTE.filter(c => c.code === code);
         let colorObj;
-        if (newPaletteMap.has(code)) {
-            colorObj = newPaletteMap.get(code);
+        if (variants.length > 0) {
+             colorObj = variants[Math.floor(Math.random() * variants.length)];
         } else {
-            let variants = SRT_PALETTE.filter(c => c.code === code);
-            if (variants.length > 0) {
-                 colorObj = variants[Math.floor(Math.random() * variants.length)];
-            } else {
-                colorObj = srtLookup.get(code); // Fallback to map if something goes wrong
-            }
+            colorObj = srtLookup.get(code); // Fallback to map if something goes wrong
         }
 
         if (!colorObj) {
@@ -1707,4 +1703,3 @@ window.importSRT = function() {
     saveState();
 
 }
-

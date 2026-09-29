@@ -1,0 +1,135 @@
+cat << 'DIFF' > patch.diff
+--- Random_Tartan_Generator.js
++++ Random_Tartan_Generator.js
+@@ -267,10 +267,12 @@
+
+     // Initial Startup
+     setTimeout(() => {
+-        if (window.randomizeUserPalette && window.handleGenerateClick) {
+-            randomizeUserPalette();
+-            window.handleGenerateClick();
++        if (!loadState()) {
++            if (window.randomizeUserPalette && window.handleGenerateClick) {
++                randomizeUserPalette();
++                window.handleGenerateClick();
++            }
+         }
+         setLanguage('fr');
+     }, 100);
+ }
++
++function saveState() {
++    let state = {
++        stripes: tartanStripes,
++        palette: userPalette,
++        symmetric: domElements.sym?.checked || false,
++        checkMode: domElements.checkMode?.checked || false,
++        generationID: generationID,
++        minWidth: domElements.minWidth?.value || 4,
++        maxWidth: domElements.maxWidth?.value || 64,
++        targetStripes: domElements.targetStripes?.value || 6,
++        sett: domElements.sett?.value || 260,
++        threadMm: domElements.threadMm?.value || 0.30,
++        zoom: domElements.zoom?.value || 2.0,
++        weaveZ: domElements.weaveZ?.checked || true
++    };
++    try {
++        localStorage.setItem('tartanGeneratorState', JSON.stringify(state));
++    } catch(e) {
++        console.warn("Could not save to localStorage", e);
++    }
++}
++
++function loadState() {
++    try {
++        let saved = localStorage.getItem('tartanGeneratorState');
++        if (!saved) return false;
++
++        let state = JSON.parse(saved);
++        if (!state.stripes || state.stripes.length === 0) return false;
++
++        tartanStripes = state.stripes;
++        userPalette = state.palette || [];
++        generationID = state.generationID || 0;
++
++        if (domElements.sym) domElements.sym.checked = state.symmetric;
++        if (domElements.checkMode) domElements.checkMode.checked = state.checkMode;
++        if (domElements.minWidth) domElements.minWidth.value = state.minWidth;
++        if (domElements.maxWidth) domElements.maxWidth.value = state.maxWidth;
++        if (domElements.targetStripes) domElements.targetStripes.value = state.targetStripes;
++        if (domElements.sett) domElements.sett.value = state.sett;
++        if (domElements.threadMm) domElements.threadMm.value = state.threadMm;
++        if (domElements.zoom) domElements.zoom.value = state.zoom;
++
++        if (domElements.weaveZ) {
++            domElements.weaveZ.checked = state.weaveZ;
++            let domWeaveS = document.getElementById('weave-s');
++            if (domWeaveS) domWeaveS.checked = !state.weaveZ;
++        }
++
++        updateUserPaletteUI();
++        updateGeneratedListUI();
++        redrawTartan();
++        return true;
++    } catch(e) {
++        console.warn("Could not load from localStorage", e);
++        return false;
++    }
++}
+
+ function cacheDomElements() {
+@@ -582,6 +643,7 @@
+     updateUserPaletteUI();
+     updateGeneratedListUI();
+     redrawTartan();
++    saveState();
+ }
+
+ function removeFromPalette(index) {
+@@ -604,6 +666,7 @@
+
+     updateGeneratedListUI();
+     redrawTartan();
++    saveState();
+ }
+
+ function regenerateColorsOnly() {
+@@ -628,6 +691,7 @@
+
+     updateGeneratedListUI();
+     redrawTartan();
++    saveState();
+ }
+ // === DISPLAY ACTUAL VALUES ===
+
+@@ -767,6 +831,7 @@
+     redrawTartan();
+     updateUndoButton();
+     updateActualValues();
++    saveState();
+ }
+
+ function updateUndoButton() {
+@@ -1071,6 +1136,7 @@
+
+         if(typeof redrawTartan === 'function') redrawTartan();
+         if(typeof updateGeneratedListUI === 'function') updateGeneratedListUI();
++        saveState();
+
+     }, 50);
+ }
+@@ -1444,10 +1510,11 @@
+     if (!aboutModalElement) aboutModalElement = document.getElementById('about-modal');
+     if (aboutModalElement) aboutModalElement.style.display = 'none';
+ }
+-window.updateZoom = function() { redrawTartan(); }
++window.updateZoom = function() { redrawTartan(); saveState(); }
+ window.updateSymmetry = function() {
+     // We might need to update SRT text if symmetry changes display
+     redrawTartan();
++    saveState();
+ }
+
+ // ==========================================
+DIFF
+patch -p0 < patch.diff
