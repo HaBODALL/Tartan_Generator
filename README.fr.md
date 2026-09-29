@@ -78,6 +78,10 @@ Voici une analyse détaillée des pistes d'optimisation et des fonctionnalités 
   * La graine de génération aléatoire (*seed*)
 * **Bibliothèque de Modèles Pré-chargés** :
   Proposez une sélection de tartans historiques célèbres (ex: Royal Stewart, Black Watch, Dress Gordon) comme modèles de démarrage rapide.
+* **Système de Contraintes Absolues** :
+  Mettre en place un concept de contrainte absolue (qui doit être respectée avant tout) avec un ordre précis, affichant un message explicite bloquant l'action lorsque celle-ci est impossible.
+* **Aperçu d'Importation en Direct** :
+  Améliorer la zone de texte d'importation pour voir le résultat du code SRT se générer en direct à mesure de la frappe, en forçant éventuellement le formatage pour éviter les alertes d'erreur intempestives.
 
 ### 4. 💾 Fonctions d'Exportation & Partage
 
