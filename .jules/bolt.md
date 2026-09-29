@@ -38,3 +38,6 @@
 **Learning:** When generating a large number of DOM elements dynamically, injecting them directly into the live DOM on each iteration of a loop causes expensive, synchronous layout/style recalculations (thrashing). Grouping these items into a `DocumentFragment` outside the DOM and appending it once eliminates layout thrashing.
 
 **Action:** Whenever iterating and creating > 5 DOM elements for insertion into the same container, wrap the creation in a `document.createDocumentFragment()`, append to the fragment in the loop, and insert the fragment to the container once at the end.
+## 2026-08-15 - Fast Array Allocation and Loop Unrolling in Canvas Rendering
+**Learning:** Pre-allocating arrays and unrolling loops in tight nested drawing loops yields significant performance gains. Profiling `redrawTartan` in Node.js revealed that dynamically growing the `warpSeq` array and performing bounds checks within `for` loops took a significant toll. By pre-calculating the sequence array size and partially unrolling the inner `x` loop for weft threads, execution time decreased by over 50% in benchmarks.
+**Action:** Always pre-calculate array lengths and allocate directly using `new Array(size)` when sizes are known. Unroll tight loops to combine consecutive `drawingContext.rect` rendering conditions in grid-based drawing.
