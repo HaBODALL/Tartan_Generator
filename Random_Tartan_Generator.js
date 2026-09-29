@@ -1182,11 +1182,21 @@ function redrawTartan() {
 
     // 2. Construction de la séquence de threads (WARP - Chaîne)
     // On convertit "Rouge: 4 threads, Bleu: 6 threads" en un tableau [R,R,R,R, B,B,B,B,B,B]
-    let warpSeq = [];
+    // ⚡ Bolt Optimization: Use fast array allocation for warp sequence
+    let estLen = 0;
+    for (let i = 0, len = tartanStripes.length; i < len; i++) {
+        estLen += tartanStripes[i].count;
+    }
+    estLen *= isSymmetric ? 2 : 1;
+    let warpSeq = new Array(estLen);
+    let idx = 0;
 
     // Part A (Forward)
-    for(let s of tartanStripes) {
-        for(let k=0; k<s.count; k++) warpSeq.push(s.hex);
+    for(let i = 0, len = tartanStripes.length; i < len; i++) {
+        let s = tartanStripes[i];
+        let hex = s.hex;
+        let count = s.count;
+        for(let k=0; k<count; k++) warpSeq[idx++] = hex;
     }
 
     // Part B (Backward - if symmetric)
@@ -1195,12 +1205,15 @@ function redrawTartan() {
     if (isSymmetric) {
         for(let i = tartanStripes.length - 2; i >= 0; i--) {
             let s = tartanStripes[i];
-            for(let k=0; k<s.count; k++) warpSeq.push(s.hex);
+            let hex = s.hex;
+            let count = s.count;
+            for(let k=0; k<count; k++) warpSeq[idx++] = hex;
         }
         // NOTE: If you want total symmetry including last stripe: change index to length-1
     }
 
-    let seqLen = warpSeq.length;
+    warpSeq.length = idx; // Truncate just in case
+    let seqLen = idx;
 
     // 3. Canvas Preparation
     clear();
@@ -1248,10 +1261,13 @@ function redrawTartan() {
         drawingContext.fillStyle = currentWeftColor;
         drawingContext.beginPath();
 
+        // ⚡ Bolt Optimization: Cache row shifts and eliminate `yMod` calculation inside loop
+        let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
+        let maxCol = cols - 2;
+
         for (let y = 0; y < rows; y++) {
-            let weftColor = warpSeq[y % seqLen];
             let yZoom = y * zoom;
-            let yMod = y & 3; // Bitwise & 3 is equivalent to % 4 but faster
+            let weftColor = warpSeq[y % seqLen];
 
             // ⚡ Bolt Optimization: Only update fillStyle and trigger fill() when the color changes.
             // Prevents 90%+ of expensive canvas 2d context state updates and path rasterizations.
@@ -1263,41 +1279,52 @@ function redrawTartan() {
                 drawingContext.beginPath();
             }
 
-            // Determine starting x-index for visible weft based on twist direction
-            let xStart = isZTwist ? (6 - yMod) & 3 : (yMod + 2) & 3;
+            let xStart = shifts[y & 3];
 
             // The first group might be cut off on the left edge
-            if (xStart === 3) {
+            if (xStart === 3 && weftColor !== warpColors[0]) {
                 // ⚡ Bolt Optimization: skip drawing if identical to warp color underneath
-                if (weftColor !== warpColors[0]) {
-                    drawingContext.rect(0, yZoom, zoom, zoom);
-                }
+                drawingContext.rect(0, yZoom, zoom, zoom);
             }
 
-            // Draw the rest in pairs (since it's a 2/2 twill weave, weft is visible for 2 threads)
-            for (let x = xStart; x < cols; x += 4) {
-                let w = x + 2 > cols ? cols - x : 2;
+            let x = xStart;
 
-                // ⚡ Bolt Optimization: Skip drawing pixels that are the same color as the warp underneath.
-                // For a pair (w=2), test both threads individually to maximize omitted rectangles.
-                if (w === 2) {
-                    let match1 = weftColor === warpColors[x];
-                    let match2 = weftColor === warpColors[x + 1];
+            // ⚡ Bolt Optimization: Loop unrolling for pairs of 4 threads
+            let maxColUnrolled = maxCol - 4;
 
-                    if (!match1 && !match2) {
-                        drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
-                    } else if (!match1) {
-                        drawingContext.rect(x * zoom, yZoom, zoom, zoom);
-                    } else if (!match2) {
-                        drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
-                    }
-                    // if both match, draw nothing
-                } else {
-                    // For edges where w < 2
-                    if (weftColor !== warpColors[x]) {
-                        drawingContext.rect(x * zoom, yZoom, zoom, zoom);
-                    }
+            while (x <= maxColUnrolled) {
+                if (weftColor !== warpColors[x]) {
+                    if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
+                    else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                } else if (weftColor !== warpColors[x + 1]) {
+                    drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
                 }
+
+                let x4 = x + 4;
+                if (weftColor !== warpColors[x4]) {
+                    if (weftColor !== warpColors[x4 + 1]) drawingContext.rect(x4 * zoom, yZoom, 2 * zoom, zoom);
+                    else drawingContext.rect(x4 * zoom, yZoom, zoom, zoom);
+                } else if (weftColor !== warpColors[x4 + 1]) {
+                    drawingContext.rect((x4 + 1) * zoom, yZoom, zoom, zoom);
+                }
+
+                x += 8;
+            }
+
+            // Tail cleanup
+            while (x <= maxCol) {
+                if (weftColor !== warpColors[x]) {
+                    if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
+                    else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                } else if (weftColor !== warpColors[x + 1]) {
+                    drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                }
+                x += 4;
+            }
+
+            // For edges where w < 2
+            if (x < cols && weftColor !== warpColors[x]) {
+                drawingContext.rect(x * zoom, yZoom, zoom, zoom);
             }
         }
         drawingContext.fill(); // Render the final block
