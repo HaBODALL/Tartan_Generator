@@ -78,6 +78,10 @@ Below are key recommendations and optimization avenues to improve performance, r
   * Randomization seed control
 * **Live Preset Selector**:
   Include pre-loaded historical tartans (e.g., Royal Stewart, Black Watch, Dress Gordon) as quick-start templates.
+* **Absolute Constraints System**:
+  Implement a system to enforce strict pattern rules (e.g., maximum thread count or specific color order) and display a clear error message when the constraints cannot be met, blocking the invalid action.
+* **Live Import Preview**:
+  Enhance the text input field for SRT codes to preview the pattern in real-time as the user types, and potentially enforce the correct format automatically without showing alert popups continuously.
 
 ### 4. 💾 Export & Sharing Capabilities
 

@@ -449,6 +449,57 @@ function bindEvents() {
 
     const btnExportAll = document.getElementById('btn-export-all');
     if (btnExportAll) btnExportAll.addEventListener('click', exportAll);
+
+    // Touch events for Pinch-to-Zoom on canvas container
+    const canvasContainer = document.getElementById('canvas-container');
+    if (canvasContainer) {
+        let initialPinchDistance = null;
+        let initialZoom = null;
+
+        canvasContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                // Prevent default to stop page zooming
+                e.preventDefault();
+                initialPinchDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                initialZoom = parseFloat(domElements.zoom.value) || 2.0;
+            }
+        }, { passive: false });
+
+        canvasContainer.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialPinchDistance !== null) {
+                e.preventDefault();
+                const currentPinchDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+
+                // Calculate ratio
+                const pinchRatio = currentPinchDistance / initialPinchDistance;
+
+                // Calculate new zoom and clamp between 0.5 and 12
+                let newZoom = initialZoom * pinchRatio;
+                newZoom = Math.max(0.5, Math.min(12.0, newZoom));
+
+                // Update input field and redraw
+                if (domElements.zoom) {
+                    // Round to nearest 0.5 step to match input step if desired, or just to 1 decimal
+                    domElements.zoom.value = newZoom.toFixed(1);
+                    if (window.updateZoom) {
+                        window.updateZoom();
+                    }
+                }
+            }
+        }, { passive: false });
+
+        canvasContainer.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                initialPinchDistance = null;
+            }
+        });
+    }
 }
 document.addEventListener('keydown', (e) => {
     // Ignore if focus is in an input
