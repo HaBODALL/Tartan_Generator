@@ -1,0 +1,75 @@
+<<<<<<< SEARCH
+window.handleGenerateClick = function(isUpdateOnly = false) {
+
+    // SAVE CURRENT STATE BEFORE ANY MODIFICATION
+    if (tartanStripes.length > 0 && !isUpdateOnly) {
+        pushToHistory();
+    }
+
+    // 1. Read checkbox state (USE SAME IDs EVERYWHERE)
+    let keepColors = domElements.lockColors?.checked || false;
+    let keepStructure = domElements.lockStructure?.checked || false;
+
+    // 2. If colors are NOT kept → randomize palette
+    // But only if it's not a simple "visual update" (slider)
+    if(!keepColors && !isUpdateOnly) {
+        randomizeUserPalette();
+    }
+
+    // 3. Security check
+    if(userPalette.length <= 1) {
+        alert(TRANSLATIONS[currentLang].msg_palette_min);
+        return;
+    }
+
+    // 4. UI Management
+    drawLoadingScreen();
+
+    // 5. Generation with delay
+    setTimeout(() => {
+        generateNewTartan(keepColors, keepStructure); // ← PASS PARAMS
+
+        if(typeof redrawTartan === 'function') redrawTartan();
+        if(typeof updateGeneratedListUI === 'function') updateGeneratedListUI();
+
+    }, 50);
+}
+=======
+window.handleGenerateClick = function(isUpdateOnly = false) {
+
+    // SAVE CURRENT STATE BEFORE ANY MODIFICATION
+    if (tartanStripes.length > 0 && !isUpdateOnly) {
+        pushToHistory();
+    }
+
+    // 1. Read checkbox state (USE SAME IDs EVERYWHERE)
+    let keepColors = domElements.lockColors?.checked || false;
+    let keepStructure = domElements.lockStructure?.checked || false;
+
+    // 2. If colors are NOT kept → randomize palette
+    // But only if it's not a simple "visual update" (slider)
+    if(!keepColors && !isUpdateOnly) {
+        randomizeUserPalette();
+    }
+
+    // 3. Security check
+    if(userPalette.length <= 1) {
+        alert(TRANSLATIONS[currentLang].msg_palette_min);
+        return;
+    }
+
+    // 4. UI Management
+    drawLoadingScreen();
+
+    // 5. Generation with delay
+    setTimeout(() => {
+        generateNewTartan(keepColors, keepStructure); // ← PASS PARAMS
+
+        if(typeof redrawTartan === 'function') redrawTartan();
+        if(typeof updateGeneratedListUI === 'function') updateGeneratedListUI();
+
+        saveState();
+
+    }, 50);
+}
+>>>>>>> REPLACE
