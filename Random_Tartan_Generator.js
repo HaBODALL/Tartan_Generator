@@ -203,7 +203,6 @@ const TRANSLATIONS = {
         lbl_thread_type: "Type de fil",
         lbl_effect: "Effet Textile",
         opt_eff_none: "Aucun",
-        opt_eff_fil: "Filaments",
         opt_eff_overlay: "Filtre Overlay",
         opt_eff_noise: "Bruit (Grain)",
         opt_eff_exp: "Expérimental (Tous)",
@@ -219,6 +218,7 @@ const TRANSLATIONS = {
         txt_about_p1: "Random Tartan Generator est un outil open-source (CC BY-SA 4.0) permettant de créer des motifs de tartan. Il s'appuie sur le format du Scottish Register of Tartans (SRT).",
         txt_about_p2: "Vous pouvez l'utiliser pour la conception, ou exporter les motifs pour Ink/Stitch.",
         btn_close: "Fermer",
+        title_toggle_ui: "Afficher/Masquer le panneau",
         sec_patchwork: "Export Patchwork (Grille)",
         lbl_patch_qty: "Quantité (10-100)",
         lbl_patch_size: "Taille Tuile (px)",
@@ -260,7 +260,6 @@ const TRANSLATIONS = {
         lbl_thread_type: "Thread type",
         lbl_effect: "Textile Effect",
         opt_eff_none: "None",
-        opt_eff_fil: "Filaments",
         opt_eff_overlay: "Overlay Filter",
         opt_eff_noise: "Noise (Grain)",
         opt_eff_exp: "Experimental (All)",
@@ -276,6 +275,7 @@ const TRANSLATIONS = {
         txt_about_p1: "Random Tartan Generator is an open-source tool (CC BY-SA 4.0) to create tartan patterns. It uses the Scottish Register of Tartans (SRT) format.",
         txt_about_p2: "You can use it for design, or export patterns for Ink/Stitch.",
         btn_close: "Close",
+        title_toggle_ui: "Show/Hide panel",
         sec_patchwork: "Patchwork Export (Grid)",
         lbl_patch_qty: "Quantity (10-100)",
         lbl_patch_size: "Tile Size (px)",
@@ -411,8 +411,6 @@ function bindEvents() {
         'in-stripes',
         'in-maxwidth',
         'in-sett',
-        'in-zoom',
-        'in-threadmm',
         'check-sym'
     ];
 
@@ -480,7 +478,11 @@ function bindEvents() {
     if (threadType) threadType.addEventListener('change', updateThreadDiameter);
 
     const inThreadMm = document.getElementById('in-threadmm');
-    if (inThreadMm) inThreadMm.addEventListener('input', updateScaleInfo);
+    if (inThreadMm) inThreadMm.addEventListener('input', () => {
+        updateScaleInfo();
+        redrawTartan();
+        saveState();
+    });
 
     const inZoom = document.getElementById('in-zoom');
     if (inZoom) inZoom.addEventListener('input', updateZoom);
@@ -542,9 +544,7 @@ function bindEvents() {
                 if (domElements.zoom) {
                     // Round to nearest 0.5 step to match input step if desired, or just to 1 decimal
                     domElements.zoom.value = newZoom.toFixed(1);
-                    if (window.updateZoom) {
-                        window.updateZoom();
-                    }
+                    domElements.zoom.dispatchEvent(new Event('input'));
                 }
             }
         }, { passive: false });
@@ -1423,100 +1423,29 @@ function redrawTartan() {
         warpColors[x] = warpSeq[x % seqLen];
     }
 
-    // --- EFFECT: FILAMENTS (DRAW LINES INSTEAD OF BLOCKS) ---
-    if (effectType === 'filaments' || effectType === 'experimental') {
-        let filamentCount = Math.max(2, Math.floor(zoom / 2));
-        drawingContext.lineWidth = zoom / (filamentCount * 2);
+    // --- STANDARD BLOCKS RENDERING ---
 
-        // Draw Warp Filaments (Vertical)
-        for (let x = 0; x < cols; x++) {
-            drawingContext.strokeStyle = warpColors[x];
-            drawingContext.beginPath();
-            let xBase = x * zoom;
-            for (let f = 0; f < filamentCount; f++) {
-                let fx = xBase + (f + 0.5) * (zoom / filamentCount);
-                drawingContext.moveTo(fx, 0);
-                drawingContext.lineTo(fx, height);
+    // ⚡ Bolt Optimization: Draw entire warp vertically, grouping adjacent identical colors
+    if (cols > 0) {
+        let currentWarpColor = warpColors[0];
+        let warpStart = 0;
+        for (let x = 1; x <= cols; x++) {
+            if (x === cols || warpColors[x] !== currentWarpColor) {
+                drawingContext.fillStyle = currentWarpColor;
+                drawingContext.fillRect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
+                if (x < cols) {
+                    currentWarpColor = warpColors[x];
+                    warpStart = x;
+                }
             }
-            drawingContext.stroke();
         }
+    }
 
-        // Draw Weft Filaments (Horizontal) over Twill Pattern
-        let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
+    // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads
+    if (rows > 0) {
         let currentWeftColor = warpSeq[0];
-        drawingContext.strokeStyle = currentWeftColor;
+        drawingContext.fillStyle = currentWeftColor;
         drawingContext.beginPath();
-
-        for (let y = 0; y < rows; y++) {
-            let yZoom = y * zoom;
-            let weftColor = warpSeq[y % seqLen];
-
-            if (weftColor !== currentWeftColor) {
-                drawingContext.stroke();
-                drawingContext.strokeStyle = weftColor;
-                currentWeftColor = weftColor;
-                drawingContext.beginPath();
-            }
-
-            let xStart = shifts[y & 3];
-            let x = xStart;
-
-            // Draw line segments for weft where it goes OVER warp
-            while (x < cols) {
-                // If it goes over warp, draw horizontal filaments
-                let drawSegment = true;
-                // In actual twill, weft goes over 2, under 2.
-                // The algorithm below simplifies by just drawing weft over everything that is NOT the warp color
-                // (or if it is, it blends). Actually, we need to respect the 2/2 twill mask:
-                // Weft is visible for 2 threads starting at xStart
-                // So at x and x+1 weft is visible.
-
-                let px = x * zoom;
-                let segmentWidth = (x + 1 < cols) ? 2 * zoom : zoom;
-
-                for (let f = 0; f < filamentCount; f++) {
-                    let fy = yZoom + (f + 0.5) * (zoom / filamentCount);
-                    drawingContext.moveTo(px, fy);
-                    drawingContext.lineTo(px + segmentWidth, fy);
-                }
-                x += 4;
-            }
-
-            // Edge case for the left-most shifted thread
-            if (xStart === 3) {
-                 for (let f = 0; f < filamentCount; f++) {
-                    let fy = yZoom + (f + 0.5) * (zoom / filamentCount);
-                    drawingContext.moveTo(0, fy);
-                    drawingContext.lineTo(zoom, fy);
-                }
-            }
-        }
-        drawingContext.stroke();
-
-    } else {
-        // --- STANDARD BLOCKS RENDERING (NO EFFECT, OVERLAY, NOISE) ---
-
-        // ⚡ Bolt Optimization: Draw entire warp vertically, grouping adjacent identical colors
-        if (cols > 0) {
-            let currentWarpColor = warpColors[0];
-            let warpStart = 0;
-            for (let x = 1; x <= cols; x++) {
-                if (x === cols || warpColors[x] !== currentWarpColor) {
-                    drawingContext.fillStyle = currentWarpColor;
-                    drawingContext.fillRect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
-                    if (x < cols) {
-                        currentWarpColor = warpColors[x];
-                        warpStart = x;
-                    }
-                }
-            }
-        }
-
-        // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads
-        if (rows > 0) {
-            let currentWeftColor = warpSeq[0];
-            drawingContext.fillStyle = currentWeftColor;
-            drawingContext.beginPath();
 
             let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
             let maxCol = cols - 2;
@@ -1574,19 +1503,18 @@ function redrawTartan() {
                     drawingContext.rect(x * zoom, yZoom, zoom, zoom);
                 }
             }
-            drawingContext.fill();
-        }
+        drawingContext.fill();
+    }
 
-        // --- POST-PROCESSING EFFECTS OVER STANDARD BLOCKS ---
-        if (effectType === 'overlay') {
-            applyOverlayEffect(cols, rows, zoom);
-        } else if (effectType === 'noise') {
-            applyNoiseEffect(cols, rows, zoom);
-        } else if (effectType === 'experimental') {
-            // Both overlay and noise
-            applyOverlayEffect(cols, rows, zoom);
-            applyNoiseEffect(cols, rows, zoom);
-        }
+    // --- POST-PROCESSING EFFECTS OVER STANDARD BLOCKS ---
+    if (effectType === 'overlay') {
+        applyOverlayEffect(cols, rows, zoom);
+    } else if (effectType === 'noise') {
+        applyNoiseEffect(cols, rows, zoom);
+    } else if (effectType === 'experimental') {
+        // Both overlay and noise
+        applyOverlayEffect(cols, rows, zoom);
+        applyNoiseEffect(cols, rows, zoom);
     }
 
     // Update textual info (Actual dimensions)
@@ -1600,6 +1528,9 @@ function applyOverlayEffect(cols, rows, zoom) {
     // Create it once and tile it
     let patternSize = Math.max(10, zoom * 2);
     if (!window.overlayPatternBuffer || window.overlayPatternBuffer.width !== patternSize) {
+        if (window.overlayPatternBuffer) {
+            window.overlayPatternBuffer.remove(); // Prevent memory leak by removing old buffer
+        }
         let pg = createGraphics(patternSize, patternSize);
         pg.clear();
         pg.stroke(0, 0, 0, 40); // Dark faint lines
@@ -1626,6 +1557,9 @@ function applyOverlayEffect(cols, rows, zoom) {
 function applyNoiseEffect(cols, rows, zoom) {
     // Generate static noise once per size to avoid freezing the browser on every redraw
     if (!window.noiseBuffer || window.noiseBuffer.width !== width || window.noiseBuffer.height !== height) {
+        if (window.noiseBuffer) {
+            window.noiseBuffer.remove(); // Prevent memory leak by removing old buffer
+        }
         let pg = createGraphics(width, height);
         pg.pixelDensity(1);
         pg.loadPixels();
@@ -2008,7 +1942,7 @@ window.generatePatchwork = function() {
     let totalW = cols * tileSize;
     let totalH = rows * tileSize;
 
-    showLoading();
+    drawLoadingScreen();
 
     // Small timeout to allow DOM to update loading screen
     setTimeout(() => {
@@ -2051,19 +1985,22 @@ window.generatePatchwork = function() {
 
                 // Base structure (horizontal & vertical)
                 let yOffset = 0;
-                for (let i = 0; i < threadsArray.length; i++) {
-                    let col = threadsArray[i];
+                let i = 0;
+                while (true) {
+                    let col = threadsArray[i % threadsArray.length];
                     let currentY = yOffset * tileScale;
                     if (currentY >= tileSize) break;
 
                     ctx.fillStyle = col.hex;
                     ctx.fillRect(0, currentY, tileSize, tileScale + 0.5);
                     yOffset++;
+                    i++;
                 }
 
                 let xOffset = 0;
-                for (let j = 0; j < threadsArray.length; j++) {
-                    let col = threadsArray[j];
+                let j = 0;
+                while (true) {
+                    let col = threadsArray[j % threadsArray.length];
                     let currentX = xOffset * tileScale;
                     if (currentX >= tileSize) break;
 
@@ -2074,15 +2011,18 @@ window.generatePatchwork = function() {
                     ctx.fillRect(currentX, 0, tileScale + 0.5, tileSize);
                     ctx.globalAlpha = 1.0;
                     xOffset++;
+                    j++;
                 }
 
                 // Fast weave (twill) overlay
                 ctx.fillStyle = "#000000";
                 ctx.globalAlpha = 0.15; // Simple shadow overlay to simulate weave for performance on large canvases
+
+                let isZTwist = domElements.weaveZ ? domElements.weaveZ.checked : true;
                 for (let ty = 0; ty * tileScale < tileSize; ty++) {
                     for (let tx = 0; tx * tileScale < tileSize; tx++) {
                         let isWarpOverWeft = false;
-                        if (currentTwist === 'Z') {
+                        if (isZTwist) {
                             isWarpOverWeft = ((tx - ty) % 4 === 0) || ((tx - ty) % 4 === 1) || ((tx - ty) % 4 === -3);
                         } else {
                             isWarpOverWeft = ((tx + ty) % 4 === 0) || ((tx + ty) % 4 === 1) || ((tx + ty) % 4 === -3);
@@ -2110,6 +2050,5 @@ window.generatePatchwork = function() {
         // Save image
         save(pg, `Tartan_Patchwork_${qty}_tiles_${getFormattedDate()}.png`);
 
-        hideLoading();
     }, 50);
 };
