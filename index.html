@@ -444,8 +444,9 @@
 
     <div class="sidebar" id="sidebar">
       <!-- SECTION: IMPORT -->
-      <div class="import-box">
-          <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." aria-label="Code SRT à importer">
+      <div class="import-box" style="position: relative;">
+          <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." aria-label="Code SRT à importer" style="padding-right: 30px;">
+          <div id="btn-srt-help" role="button" tabindex="0" aria-label="Aide sur le code SRT" style="position: absolute; right: 120px; top: 12px; color: #888; cursor: pointer; font-weight: bold;">(?)</div>
           <button class="btn-secondary" id="btn-import-srt" data-i18n="btn_import" aria-label="Importer le code SRT">IMPORTER</button>
       </div>
 
@@ -563,6 +564,7 @@
                 <option value="filaments" data-i18n="opt_eff_fil">Filaments</option>
                 <option value="overlay" data-i18n="opt_eff_overlay">Filtre Overlay</option>
                 <option value="noise" data-i18n="opt_eff_noise">Bruit (Grain)</option>
+                  <option value="experimental" data-i18n="opt_eff_exp">Expérimental (Tous)</option>
             </select>
         </div>
 
@@ -586,6 +588,22 @@
           <button class="btn-export" id="btn-export-txt" data-i18n="btn_details" aria-label="Exporter les détails en texte">Détails</button>
           <button class="btn-export btn-primary" id="btn-export-all" data-i18n="btn_export_all" aria-label="Tout exporter">Exporter tout</button>
       </div>
+
+      <h2 style="margin-top:20px;" data-i18n="sec_patchwork">Export Patchwork (Grille)</h2>
+      <div class="controls-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 5px;">
+          <div>
+              <label data-i18n="lbl_patch_qty">Quantité (10-100)</label>
+              <input type="number" id="patchwork-qty" value="10" min="10" max="100" class="input-number" aria-label="Nombre de tartans à générer">
+          </div>
+          <div>
+              <label data-i18n="lbl_patch_size">Taille Tuile (px)</label>
+              <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number" aria-label="Taille de la tuile en pixels">
+          </div>
+      </div>
+      <div style="font-size: 11px; color: #888; margin-bottom: 15px; text-align: center;" id="patchwork-info">
+          <!-- Dynamic info here -->
+      </div>
+      <button class="btn-primary" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork" style="width: 100%; margin-bottom: 20px;">GÉNÉRER PATCHWORK</button>
 
       <div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
 
