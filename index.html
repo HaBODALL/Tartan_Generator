@@ -132,6 +132,40 @@
       padding: 16px; padding-bottom: 60px;
       box-shadow: -10px 0 30px rgba(0,0,0,0.8);
       flex-shrink: 0;
+      transition: width 0.3s ease;
+    }
+    .sidebar.collapsed {
+      width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      border-left: none;
+      overflow: hidden;
+    }
+
+    /* BOUTON TOGGLE UI */
+    .btn-toggle-ui {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      z-index: 200;
+      background: rgba(0,0,0,0.6);
+      color: #aaa;
+      border: 1px solid #333;
+      border-radius: 4px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-toggle-ui:hover {
+      background: rgba(50,50,50,0.8);
+      color: #fff;
+    }
+    .btn-toggle-ui.collapsed {
+      transform: rotate(180deg);
     }
 
     /* RESPONSIVE DESIGN FOR MOBILE / PORTRAIT */
@@ -152,6 +186,22 @@
         border-left: none;
         border-top: 1px solid #333;
         box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        transition: height 0.3s ease, width 0s;
+      }
+      .sidebar.collapsed {
+        height: 0;
+        width: 100%;
+        border-top: none;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      .btn-toggle-ui {
+        top: auto;
+        bottom: 10px;
+        right: 10px;
+      }
+      .btn-toggle-ui.collapsed {
+        transform: rotate(-90deg);
       }
     }
 
@@ -388,9 +438,11 @@
         </div>
       </div>
     </div>
-    <div id="canvas-container"></div>
+    <div id="canvas-container">
+        <button id="btn-toggle-ui" class="btn-toggle-ui" aria-label="Masquer l'interface" title="Masquer l'interface">▶</button>
+    </div>
 
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <!-- SECTION: IMPORT -->
       <div class="import-box">
           <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." aria-label="Code SRT à importer">
@@ -502,6 +554,16 @@
         <div class="control-row">
             <label for="in-zoom" data-i18n="lbl_zoom">Zoom Visuel</label>
             <input type="number" id="in-zoom" value="2.0" step="0.5" min="0.5" max="12" aria-label="Zoom Visuel">
+        </div>
+
+        <div class="control-row">
+            <label for="effect-type" data-i18n="lbl_effect">Effet Textile</label>
+            <select id="effect-type" style="background: #222; color: #ccc; border: 1px solid #444; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">
+                <option value="none" data-i18n="opt_eff_none">Aucun</option>
+                <option value="filaments" data-i18n="opt_eff_fil">Filaments</option>
+                <option value="overlay" data-i18n="opt_eff_overlay">Filtre Overlay</option>
+                <option value="noise" data-i18n="opt_eff_noise">Bruit (Grain)</option>
+            </select>
         </div>
 
         <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">

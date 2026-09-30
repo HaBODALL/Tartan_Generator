@@ -158,7 +158,10 @@ let domElements = {
     lockStructure: null,
     genId: null,
     srtDisplay: null,
-    undoBtn: null
+    undoBtn: null,
+    effectType: null,
+    btnToggleUI: null,
+    sidebar: null
 };
 
 // Multilingual management
@@ -196,6 +199,11 @@ const TRANSLATIONS = {
         btn_cancel: "ANNULER",
         loading: "TISSAGE EN COURS...",
         lbl_thread_type: "Type de fil",
+        lbl_effect: "Effet Textile",
+        opt_eff_none: "Aucun",
+        opt_eff_fil: "Filaments",
+        opt_eff_overlay: "Filtre Overlay",
+        opt_eff_noise: "Bruit (Grain)",
         opt_wool: "Laine",
         opt_merino: "Mérinos",
         opt_cotton: "Coton",
@@ -241,6 +249,11 @@ const TRANSLATIONS = {
         btn_cancel: "CANCEL",
         loading: "WEAVING IN PROGRESS...",
         lbl_thread_type: "Thread type",
+        lbl_effect: "Textile Effect",
+        opt_eff_none: "None",
+        opt_eff_fil: "Filaments",
+        opt_eff_overlay: "Overlay Filter",
+        opt_eff_noise: "Noise (Grain)",
         opt_wool: "Wool",
         opt_merino: "Merino",
         opt_cotton: "Cotton",
@@ -290,7 +303,8 @@ function saveState() {
         sett: domElements.sett?.value || 260,
         threadMm: domElements.threadMm?.value || 0.30,
         zoom: domElements.zoom?.value || 2.0,
-        weaveZ: domElements.weaveZ?.checked || true
+        weaveZ: domElements.weaveZ?.checked || true,
+        effectType: domElements.effectType?.value || 'none'
     };
     try {
         localStorage.setItem('tartanGeneratorState', JSON.stringify(state));
@@ -326,6 +340,10 @@ function loadState() {
             if (domWeaveS) domWeaveS.checked = !state.weaveZ;
         }
 
+        if (domElements.effectType && state.effectType) {
+            domElements.effectType.value = state.effectType;
+        }
+
         updateUserPaletteUI();
         updateGeneratedListUI();
         redrawTartan();
@@ -355,6 +373,9 @@ function cacheDomElements() {
     domElements.genId = document.getElementById('gen-id');
     domElements.srtDisplay = document.getElementById('srt-display');
     domElements.undoBtn = document.getElementById('btn-undo');
+    domElements.effectType = document.getElementById('effect-type');
+    domElements.btnToggleUI = document.getElementById('btn-toggle-ui');
+    domElements.sidebar = document.getElementById('sidebar');
 }
 
 function initCanvas() {
@@ -440,6 +461,17 @@ function bindEvents() {
 
     const inZoom = document.getElementById('in-zoom');
     if (inZoom) inZoom.addEventListener('input', updateZoom);
+
+    if (domElements.effectType) {
+        domElements.effectType.addEventListener('change', () => {
+            redrawTartan();
+            saveState();
+        });
+    }
+
+    if (domElements.btnToggleUI) {
+        domElements.btnToggleUI.addEventListener('click', toggleSidebar);
+    }
 
     const btnExportPng = document.getElementById('btn-export-png');
     if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
@@ -1102,6 +1134,20 @@ window.buildSRTCode = buildSRTCode;
 window.buildInkStitchCode = buildInkStitchCode;
 
 
+// Toggle Sidebar
+function toggleSidebar() {
+    if (!domElements.sidebar || !domElements.btnToggleUI) return;
+
+    domElements.sidebar.classList.toggle('collapsed');
+    domElements.btnToggleUI.classList.toggle('collapsed');
+
+    // We need to trigger windowResized after animation completes
+    // The CSS transition is 0.3s
+    setTimeout(() => {
+        windowResized();
+    }, 320);
+}
+
 // Initialize styles on load
 injectDynamicStyles();
 
@@ -1346,111 +1392,232 @@ function redrawTartan() {
     // This is where the magic happens.
     // Standard tartan algorithm is a 2/2 twill: 2 over, 2 under, shifted by 1 each line.
 
+    let effectType = domElements.effectType ? domElements.effectType.value : 'none';
+
     // ⚡ Bolt Optimization: Pre-calculate warp sequence colors for each column
     let warpColors = new Array(cols);
     for (let x = 0; x < cols; x++) {
         warpColors[x] = warpSeq[x % seqLen];
     }
 
-    // ⚡ Bolt Optimization: Draw entire warp vertically, grouping adjacent identical colors
-    // ⚡ Bolt Optimization: Use native drawingContext API to bypass p5.js wrappers
-    if (cols > 0) {
-        let currentWarpColor = warpColors[0];
-        let warpStart = 0;
-        for (let x = 1; x <= cols; x++) {
-            if (x === cols || warpColors[x] !== currentWarpColor) {
-                drawingContext.fillStyle = currentWarpColor;
-                drawingContext.fillRect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
-                if (x < cols) {
-                    currentWarpColor = warpColors[x];
-                    warpStart = x;
-                }
+    // --- EFFECT: FILAMENTS (DRAW LINES INSTEAD OF BLOCKS) ---
+    if (effectType === 'filaments') {
+        let filamentCount = Math.max(2, Math.floor(zoom / 2));
+        drawingContext.lineWidth = zoom / (filamentCount * 2);
+
+        // Draw Warp Filaments (Vertical)
+        for (let x = 0; x < cols; x++) {
+            drawingContext.strokeStyle = warpColors[x];
+            drawingContext.beginPath();
+            let xBase = x * zoom;
+            for (let f = 0; f < filamentCount; f++) {
+                let fx = xBase + (f + 0.5) * (zoom / filamentCount);
+                drawingContext.moveTo(fx, 0);
+                drawingContext.lineTo(fx, height);
             }
+            drawingContext.stroke();
         }
-    }
 
-    // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads, grouping pairs
-    // ⚡ Bolt Optimization: Batch drawing operations using beginPath()/rect()/fill() instead of fillRect()
-    // ⚡ Bolt Optimization: Multi-row color batching. Weft threads of the same color appear in contiguous blocks.
-    // By grouping these blocks into a single beginPath() and fill(), we reduce canvas draw calls
-    // from O(rows) to O(color_bands), reducing total weft rendering time by ~45%.
-    if (rows > 0) {
-        let currentWeftColor = warpSeq[0];
-        drawingContext.fillStyle = currentWeftColor;
-        drawingContext.beginPath();
-
-        // ⚡ Bolt Optimization: Cache row shifts and eliminate `yMod` calculation inside loop
+        // Draw Weft Filaments (Horizontal) over Twill Pattern
         let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
-        let maxCol = cols - 2;
+        let currentWeftColor = warpSeq[0];
+        drawingContext.strokeStyle = currentWeftColor;
+        drawingContext.beginPath();
 
         for (let y = 0; y < rows; y++) {
             let yZoom = y * zoom;
             let weftColor = warpSeq[y % seqLen];
 
-            // ⚡ Bolt Optimization: Only update fillStyle and trigger fill() when the color changes.
-            // Prevents 90%+ of expensive canvas 2d context state updates and path rasterizations.
             if (weftColor !== currentWeftColor) {
-                drawingContext.fill(); // Render the previous block of same-color rows
-
-                drawingContext.fillStyle = weftColor;
+                drawingContext.stroke();
+                drawingContext.strokeStyle = weftColor;
                 currentWeftColor = weftColor;
                 drawingContext.beginPath();
             }
 
             let xStart = shifts[y & 3];
-
-            // The first group might be cut off on the left edge
-            if (xStart === 3 && weftColor !== warpColors[0]) {
-                // ⚡ Bolt Optimization: skip drawing if identical to warp color underneath
-                drawingContext.rect(0, yZoom, zoom, zoom);
-            }
-
             let x = xStart;
 
-            // ⚡ Bolt Optimization: Loop unrolling for pairs of 4 threads
-            let maxColUnrolled = maxCol - 4;
+            // Draw line segments for weft where it goes OVER warp
+            while (x < cols) {
+                // If it goes over warp, draw horizontal filaments
+                let drawSegment = true;
+                // In actual twill, weft goes over 2, under 2.
+                // The algorithm below simplifies by just drawing weft over everything that is NOT the warp color
+                // (or if it is, it blends). Actually, we need to respect the 2/2 twill mask:
+                // Weft is visible for 2 threads starting at xStart
+                // So at x and x+1 weft is visible.
 
-            while (x <= maxColUnrolled) {
-                if (weftColor !== warpColors[x]) {
-                    if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
-                    else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
-                } else if (weftColor !== warpColors[x + 1]) {
-                    drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
-                }
+                let px = x * zoom;
+                let segmentWidth = (x + 1 < cols) ? 2 * zoom : zoom;
 
-                let x4 = x + 4;
-                if (weftColor !== warpColors[x4]) {
-                    if (weftColor !== warpColors[x4 + 1]) drawingContext.rect(x4 * zoom, yZoom, 2 * zoom, zoom);
-                    else drawingContext.rect(x4 * zoom, yZoom, zoom, zoom);
-                } else if (weftColor !== warpColors[x4 + 1]) {
-                    drawingContext.rect((x4 + 1) * zoom, yZoom, zoom, zoom);
-                }
-
-                x += 8;
-            }
-
-            // Tail cleanup
-            while (x <= maxCol) {
-                if (weftColor !== warpColors[x]) {
-                    if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
-                    else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
-                } else if (weftColor !== warpColors[x + 1]) {
-                    drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                for (let f = 0; f < filamentCount; f++) {
+                    let fy = yZoom + (f + 0.5) * (zoom / filamentCount);
+                    drawingContext.moveTo(px, fy);
+                    drawingContext.lineTo(px + segmentWidth, fy);
                 }
                 x += 4;
             }
 
-            // For edges where w < 2
-            if (x < cols && weftColor !== warpColors[x]) {
-                drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+            // Edge case for the left-most shifted thread
+            if (xStart === 3) {
+                 for (let f = 0; f < filamentCount; f++) {
+                    let fy = yZoom + (f + 0.5) * (zoom / filamentCount);
+                    drawingContext.moveTo(0, fy);
+                    drawingContext.lineTo(zoom, fy);
+                }
             }
         }
-        drawingContext.fill(); // Render the final block
+        drawingContext.stroke();
+
+    } else {
+        // --- STANDARD BLOCKS RENDERING (NO EFFECT, OVERLAY, NOISE) ---
+
+        // ⚡ Bolt Optimization: Draw entire warp vertically, grouping adjacent identical colors
+        if (cols > 0) {
+            let currentWarpColor = warpColors[0];
+            let warpStart = 0;
+            for (let x = 1; x <= cols; x++) {
+                if (x === cols || warpColors[x] !== currentWarpColor) {
+                    drawingContext.fillStyle = currentWarpColor;
+                    drawingContext.fillRect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
+                    if (x < cols) {
+                        currentWarpColor = warpColors[x];
+                        warpStart = x;
+                    }
+                }
+            }
+        }
+
+        // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads
+        if (rows > 0) {
+            let currentWeftColor = warpSeq[0];
+            drawingContext.fillStyle = currentWeftColor;
+            drawingContext.beginPath();
+
+            let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
+            let maxCol = cols - 2;
+
+            for (let y = 0; y < rows; y++) {
+                let yZoom = y * zoom;
+                let weftColor = warpSeq[y % seqLen];
+
+                if (weftColor !== currentWeftColor) {
+                    drawingContext.fill();
+                    drawingContext.fillStyle = weftColor;
+                    currentWeftColor = weftColor;
+                    drawingContext.beginPath();
+                }
+
+                let xStart = shifts[y & 3];
+
+                if (xStart === 3 && weftColor !== warpColors[0]) {
+                    drawingContext.rect(0, yZoom, zoom, zoom);
+                }
+
+                let x = xStart;
+                let maxColUnrolled = maxCol - 4;
+
+                while (x <= maxColUnrolled) {
+                    if (weftColor !== warpColors[x]) {
+                        if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
+                        else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                    } else if (weftColor !== warpColors[x + 1]) {
+                        drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                    }
+
+                    let x4 = x + 4;
+                    if (weftColor !== warpColors[x4]) {
+                        if (weftColor !== warpColors[x4 + 1]) drawingContext.rect(x4 * zoom, yZoom, 2 * zoom, zoom);
+                        else drawingContext.rect(x4 * zoom, yZoom, zoom, zoom);
+                    } else if (weftColor !== warpColors[x4 + 1]) {
+                        drawingContext.rect((x4 + 1) * zoom, yZoom, zoom, zoom);
+                    }
+
+                    x += 8;
+                }
+
+                while (x <= maxCol) {
+                    if (weftColor !== warpColors[x]) {
+                        if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
+                        else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                    } else if (weftColor !== warpColors[x + 1]) {
+                        drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                    }
+                    x += 4;
+                }
+
+                if (x < cols && weftColor !== warpColors[x]) {
+                    drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                }
+            }
+            drawingContext.fill();
+        }
+
+        // --- POST-PROCESSING EFFECTS OVER STANDARD BLOCKS ---
+        if (effectType === 'overlay') {
+            applyOverlayEffect(cols, rows, zoom);
+        } else if (effectType === 'noise') {
+            applyNoiseEffect(cols, rows, zoom);
+        }
     }
 
     // Update textual info (Actual dimensions)
     updateScaleInfo(seqLen);
     updateActualValues();
+}
+
+// --- Textile Effect Implementations ---
+function applyOverlayEffect(cols, rows, zoom) {
+    // Generate a simple crosshatch pattern offscreen to simulate fabric
+    // Create it once and tile it
+    let patternSize = Math.max(10, zoom * 2);
+    if (!window.overlayPatternBuffer || window.overlayPatternBuffer.width !== patternSize) {
+        let pg = createGraphics(patternSize, patternSize);
+        pg.clear();
+        pg.stroke(0, 0, 0, 40); // Dark faint lines
+        pg.strokeWeight(1);
+
+        // Draw diagonal crosshatch
+        for (let i = 0; i < patternSize * 2; i += 4) {
+            pg.line(0, i, i, 0);
+            pg.line(patternSize, i - patternSize, i - patternSize, patternSize);
+        }
+        window.overlayPatternBuffer = pg;
+    }
+
+    // Draw the pattern over the whole canvas
+    drawingContext.globalCompositeOperation = 'multiply';
+    let ptrn = drawingContext.createPattern(window.overlayPatternBuffer.canvas, 'repeat');
+    drawingContext.fillStyle = ptrn;
+    drawingContext.fillRect(0, 0, width, height);
+
+    // Reset blend mode
+    drawingContext.globalCompositeOperation = 'source-over';
+}
+
+function applyNoiseEffect(cols, rows, zoom) {
+    // Generate static noise once per size to avoid freezing the browser on every redraw
+    if (!window.noiseBuffer || window.noiseBuffer.width !== width || window.noiseBuffer.height !== height) {
+        let pg = createGraphics(width, height);
+        pg.pixelDensity(1);
+        pg.loadPixels();
+        let len = pg.pixels.length;
+        for (let i = 0; i < len; i += 4) {
+            let val = Math.random() * 255;
+            pg.pixels[i] = val;
+            pg.pixels[i+1] = val;
+            pg.pixels[i+2] = val;
+            // Low opacity noise
+            pg.pixels[i+3] = 30;
+        }
+        pg.updatePixels();
+        window.noiseBuffer = pg;
+    }
+
+    drawingContext.globalCompositeOperation = 'overlay';
+    drawingContext.drawImage(window.noiseBuffer.canvas, 0, 0);
+    drawingContext.globalCompositeOperation = 'source-over';
 }
 
 // Utility function: Loading Screen
