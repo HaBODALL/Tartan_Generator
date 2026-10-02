@@ -1949,11 +1949,7 @@ window.generatePatchwork = function() {
         let pg = createGraphics(totalW, totalH);
         pg.background(255);
 
-        // Store current states to restore them later
-        let originalPattern = patternMap;
-        let originalStripeW = stripeWidths;
-        let originalThreadArr = threadsArray;
-        let originalScale = currentScale;
+        // No need to restore these variables since they don't exist globally
 
         // Temporarily adjust scale for the tile rendering
         // We want the pattern to fill the tileSize, scaling proportionally based on current visualization settings
@@ -1987,7 +1983,7 @@ window.generatePatchwork = function() {
                 let yOffset = 0;
                 let i = 0;
                 while (true) {
-                    let col = threadsArray[i % threadsArray.length];
+                    let col = tartanStripes[i % tartanStripes.length];
                     let currentY = yOffset * tileScale;
                     if (currentY >= tileSize) break;
 
@@ -2000,7 +1996,7 @@ window.generatePatchwork = function() {
                 let xOffset = 0;
                 let j = 0;
                 while (true) {
-                    let col = threadsArray[j % threadsArray.length];
+                    let col = tartanStripes[j % tartanStripes.length];
                     let currentX = xOffset * tileScale;
                     if (currentX >= tileSize) break;
 
@@ -2041,10 +2037,6 @@ window.generatePatchwork = function() {
         }
 
         // Restore original states
-        patternMap = originalPattern;
-        stripeWidths = originalStripeW;
-        threadsArray = originalThreadArr;
-        currentScale = originalScale;
         redrawTartan();
 
         // Save image
