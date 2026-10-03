@@ -484,7 +484,10 @@
       </div>
 
       <!-- SECTION: STRUCTURE -->
-      <h2 data-i18n="sec_structure">Structure du Motif</h2>
+      <details open>
+  <summary data-i18n="sec_structure">Structure du Motif</summary>
+  <div class="details-content">
+
       <div class="control-group">
         <div class="control-row">
              <label class="checkbox-lock" for="check-sym" style="font-size:15px;">
@@ -534,8 +537,14 @@
         </div>
       </div>
 
-      <!-- SECTION: ZOOM & ECHELLE -->
-      <h2 data-i18n="sec_zoom">Zoom et Échelle</h2>
+        </div>
+</details>
+
+<!-- SECTION: ZOOM & ECHELLE -->
+      <details >
+  <summary data-i18n="sec_zoom">Zoom et Échelle</summary>
+  <div class="details-content">
+
       <div class="control-group">
 
         <div class="control-row">
@@ -573,22 +582,46 @@
 
       </div>
 
-      <!-- SECTION: PALETTE -->
-      <h2 data-i18n="sec_palette">Palette de couleurs sélectionnées (Max 8)</h2>
+        </div>
+</details>
+
+<!-- SECTION: PALETTE -->
+      <details >
+  <summary data-i18n="sec_palette">Palette de couleurs sélectionnées (Max 8)</summary>
+  <div class="details-content">
+
       <div id="color-list"></div>
 
-      <!-- SECTION: EXPORT -->
-      <h2 data-i18n="sec_srt">Code SRT du Tartan</h2>
+        </div>
+</details>
+
+<!-- SECTION: EXPORT -->
+      <details >
+  <summary data-i18n="sec_srt">Code SRT du Tartan</summary>
+  <div class="details-content">
+
       <textarea id="srt-display" class="srt-display" readonly aria-label="Code SRT du Tartan"></textarea>
 
-      <h2 data-i18n="sec_export">Export</h2>
+        </div>
+</details>
+
+<details >
+  <summary data-i18n="sec_export">Export</summary>
+  <div class="details-content">
+
       <div class="export-buttons">
           <button class="btn-export" id="btn-export-png" aria-label="Exporter en image PNG">Image</button>
           <button class="btn-export" id="btn-export-txt" data-i18n="btn_details" aria-label="Exporter les détails en texte">Détails</button>
           <button class="btn-export btn-primary" id="btn-export-all" data-i18n="btn_export_all" aria-label="Tout exporter">Exporter tout</button>
       </div>
 
-      <h2 style="margin-top:20px;" data-i18n="sec_patchwork">Export Patchwork (Grille)</h2>
+        </div>
+</details>
+
+<details >
+  <summary data-i18n="sec_patchwork">Export Patchwork (Grille)</summary>
+  <div class="details-content">
+
       <div class="controls-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 5px;">
           <div>
               <label data-i18n="lbl_patch_qty">Quantité (10-100)</label>
@@ -603,12 +636,17 @@
           <!-- Dynamic info here -->
       </div>
       <button class="btn-primary" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork" style="width: 100%; margin-bottom: 20px;">GÉNÉRER PATCHWORK</button>
+      <button class="btn-primary btn-duo" id="btn-generate-patchwork-zip" data-i18n="btn_gen_patchwork_zip" style="width: 100%; margin-bottom: 20px;">GÉNÉRER ZIP (Séparés)</button>
 
-      <div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
+        </div>
+</details>
+
+<div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
 
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="p5.min.js"></script>
   <script src="Random_Tartan_Generator.js"></script>
 </body>
