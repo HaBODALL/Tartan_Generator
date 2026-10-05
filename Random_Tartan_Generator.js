@@ -2030,6 +2030,7 @@ window.generatePatchwork = function() {
                 ctx.globalAlpha = 0.15; // Simple shadow overlay to simulate weave for performance on large canvases
 
                 let isZTwist = domElements.weaveZ ? domElements.weaveZ.checked : true;
+                ctx.beginPath();
                 for (let ty = 0; ty * tileScale < tileSize; ty++) {
                     for (let tx = 0; tx * tileScale < tileSize; tx++) {
                         let isWarpOverWeft = false;
@@ -2040,10 +2041,11 @@ window.generatePatchwork = function() {
                         }
 
                         if (isWarpOverWeft) {
-                           ctx.fillRect(tx * tileScale, ty * tileScale, tileScale+0.5, tileScale+0.5);
+                           ctx.rect(tx * tileScale, ty * tileScale, tileScale+0.5, tileScale+0.5);
                         }
                     }
                 }
+                ctx.fill();
                 ctx.globalAlpha = 1.0;
 
                 pg.pop();

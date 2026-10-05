@@ -41,3 +41,7 @@
 ## 2026-08-15 - Fast Array Allocation and Loop Unrolling in Canvas Rendering
 **Learning:** Pre-allocating arrays and unrolling loops in tight nested drawing loops yields significant performance gains. Profiling `redrawTartan` in Node.js revealed that dynamically growing the `warpSeq` array and performing bounds checks within `for` loops took a significant toll. By pre-calculating the sequence array size and partially unrolling the inner `x` loop for weft threads, execution time decreased by over 50% in benchmarks.
 **Action:** Always pre-calculate array lengths and allocate directly using `new Array(size)` when sizes are known. Unroll tight loops to combine consecutive `drawingContext.rect` rendering conditions in grid-based drawing.
+
+## 2024-05-18 - Canvas batching in generatePatchwork
+**Learning:** Batching canvas rect operations within a single `beginPath()` and `fill()` inside dense loops (like the twill weaving code in `generatePatchwork`) is drastically faster than calling `fillRect()` on every iteration because it reduces the number of state changes the Canvas API has to process.
+**Action:** When drawing complex grids or weaving patterns, prefer accumulating `rect()` calls inside a path and applying `fill()` once, instead of repeated `fillRect()` calls.
