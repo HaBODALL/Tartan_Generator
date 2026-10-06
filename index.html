@@ -17,6 +17,13 @@
       flex-direction: column;
     }
 
+    /* ACCESSIBILITY: Focus rings for keyboard navigation */
+    :focus-visible {
+      outline: 2px solid #3498db !important;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
     /* HEADER BAR */
     .app-header {
       height: 50px;
@@ -288,7 +295,6 @@
     input[type=number]:focus {
         border-color: #888;
         background-color: #1a1a1a;
-        outline: none;
     }
 
     /* PALETTE LIST */
@@ -399,7 +405,6 @@
         border-color: #666;
     }
     #thread-type:focus {
-        outline: none;
         border-color: #e74c3c;
     }
 
