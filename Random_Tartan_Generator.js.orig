@@ -158,7 +158,10 @@ let domElements = {
     lockStructure: null,
     genId: null,
     srtDisplay: null,
-    undoBtn: null
+    undoBtn: null,
+    effectType: null,
+    btnToggleUI: null,
+    sidebar: null
 };
 
 // Multilingual management
@@ -190,12 +193,19 @@ const TRANSLATIONS = {
         msg_palette_dup: "Cette couleur est déjà présente !",
         msg_palette_min: "La palette doit contenir au minimum 2 couleurs !",
         msg_import_ok: "Import réussi",
-        msg_import_err: "Aucun code valide détecté.",
+        msg_import_err: "Code SRT incompatible ou invalide, veuillez vérifier celui-ci. Il faut au minimum deux couleurs. (Ex: K4 R4)",
+        srt_help_title: "Qu'est-ce que le code SRT ?",
+        srt_help_text: "Le format SRT (Scottish Register of Tartans) est la notation standard pour décrire un tartan.\n\nChaque couleur est définie par une lettre (ou plusieurs) suivie du nombre de fils.\n\nExemple : K4 R32\n- 'K' = Noir, 4 fils\n- 'R' = Rouge, 32 fils\n\nPour que le motif soit valide, le code doit contenir au minimum 2 couleurs différentes.",
         lbl_add_nuance: "AJOUTER UNE NUANCE",
         lbl_mod_nuance: "MODIFIER LA NUANCE",
         btn_cancel: "ANNULER",
         loading: "TISSAGE EN COURS...",
         lbl_thread_type: "Type de fil",
+        lbl_effect: "Effet Textile",
+        opt_eff_none: "Aucun",
+        opt_eff_overlay: "Filtre Overlay",
+        opt_eff_noise: "Bruit (Grain)",
+        opt_eff_exp: "Expérimental (Tous)",
         opt_wool: "Laine",
         opt_merino: "Mérinos",
         opt_cotton: "Coton",
@@ -207,7 +217,14 @@ const TRANSLATIONS = {
         title_about: "À propos",
         txt_about_p1: "Random Tartan Generator est un outil open-source (CC BY-SA 4.0) permettant de créer des motifs de tartan. Il s'appuie sur le format du Scottish Register of Tartans (SRT).",
         txt_about_p2: "Vous pouvez l'utiliser pour la conception, ou exporter les motifs pour Ink/Stitch.",
-        btn_close: "Fermer"
+        btn_close: "Fermer",
+        title_toggle_ui: "Afficher/Masquer le panneau",
+        sec_patchwork: "Export Patchwork (Grille)",
+        lbl_patch_qty: "Quantité (10-100)",
+        lbl_patch_size: "Taille Tuile (px)",
+        btn_gen_patchwork: "GÉNÉRER PATCHWORK (Maintenance)",
+        msg_err_sett_too_low: "Génération impossible : Le Sett cible est trop petit pour le nombre de bandes et la largeur minimale. (Ex: 10 bandes x 50 fils Min = 500 fils > Sett cible).",
+        msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
         ph_import: "Paste SRT code here (e.g. K4 R32)...",
@@ -235,12 +252,19 @@ const TRANSLATIONS = {
         msg_palette_dup: "Color already in palette!",
         msg_palette_min: "Palette must have at least 2 colors!",
         msg_import_ok: "Import successful",
-        msg_import_err: "No valid code detected.",
+        msg_import_err: "Incompatible or invalid SRT code, please verify it. At least two colors are required. (e.g. K4 R4)",
+        srt_help_title: "What is an SRT Code?",
+        srt_help_text: "The SRT (Scottish Register of Tartans) format is the standard notation for describing a tartan.\n\nEach color is defined by a letter (or multiple letters) followed by the number of threads.\n\nExample: K4 R32\n- 'K' = Black, 4 threads\n- 'R' = Red, 32 threads\n\nTo be a valid pattern, the code must contain at least 2 different colors.",
         lbl_add_nuance: "ADD SHADE",
         lbl_mod_nuance: "MODIFY SHADE",
         btn_cancel: "CANCEL",
         loading: "WEAVING IN PROGRESS...",
         lbl_thread_type: "Thread type",
+        lbl_effect: "Textile Effect",
+        opt_eff_none: "None",
+        opt_eff_overlay: "Overlay Filter",
+        opt_eff_noise: "Noise (Grain)",
+        opt_eff_exp: "Experimental (All)",
         opt_wool: "Wool",
         opt_merino: "Merino",
         opt_cotton: "Cotton",
@@ -252,7 +276,14 @@ const TRANSLATIONS = {
         title_about: "About",
         txt_about_p1: "Random Tartan Generator is an open-source tool (CC BY-SA 4.0) to create tartan patterns. It uses the Scottish Register of Tartans (SRT) format.",
         txt_about_p2: "You can use it for design, or export patterns for Ink/Stitch.",
-        btn_close: "Close"
+        btn_close: "Close",
+        title_toggle_ui: "Show/Hide panel",
+        sec_patchwork: "Patchwork Export (Grid)",
+        lbl_patch_qty: "Quantity (10-100)",
+        lbl_patch_size: "Tile Size (px)",
+        btn_gen_patchwork: "GENERATE PATCHWORK (Maintenance)",
+        msg_err_sett_too_low: "Generation impossible: Target Sett is too small for the number of stripes and minimum width. (E.g., 10 stripes x 50 threads Min = 500 threads > Target Sett).",
+        msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
 
@@ -290,7 +321,8 @@ function saveState() {
         sett: domElements.sett?.value || 260,
         threadMm: domElements.threadMm?.value || 0.30,
         zoom: domElements.zoom?.value || 2.0,
-        weaveZ: domElements.weaveZ?.checked || true
+        weaveZ: domElements.weaveZ?.checked || true,
+        effectType: domElements.effectType?.value || 'none'
     };
     try {
         localStorage.setItem('tartanGeneratorState', JSON.stringify(state));
@@ -326,6 +358,10 @@ function loadState() {
             if (domWeaveS) domWeaveS.checked = !state.weaveZ;
         }
 
+        if (domElements.effectType && state.effectType) {
+            domElements.effectType.value = state.effectType;
+        }
+
         updateUserPaletteUI();
         updateGeneratedListUI();
         redrawTartan();
@@ -355,6 +391,9 @@ function cacheDomElements() {
     domElements.genId = document.getElementById('gen-id');
     domElements.srtDisplay = document.getElementById('srt-display');
     domElements.undoBtn = document.getElementById('btn-undo');
+    domElements.effectType = document.getElementById('effect-type');
+    domElements.btnToggleUI = document.getElementById('btn-toggle-ui');
+    domElements.sidebar = document.getElementById('sidebar');
 }
 
 function initCanvas() {
@@ -376,8 +415,6 @@ function bindEvents() {
         'in-stripes',
         'in-maxwidth',
         'in-sett',
-        'in-zoom',
-        'in-threadmm',
         'check-sym'
     ];
 
@@ -414,11 +451,23 @@ function bindEvents() {
     const btnImportSrt = document.getElementById('btn-import-srt');
     if (btnImportSrt) btnImportSrt.addEventListener('click', importSRT);
 
+    const btnSrtHelp = document.getElementById('btn-srt-help');
+    if (btnSrtHelp) {
+        btnSrtHelp.addEventListener('click', showSrtHelp);
+        btnSrtHelp.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showSrtHelp(); } });
+    }
+
     const srtExamples = document.getElementById('srt-examples');
     if (srtExamples) srtExamples.addEventListener('change', (e) => loadExample(e.target.value));
 
     const btnGenerate = document.getElementById('btn-generate');
     if (btnGenerate) btnGenerate.addEventListener('click', () => handleGenerateClick());
+
+    const btnGenPatchwork = document.getElementById('btn-generate-patchwork');
+    if (btnGenPatchwork) btnGenPatchwork.addEventListener('click', () => generatePatchwork());
+
+    const btnGenPatchworkZip = document.getElementById('btn-generate-patchwork-zip');
+    if (btnGenPatchworkZip) btnGenPatchworkZip.addEventListener('click', () => generatePatchworkZIP());
 
     const btnUndo = document.getElementById('btn-undo');
     if (btnUndo) btnUndo.addEventListener('click', undo);
@@ -436,10 +485,25 @@ function bindEvents() {
     if (threadType) threadType.addEventListener('change', updateThreadDiameter);
 
     const inThreadMm = document.getElementById('in-threadmm');
-    if (inThreadMm) inThreadMm.addEventListener('input', updateScaleInfo);
+    if (inThreadMm) inThreadMm.addEventListener('input', () => {
+        updateScaleInfo();
+        redrawTartan();
+        saveState();
+    });
 
     const inZoom = document.getElementById('in-zoom');
     if (inZoom) inZoom.addEventListener('input', updateZoom);
+
+    if (domElements.effectType) {
+        domElements.effectType.addEventListener('change', () => {
+            redrawTartan();
+            saveState();
+        });
+    }
+
+    if (domElements.btnToggleUI) {
+        domElements.btnToggleUI.addEventListener('click', toggleSidebar);
+    }
 
     const btnExportPng = document.getElementById('btn-export-png');
     if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
@@ -449,6 +513,55 @@ function bindEvents() {
 
     const btnExportAll = document.getElementById('btn-export-all');
     if (btnExportAll) btnExportAll.addEventListener('click', exportAll);
+
+    // Touch events for Pinch-to-Zoom on canvas container
+    const canvasContainer = document.getElementById('canvas-container');
+    if (canvasContainer) {
+        let initialPinchDistance = null;
+        let initialZoom = null;
+
+        canvasContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                // Prevent default to stop page zooming
+                e.preventDefault();
+                initialPinchDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                initialZoom = parseFloat(domElements.zoom.value) || 2.0;
+            }
+        }, { passive: false });
+
+        canvasContainer.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialPinchDistance !== null) {
+                e.preventDefault();
+                const currentPinchDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+
+                // Calculate ratio
+                const pinchRatio = currentPinchDistance / initialPinchDistance;
+
+                // Calculate new zoom and clamp between 0.5 and 12
+                let newZoom = initialZoom * pinchRatio;
+                newZoom = Math.max(0.5, Math.min(12.0, newZoom));
+
+                // Update input field and redraw
+                if (domElements.zoom) {
+                    // Round to nearest 0.5 step to match input step if desired, or just to 1 decimal
+                    domElements.zoom.value = newZoom.toFixed(1);
+                    domElements.zoom.dispatchEvent(new Event('input'));
+                }
+            }
+        }, { passive: false });
+
+        canvasContainer.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                initialPinchDistance = null;
+            }
+        });
+    }
 }
 document.addEventListener('keydown', (e) => {
     // Ignore if focus is in an input
@@ -1051,6 +1164,20 @@ window.buildSRTCode = buildSRTCode;
 window.buildInkStitchCode = buildInkStitchCode;
 
 
+// Toggle Sidebar
+function toggleSidebar() {
+    if (!domElements.sidebar || !domElements.btnToggleUI) return;
+
+    domElements.sidebar.classList.toggle('collapsed');
+    domElements.btnToggleUI.classList.toggle('collapsed');
+
+    // We need to trigger windowResized after animation completes
+    // The CSS transition is 0.3s
+    setTimeout(() => {
+        windowResized();
+    }, 320);
+}
+
 // Initialize styles on load
 injectDynamicStyles();
 
@@ -1110,7 +1237,18 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
     if (maxW % 2 !== 0) maxW++;
     if (minW < 2) minW = 2;
     if (maxW > 124) maxW = 124;
-    if (minW > maxW) minW = maxW;
+    if (isCheckMode && minW !== maxW) {
+        alert(TRANSLATIONS[currentLang].msg_err_check_mode_forced);
+        maxW = minW;
+        if (domElements.maxWidth) domElements.maxWidth.value = maxW;
+    } else if (minW > maxW) {
+        minW = maxW;
+    }
+
+    if (targetStripes * minW > targetSett) {
+        alert(TRANSLATIONS[currentLang].msg_err_sett_too_low);
+        return;
+    }
 
     generationID = Math.floor(Math.random() * 1000000);
 
@@ -1295,14 +1433,17 @@ function redrawTartan() {
     // This is where the magic happens.
     // Standard tartan algorithm is a 2/2 twill: 2 over, 2 under, shifted by 1 each line.
 
+    let effectType = domElements.effectType ? domElements.effectType.value : 'none';
+
     // ⚡ Bolt Optimization: Pre-calculate warp sequence colors for each column
     let warpColors = new Array(cols);
     for (let x = 0; x < cols; x++) {
         warpColors[x] = warpSeq[x % seqLen];
     }
 
+    // --- STANDARD BLOCKS RENDERING ---
+
     // ⚡ Bolt Optimization: Draw entire warp vertically, grouping adjacent identical colors
-    // ⚡ Bolt Optimization: Use native drawingContext API to bypass p5.js wrappers
     if (cols > 0) {
         let currentWarpColor = warpColors[0];
         let warpStart = 0;
@@ -1318,88 +1459,145 @@ function redrawTartan() {
         }
     }
 
-    // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads, grouping pairs
-    // ⚡ Bolt Optimization: Batch drawing operations using beginPath()/rect()/fill() instead of fillRect()
-    // ⚡ Bolt Optimization: Multi-row color batching. Weft threads of the same color appear in contiguous blocks.
-    // By grouping these blocks into a single beginPath() and fill(), we reduce canvas draw calls
-    // from O(rows) to O(color_bands), reducing total weft rendering time by ~45%.
+    // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads
     if (rows > 0) {
         let currentWeftColor = warpSeq[0];
         drawingContext.fillStyle = currentWeftColor;
         drawingContext.beginPath();
 
-        // ⚡ Bolt Optimization: Cache row shifts and eliminate `yMod` calculation inside loop
-        let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
-        let maxCol = cols - 2;
+            let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
+            let maxCol = cols - 2;
 
-        for (let y = 0; y < rows; y++) {
-            let yZoom = y * zoom;
-            let weftColor = warpSeq[y % seqLen];
+            for (let y = 0; y < rows; y++) {
+                let yZoom = y * zoom;
+                let weftColor = warpSeq[y % seqLen];
 
-            // ⚡ Bolt Optimization: Only update fillStyle and trigger fill() when the color changes.
-            // Prevents 90%+ of expensive canvas 2d context state updates and path rasterizations.
-            if (weftColor !== currentWeftColor) {
-                drawingContext.fill(); // Render the previous block of same-color rows
-
-                drawingContext.fillStyle = weftColor;
-                currentWeftColor = weftColor;
-                drawingContext.beginPath();
-            }
-
-            let xStart = shifts[y & 3];
-
-            // The first group might be cut off on the left edge
-            if (xStart === 3 && weftColor !== warpColors[0]) {
-                // ⚡ Bolt Optimization: skip drawing if identical to warp color underneath
-                drawingContext.rect(0, yZoom, zoom, zoom);
-            }
-
-            let x = xStart;
-
-            // ⚡ Bolt Optimization: Loop unrolling for pairs of 4 threads
-            let maxColUnrolled = maxCol - 4;
-
-            while (x <= maxColUnrolled) {
-                if (weftColor !== warpColors[x]) {
-                    if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
-                    else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
-                } else if (weftColor !== warpColors[x + 1]) {
-                    drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                if (weftColor !== currentWeftColor) {
+                    drawingContext.fill();
+                    drawingContext.fillStyle = weftColor;
+                    currentWeftColor = weftColor;
+                    drawingContext.beginPath();
                 }
 
-                let x4 = x + 4;
-                if (weftColor !== warpColors[x4]) {
-                    if (weftColor !== warpColors[x4 + 1]) drawingContext.rect(x4 * zoom, yZoom, 2 * zoom, zoom);
-                    else drawingContext.rect(x4 * zoom, yZoom, zoom, zoom);
-                } else if (weftColor !== warpColors[x4 + 1]) {
-                    drawingContext.rect((x4 + 1) * zoom, yZoom, zoom, zoom);
+                let xStart = shifts[y & 3];
+
+                if (xStart === 3 && weftColor !== warpColors[0]) {
+                    drawingContext.rect(0, yZoom, zoom, zoom);
                 }
 
-                x += 8;
-            }
+                let x = xStart;
+                let maxColUnrolled = maxCol - 4;
 
-            // Tail cleanup
-            while (x <= maxCol) {
-                if (weftColor !== warpColors[x]) {
-                    if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
-                    else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
-                } else if (weftColor !== warpColors[x + 1]) {
-                    drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                while (x <= maxColUnrolled) {
+                    if (weftColor !== warpColors[x]) {
+                        if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
+                        else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                    } else if (weftColor !== warpColors[x + 1]) {
+                        drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                    }
+
+                    let x4 = x + 4;
+                    if (weftColor !== warpColors[x4]) {
+                        if (weftColor !== warpColors[x4 + 1]) drawingContext.rect(x4 * zoom, yZoom, 2 * zoom, zoom);
+                        else drawingContext.rect(x4 * zoom, yZoom, zoom, zoom);
+                    } else if (weftColor !== warpColors[x4 + 1]) {
+                        drawingContext.rect((x4 + 1) * zoom, yZoom, zoom, zoom);
+                    }
+
+                    x += 8;
                 }
-                x += 4;
-            }
 
-            // For edges where w < 2
-            if (x < cols && weftColor !== warpColors[x]) {
-                drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                while (x <= maxCol) {
+                    if (weftColor !== warpColors[x]) {
+                        if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
+                        else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                    } else if (weftColor !== warpColors[x + 1]) {
+                        drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                    }
+                    x += 4;
+                }
+
+                if (x < cols && weftColor !== warpColors[x]) {
+                    drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                }
             }
-        }
-        drawingContext.fill(); // Render the final block
+        drawingContext.fill();
+    }
+
+    // --- POST-PROCESSING EFFECTS OVER STANDARD BLOCKS ---
+    if (effectType === 'overlay') {
+        applyOverlayEffect(cols, rows, zoom);
+    } else if (effectType === 'noise') {
+        applyNoiseEffect(cols, rows, zoom);
+    } else if (effectType === 'experimental') {
+        // Both overlay and noise
+        applyOverlayEffect(cols, rows, zoom);
+        applyNoiseEffect(cols, rows, zoom);
     }
 
     // Update textual info (Actual dimensions)
     updateScaleInfo(seqLen);
     updateActualValues();
+}
+
+// --- Textile Effect Implementations ---
+function applyOverlayEffect(cols, rows, zoom) {
+    // Generate a simple crosshatch pattern offscreen to simulate fabric
+    // Create it once and tile it
+    let patternSize = Math.max(10, zoom * 2);
+    if (!window.overlayPatternBuffer || window.overlayPatternBuffer.width !== patternSize) {
+        if (window.overlayPatternBuffer) {
+            window.overlayPatternBuffer.remove(); // Prevent memory leak by removing old buffer
+        }
+        let pg = createGraphics(patternSize, patternSize);
+        pg.clear();
+        pg.stroke(0, 0, 0, 40); // Dark faint lines
+        pg.strokeWeight(1);
+
+        // Draw diagonal crosshatch
+        for (let i = 0; i < patternSize * 2; i += 4) {
+            pg.line(0, i, i, 0);
+            pg.line(patternSize, i - patternSize, i - patternSize, patternSize);
+        }
+        window.overlayPatternBuffer = pg;
+    }
+
+    // Draw the pattern over the whole canvas
+    drawingContext.globalCompositeOperation = 'multiply';
+    let ptrn = drawingContext.createPattern(window.overlayPatternBuffer.canvas, 'repeat');
+    drawingContext.fillStyle = ptrn;
+    drawingContext.fillRect(0, 0, width, height);
+
+    // Reset blend mode
+    drawingContext.globalCompositeOperation = 'source-over';
+}
+
+function applyNoiseEffect(cols, rows, zoom) {
+    // Generate static noise once per size to avoid freezing the browser on every redraw
+    if (!window.noiseBuffer || window.noiseBuffer.width !== width || window.noiseBuffer.height !== height) {
+        if (window.noiseBuffer) {
+            window.noiseBuffer.remove(); // Prevent memory leak by removing old buffer
+        }
+        let pg = createGraphics(width, height);
+        pg.pixelDensity(1);
+        pg.loadPixels();
+        let len = pg.pixels.length;
+        for (let i = 0; i < len; i += 4) {
+            let val = Math.random() * 255;
+            pg.pixels[i] = val;
+            pg.pixels[i+1] = val;
+            pg.pixels[i+2] = val;
+            // Low opacity noise (increased for visibility)
+            pg.pixels[i+3] = 45;
+        }
+        pg.updatePixels();
+        window.noiseBuffer = pg;
+    }
+
+    // We use soft-light for grain to make it more visible without destroying colors
+    drawingContext.globalCompositeOperation = 'soft-light';
+    drawingContext.drawImage(window.noiseBuffer.canvas, 0, 0);
+    drawingContext.globalCompositeOperation = 'source-over';
 }
 
 // Utility function: Loading Screen
@@ -1593,7 +1791,7 @@ window.importSRT = function() {
     let input = importInputElement;
     if(!input) return;
     let text = input.value.trim().toUpperCase();
-    if(!text) { alert("Please enter an SRT code."); return; }
+    if(!text) { alert(TRANSLATIONS[currentLang].msg_import_err); return; }
 
     let domSym = domElements.sym;
     let isAsymmetricImport = false;
@@ -1647,12 +1845,16 @@ window.importSRT = function() {
             isCheckModePattern = false;
         }
 
-        let variants = SRT_PALETTE.filter(c => c.code === code);
         let colorObj;
-        if (variants.length > 0) {
-             colorObj = variants[Math.floor(Math.random() * variants.length)];
+        if (newPaletteMap.has(code)) {
+            colorObj = newPaletteMap.get(code);
         } else {
-            colorObj = srtLookup.get(code); // Fallback to map if something goes wrong
+            let variants = SRT_PALETTE.filter(c => c.code === code);
+            if (variants.length > 0) {
+                 colorObj = variants[Math.floor(Math.random() * variants.length)];
+            } else {
+                colorObj = srtLookup.get(code); // Fallback to map if something goes wrong
+            }
         }
 
         if (!colorObj) {
@@ -1671,8 +1873,8 @@ window.importSRT = function() {
         }
     }
 
-    if (newStripes.length === 0) {
-        alert("No valid code detected.");
+    if (newStripes.length === 0 || newPaletteMap.size < 2) {
+        alert(TRANSLATIONS[currentLang].msg_import_err);
         return;
     }
 
@@ -1702,4 +1904,333 @@ window.importSRT = function() {
     matchSrtWithExamples();
     saveState();
 
+}
+
+
+window.showSrtHelp = function() {
+    alert(`${TRANSLATIONS[currentLang].srt_help_title}\n\n${TRANSLATIONS[currentLang].srt_help_text}`);
+};
+
+window.updatePatchworkInfo = function() {
+    let qtyInput = document.getElementById('patchwork-qty');
+    let sizeInput = document.getElementById('patchwork-size');
+    let infoDiv = document.getElementById('patchwork-info');
+    if(!qtyInput || !sizeInput || !infoDiv) return;
+
+    let qty = parseInt(qtyInput.value) || 10;
+    let tileSize = parseInt(sizeInput.value) || 300;
+
+    qty = Math.max(1, Math.min(100, qty));
+    tileSize = Math.max(50, Math.min(2000, tileSize));
+
+    let cols = Math.ceil(Math.sqrt(qty));
+    let rows = Math.ceil(qty / cols);
+
+    let totalW = cols * tileSize;
+    let totalH = rows * tileSize;
+
+    // Rough estimate: assuming ~0.5 byte per pixel for PNG with simple colors (can vary wildly based on complexity)
+    let estimatedBytes = totalW * totalH * 0.5;
+    let estimatedMB = (estimatedBytes / (1024 * 1024)).toFixed(1);
+
+    infoDiv.innerHTML = `${totalW}x${totalH} px &bull; ~${estimatedMB} MB`;
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+    let qtyInput = document.getElementById('patchwork-qty');
+    let sizeInput = document.getElementById('patchwork-size');
+    if (qtyInput) qtyInput.addEventListener('input', updatePatchworkInfo);
+    if (sizeInput) sizeInput.addEventListener('input', updatePatchworkInfo);
+});
+
+window.generatePatchwork = function() {
+    alert("La fonctionnalit\é Patchwork est actuellement en maintenance.");
+    return;
+    let qtyInput = document.getElementById('patchwork-qty');
+    let sizeInput = document.getElementById('patchwork-size');
+    if (!qtyInput || !sizeInput) return;
+
+    let qty = parseInt(qtyInput.value) || 10;
+    let tileSize = parseInt(sizeInput.value) || 300;
+
+    qty = Math.max(1, Math.min(100, qty));
+    tileSize = Math.max(50, Math.min(2000, tileSize));
+
+    let cols = Math.ceil(Math.sqrt(qty));
+    let rows = Math.ceil(qty / cols);
+
+    let totalW = cols * tileSize;
+    let totalH = rows * tileSize;
+
+    drawLoadingScreen();
+
+    // Small timeout to allow DOM to update loading screen
+    setTimeout(() => {
+        let pg = createGraphics(totalW, totalH);
+        pg.background(255);
+
+        // No need to restore these variables since they don't exist globally
+
+        // Temporarily adjust scale for the tile rendering
+        // We want the pattern to fill the tileSize, scaling proportionally based on current visualization settings
+        let threadDiameterMM = parseFloat(domElements.threadW?.value) || 0.3;
+        let ppi = 96;
+        let mmPerInch = 25.4;
+        let pxPerThread = (threadDiameterMM / mmPerInch) * ppi;
+        let tileScale = pxPerThread;
+
+        // Loop and render tiles
+        let count = 0;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (count >= qty) break;
+
+                // 1. Generate random pattern based on current sidebar limits
+                // We use generateNewTartan directly to mutate the global state (threadsArray)
+                generateNewTartan(false, false);
+
+                // --- AJUSTEMENT D'ÉCHELLE DYNAMIQUE ---
+                // Nous voulons que la tuile (tileSize) affiche environ 2.5 répétitions du motif.
+                // Le motif entier fait `tartanStripes.length` fils.
+                // Donc 1 fil doit mesurer = tileSize / (tartanStripes.length * 2.5) pixels.
+                let totalThreads = tartanStripes.length;
+                let repetitions = 2.5;
+                let dynamicTileScale = tileSize / (totalThreads * repetitions);
+
+                // On met à jour l'échelle spécifiquement pour cette tuile
+                let tileScale = dynamicTileScale;
+                // ---------------------------------------
+
+                // 2. Render that specific tile
+                let ox = c * tileSize;
+                let oy = r * tileSize;
+
+                pg.push();
+                pg.translate(ox, oy);
+
+                // Use the same native canvas rendering logic we optimized, but draw to `pg` (p5.Graphics)
+                let ctx = pg.drawingContext;
+
+                // Base structure (horizontal & vertical)
+                let yOffset = 0;
+                let i = 0;
+                while (true) {
+                    let col = tartanStripes[i % tartanStripes.length];
+                    let currentY = yOffset * tileScale;
+                    if (currentY >= tileSize) break;
+
+                    ctx.fillStyle = col.hex;
+                    ctx.fillRect(0, currentY, tileSize, tileScale + 0.5);
+                    yOffset++;
+                    i++;
+                }
+
+                let xOffset = 0;
+                let j = 0;
+                while (true) {
+                    let col = tartanStripes[j % tartanStripes.length];
+                    let currentX = xOffset * tileScale;
+                    if (currentX >= tileSize) break;
+
+                    ctx.fillStyle = col.hex;
+                    // Note: to apply alpha correctly we can just draw half-opacity blocks on top, or we can weave.
+                    // For the patchwork, standard fast weave block rendering is enough
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillRect(currentX, 0, tileScale + 0.5, tileSize);
+                    ctx.globalAlpha = 1.0;
+                    xOffset++;
+                    j++;
+                }
+
+                // Fast weave (twill) overlay
+                ctx.fillStyle = "#000000";
+                ctx.globalAlpha = 0.15; // Simple shadow overlay to simulate weave for performance on large canvases
+
+                let isZTwist = domElements.weaveZ ? domElements.weaveZ.checked : true;
+                ctx.beginPath();
+                for (let ty = 0; ty * tileScale < tileSize; ty++) {
+                    for (let tx = 0; tx * tileScale < tileSize; tx++) {
+                        let isWarpOverWeft = false;
+                        if (isZTwist) {
+                            isWarpOverWeft = ((tx - ty) % 4 === 0) || ((tx - ty) % 4 === 1) || ((tx - ty) % 4 === -3);
+                        } else {
+                            isWarpOverWeft = ((tx + ty) % 4 === 0) || ((tx + ty) % 4 === 1) || ((tx + ty) % 4 === -3);
+                        }
+
+                        if (isWarpOverWeft) {
+                           ctx.rect(tx * tileScale, ty * tileScale, tileScale+0.5, tileScale+0.5);
+                        }
+                    }
+                }
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+
+                pg.pop();
+                count++;
+            }
+        }
+
+        // Restore original states
+        redrawTartan();
+
+        // Save image
+        save(pg, `Tartan_Patchwork_${qty}_tiles_${getFormattedDate()}.png`);
+
+    }, 50);
+};
+
+
+
+
+// ============================================================================
+// PATCHWORK EXPORT AS ZIP (Individual Tiles)
+// ============================================================================
+window.generatePatchworkZIP = async function() {
+    alert("La fonctionnalit\é Patchwork ZIP est actuellement en maintenance.");
+    return;
+    if (typeof JSZip === 'undefined') {
+        alert("La bibliothèque JSZip n'est pas chargée. Impossible de créer le ZIP.");
+        return;
+    }
+
+    let qtyInput = document.getElementById('patchwork-qty');
+    let sizeInput = document.getElementById('patchwork-size');
+    if (!qtyInput || !sizeInput) return;
+
+    let qty = parseInt(qtyInput.value) || 10;
+    let tileSize = parseInt(sizeInput.value) || 300;
+
+    qty = Math.max(1, Math.min(100, qty));
+    tileSize = Math.max(50, Math.min(2000, tileSize));
+
+    drawLoadingScreen();
+
+    // Small timeout to let UI update
+    setTimeout(async () => {
+        try {
+            let zip = new JSZip();
+            let imgFolder = zip.folder("tartans_images");
+            let srtContent = "Tartan Generator - Patchwork SRT Codes\n======================================\n\n";
+
+            // We use a single small graphics object and reuse it
+            let pg = createGraphics(tileSize, tileSize);
+
+            for (let count = 0; count < qty; count++) {
+                // Generate new pattern
+                generateNewTartan(false, false);
+                let currentSRT = generateSRT();
+
+                srtContent += `Tartan_${count + 1}: ${currentSRT}\n`;
+
+                // Clear background
+                pg.background(255);
+
+                let totalThreads = tartanStripes.length;
+                let repetitions = 2.5;
+                let tileScale = tileSize / (totalThreads * repetitions);
+
+                let ctx = pg.drawingContext;
+
+                // 1. Draw horizontal (base)
+                let yOffset = 0;
+                let i = 0;
+                while (true) {
+                    let col = tartanStripes[i % tartanStripes.length];
+                    let currentY = yOffset * tileScale;
+                    if (currentY >= tileSize) break;
+
+                    ctx.fillStyle = col.hex;
+                    ctx.fillRect(0, currentY, tileSize, tileScale + 0.5);
+                    yOffset++;
+                    i++;
+                }
+
+                // 2. Draw vertical (overlay)
+                let xOffset = 0;
+                let j = 0;
+                while (true) {
+                    let col = tartanStripes[j % tartanStripes.length];
+                    let currentX = xOffset * tileScale;
+                    if (currentX >= tileSize) break;
+
+                    ctx.fillStyle = col.hex;
+
+                    if (domElements.effectType && domElements.effectType.value === 'applat') {
+                        // Flat mode: 50% opacity block
+                        ctx.globalAlpha = 0.5;
+                        ctx.fillRect(currentX, 0, tileScale + 0.5, tileSize);
+                        ctx.globalAlpha = 1.0;
+                    } else {
+                        // Twill weaving
+                        let xPx = currentX;
+                        let wPx = tileScale + 0.5;
+                        let cy = 0;
+                        let rowIdx = 0;
+
+                        ctx.beginPath();
+                        while (cy < tileSize) {
+                            let yPx = cy;
+                            let hPx = tileScale + 0.5;
+
+                            let threadXIndex = j % tartanStripes.length;
+                            let threadYIndex = rowIdx % tartanStripes.length;
+
+                            let isForeground = false;
+                            if (weaveDirection === 'Z') {
+                                isForeground = ((threadXIndex - threadYIndex) % 4 + 4) % 4 < 2;
+                            } else {
+                                isForeground = ((threadXIndex + threadYIndex) % 4) < 2;
+                            }
+
+                            if (isForeground) {
+                                ctx.rect(xPx, yPx, wPx, hPx);
+                            }
+
+                            cy += tileScale;
+                            rowIdx++;
+                        }
+                        ctx.fill();
+                    }
+                    xOffset++;
+                    j++;
+                }
+
+                // Convert to blob and add to zip
+                await new Promise((resolve) => {
+                    pg.elt.toBlob((blob) => {
+                        imgFolder.file(`tartan_${count + 1}.png`, blob);
+                        resolve();
+                    }, 'image/png');
+                });
+            }
+
+            // Clean up p5.Graphics
+            pg.remove();
+
+            // Add SRT file
+            zip.file("codes_srt.txt", srtContent);
+
+            // Generate zip file
+            let content = await zip.generateAsync({type:"blob"});
+
+            // Download
+            let a = document.createElement("a");
+            let url = URL.createObjectURL(content);
+            a.href = url;
+            a.download = `tartan_patchwork_${qty}_files.zip`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+
+            // Restore previous state by regenerating one normal pattern
+            generateNewTartan(true, true);
+
+        } catch (error) {
+            console.error("Error generating ZIP:", error);
+            alert("Une erreur est survenue lors de la création du ZIP.");
+        }
+    }, 100);
 }

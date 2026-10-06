@@ -222,7 +222,9 @@ const TRANSLATIONS = {
         sec_patchwork: "Export Patchwork (Grille)",
         lbl_patch_qty: "Quantité (10-100)",
         lbl_patch_size: "Taille Tuile (px)",
-        btn_gen_patchwork: "GÉNÉRER PATCHWORK"
+        btn_gen_patchwork: "GÉNÉRER PATCHWORK (Maintenance)",
+        msg_err_sett_too_low: "Génération impossible : Le Sett cible est trop petit pour le nombre de bandes et la largeur minimale. (Ex: 10 bandes x 50 fils Min = 500 fils > Sett cible).",
+        msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
         ph_import: "Paste SRT code here (e.g. K4 R32)...",
@@ -279,7 +281,9 @@ const TRANSLATIONS = {
         sec_patchwork: "Patchwork Export (Grid)",
         lbl_patch_qty: "Quantity (10-100)",
         lbl_patch_size: "Tile Size (px)",
-        btn_gen_patchwork: "GENERATE PATCHWORK"
+        btn_gen_patchwork: "GENERATE PATCHWORK (Maintenance)",
+        msg_err_sett_too_low: "Generation impossible: Target Sett is too small for the number of stripes and minimum width. (E.g., 10 stripes x 50 threads Min = 500 threads > Target Sett).",
+        msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
 
@@ -1233,7 +1237,26 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
     if (maxW % 2 !== 0) maxW++;
     if (minW < 2) minW = 2;
     if (maxW > 124) maxW = 124;
-    if (minW > maxW) minW = maxW;
+    if (minW === maxW && !isCheckMode) {
+        isCheckMode = true;
+        if (domElements.checkMode) domElements.checkMode.checked = true;
+    }
+
+    if (isCheckMode && minW !== maxW) {
+        alert(TRANSLATIONS[currentLang].msg_err_check_mode_forced);
+        let lower = Math.min(minW, maxW);
+        minW = lower;
+        maxW = lower;
+        if (domElements.minWidth) domElements.minWidth.value = lower;
+        if (domElements.maxWidth) domElements.maxWidth.value = maxW;
+    } else if (minW > maxW) {
+        minW = maxW;
+    }
+
+    if (targetStripes * minW > targetSett) {
+        alert(TRANSLATIONS[currentLang].msg_err_sett_too_low);
+        return;
+    }
 
     generationID = Math.floor(Math.random() * 1000000);
 
@@ -1929,6 +1952,12 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 window.generatePatchwork = function() {
+    if (currentLang === 'en') {
+        alert("The Patchwork feature is currently under maintenance.");
+    } else {
+        alert("La fonctionnalité Patchwork est actuellement en maintenance.");
+    }
+    return;
     let qtyInput = document.getElementById('patchwork-qty');
     let sizeInput = document.getElementById('patchwork-size');
     if (!qtyInput || !sizeInput) return;
@@ -2069,6 +2098,12 @@ window.generatePatchwork = function() {
 // PATCHWORK EXPORT AS ZIP (Individual Tiles)
 // ============================================================================
 window.generatePatchworkZIP = async function() {
+    if (currentLang === 'en') {
+        alert("The Patchwork ZIP feature is currently under maintenance.");
+    } else {
+        alert("La fonctionnalité Patchwork ZIP est actuellement en maintenance.");
+    }
+    return;
     if (typeof JSZip === 'undefined') {
         alert("La bibliothèque JSZip n'est pas chargée. Impossible de créer le ZIP.");
         return;

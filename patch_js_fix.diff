@@ -1,0 +1,26 @@
+--- Random_Tartan_Generator.js
++++ Random_Tartan_Generator.js
+@@ -1945,6 +1945,10 @@
+ });
+
+ window.generatePatchwork = function() {
+-    alert("La fonctionnalit\é Patchwork est actuellement en maintenance.");
++    if (currentLang === 'en') {
++        alert("The Patchwork feature is currently under maintenance.");
++    } else {
++        alert("La fonctionnalité Patchwork est actuellement en maintenance.");
++    }
+     return;
+     let qtyInput = document.getElementById('patchwork-qty');
+@@ -2088,6 +2092,10 @@
+ // PATCHWORK EXPORT AS ZIP (Individual Tiles)
+ // ============================================================================
+ window.generatePatchworkZIP = async function() {
+-    alert("La fonctionnalit\é Patchwork ZIP est actuellement en maintenance.");
++    if (currentLang === 'en') {
++        alert("The Patchwork ZIP feature is currently under maintenance.");
++    } else {
++        alert("La fonctionnalité Patchwork ZIP est actuellement en maintenance.");
++    }
+     return;
+     if (typeof JSZip === 'undefined') {
