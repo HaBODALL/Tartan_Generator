@@ -625,18 +625,18 @@
       <div class="controls-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 5px;">
           <div>
               <label data-i18n="lbl_patch_qty">Quantité (10-100)</label>
-              <input type="number" id="patchwork-qty" value="10" min="10" max="100" class="input-number" aria-label="Nombre de tartans à générer">
+              <input type="number" id="patchwork-qty" value="10" min="10" max="100" class="input-number" aria-label="Nombre de tartans à générer" disabled style="opacity: 0.5; cursor: not-allowed;">
           </div>
           <div>
               <label data-i18n="lbl_patch_size">Taille Tuile (px)</label>
-              <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number" aria-label="Taille de la tuile en pixels">
+              <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number" aria-label="Taille de la tuile en pixels" disabled style="opacity: 0.5; cursor: not-allowed;">
           </div>
       </div>
       <div style="font-size: 11px; color: #888; margin-bottom: 15px; text-align: center;" id="patchwork-info">
           <!-- Dynamic info here -->
       </div>
-      <button class="btn-primary" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork" style="width: 100%; margin-bottom: 20px;">GÉNÉRER PATCHWORK</button>
-      <button class="btn-primary btn-duo" id="btn-generate-patchwork-zip" data-i18n="btn_gen_patchwork_zip" style="width: 100%; margin-bottom: 20px;">GÉNÉRER ZIP (Séparés)</button>
+      <button class="btn-primary" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork" style="width: 100%; margin-bottom: 20px; opacity: 0.5; cursor: not-allowed;" disabled>GÉNÉRER PATCHWORK (Maintenance)</button>
+      <button class="btn-primary btn-duo" id="btn-generate-patchwork-zip" data-i18n="btn_gen_patchwork_zip" style="width: 100%; margin-bottom: 20px; opacity: 0.5; cursor: not-allowed;" disabled>GÉNÉRER ZIP (Maintenance)</button>
 
         </div>
 </details>
