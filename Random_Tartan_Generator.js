@@ -1581,12 +1581,13 @@ function applyOverlayEffect(cols, rows, zoom) {
 }
 
 function applyNoiseEffect(cols, rows, zoom) {
-    // Generate static noise once per size to avoid freezing the browser on every redraw
-    if (!window.noiseBuffer || window.noiseBuffer.width !== width || window.noiseBuffer.height !== height) {
+    // Generate static noise pattern once to avoid freezing the browser on every redraw
+    let patternSize = 256;
+    if (!window.noiseBuffer || window.noiseBuffer.width !== patternSize) {
         if (window.noiseBuffer) {
             window.noiseBuffer.remove(); // Prevent memory leak by removing old buffer
         }
-        let pg = createGraphics(width, height);
+        let pg = createGraphics(patternSize, patternSize);
         pg.pixelDensity(1);
         pg.loadPixels();
         let len = pg.pixels.length;
@@ -1604,7 +1605,9 @@ function applyNoiseEffect(cols, rows, zoom) {
 
     // We use soft-light for grain to make it more visible without destroying colors
     drawingContext.globalCompositeOperation = 'soft-light';
-    drawingContext.drawImage(window.noiseBuffer.canvas, 0, 0);
+    let ptrn = drawingContext.createPattern(window.noiseBuffer.canvas, 'repeat');
+    drawingContext.fillStyle = ptrn;
+    drawingContext.fillRect(0, 0, width, height);
     drawingContext.globalCompositeOperation = 'source-over';
 }
 
