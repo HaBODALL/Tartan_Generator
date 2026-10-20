@@ -48,3 +48,7 @@
 ## 2026-10-25 - Efficient static full-screen effects with createPattern
 **Learning:** Generating full-screen visual effects (like static noise) pixel-by-pixel using HTML5 Canvas `createImageData`/`putImageData` scales poorly with window size, causing significant main-thread blocking on large screens (e.g., 4k or 1080p).
 **Action:** For static, non-animated full-screen effects like noise, generate a small, fixed-size offscreen buffer (e.g., 256x256) once. Use the canvas `createPattern(buffer, 'repeat')` API and a single `fillRect` to cover the entire screen. This offloads the tiling rendering to the browser's optimized internal graphics pipeline, resulting in exponential speedups (~7x faster for 1080p) during resize/redraw events.
+
+## 2026-10-26 - Mathematical reduction and array caching in tight rendering loops
+**Learning:** Performing multiple floating-point multiplications (like `x * zoom`) and redundant array lookups (`warpColors[x]`, `warpColors[x+1]`) inside tight `while` rendering loops causes measurable delays when drawing thousands of shapes.
+**Action:** When working inside hot path loops like `redrawTartan()`, pre-calculate constant products (e.g. `zoom2 = zoom * 2`, `zoom4 = zoom * 4`) and maintain dynamic products using incremental addition (e.g., `xZoom += zoom4`) instead of recalculating multiplication on each iteration. Also, store array accesses in local block-scoped variables if referenced multiple times.
