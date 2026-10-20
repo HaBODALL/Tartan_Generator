@@ -1475,6 +1475,8 @@ function redrawTartan() {
 
             let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
             let maxCol = cols - 2;
+            let zoom2 = zoom * 2;
+            let zoom4 = zoom * 4;
 
             for (let y = 0; y < rows; y++) {
                 let yZoom = y * zoom;
@@ -1495,38 +1497,48 @@ function redrawTartan() {
 
                 let x = xStart;
                 let maxColUnrolled = maxCol - 4;
+                let xZoom = x * zoom;
 
                 while (x <= maxColUnrolled) {
-                    if (weftColor !== warpColors[x]) {
-                        if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
-                        else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
-                    } else if (weftColor !== warpColors[x + 1]) {
-                        drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                    let c0 = warpColors[x];
+                    let c1 = warpColors[x + 1];
+                    if (weftColor !== c0) {
+                        if (weftColor !== c1) drawingContext.rect(xZoom, yZoom, zoom2, zoom);
+                        else drawingContext.rect(xZoom, yZoom, zoom, zoom);
+                    } else if (weftColor !== c1) {
+                        drawingContext.rect(xZoom + zoom, yZoom, zoom, zoom);
                     }
 
                     let x4 = x + 4;
-                    if (weftColor !== warpColors[x4]) {
-                        if (weftColor !== warpColors[x4 + 1]) drawingContext.rect(x4 * zoom, yZoom, 2 * zoom, zoom);
-                        else drawingContext.rect(x4 * zoom, yZoom, zoom, zoom);
-                    } else if (weftColor !== warpColors[x4 + 1]) {
-                        drawingContext.rect((x4 + 1) * zoom, yZoom, zoom, zoom);
+                    let x4Zoom = xZoom + zoom4;
+                    let c4 = warpColors[x4];
+                    let c5 = warpColors[x4 + 1];
+                    if (weftColor !== c4) {
+                        if (weftColor !== c5) drawingContext.rect(x4Zoom, yZoom, zoom2, zoom);
+                        else drawingContext.rect(x4Zoom, yZoom, zoom, zoom);
+                    } else if (weftColor !== c5) {
+                        drawingContext.rect(x4Zoom + zoom, yZoom, zoom, zoom);
                     }
 
                     x += 8;
+                    xZoom += zoom4 * 2;
                 }
 
                 while (x <= maxCol) {
-                    if (weftColor !== warpColors[x]) {
-                        if (weftColor !== warpColors[x + 1]) drawingContext.rect(x * zoom, yZoom, 2 * zoom, zoom);
-                        else drawingContext.rect(x * zoom, yZoom, zoom, zoom);
-                    } else if (weftColor !== warpColors[x + 1]) {
-                        drawingContext.rect((x + 1) * zoom, yZoom, zoom, zoom);
+                    let c0 = warpColors[x];
+                    let c1 = warpColors[x + 1];
+                    if (weftColor !== c0) {
+                        if (weftColor !== c1) drawingContext.rect(xZoom, yZoom, zoom2, zoom);
+                        else drawingContext.rect(xZoom, yZoom, zoom, zoom);
+                    } else if (weftColor !== c1) {
+                        drawingContext.rect(xZoom + zoom, yZoom, zoom, zoom);
                     }
                     x += 4;
+                    xZoom += zoom4;
                 }
 
                 if (x < cols && weftColor !== warpColors[x]) {
-                    drawingContext.rect(x * zoom, yZoom, zoom, zoom);
+                    drawingContext.rect(xZoom, yZoom, zoom, zoom);
                 }
             }
         drawingContext.fill();
