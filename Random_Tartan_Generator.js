@@ -1,5 +1,5 @@
 // =====================================================
-//  RANDOM TARTAN GENERATOR V1.1.0 - P5.JS VERSION
+//  RANDOM TARTAN GENERATOR V1.1.2 - P5.JS VERSION
 //  By HaBOD, 2025 - CC BY-SA 4.0
 //  Based on a Sketch from steven kay, 2011 (https://openprocessing.org/sketch/25876) - CC BY-SA 2.0
 //  Complete rewrite with constraint-based workflow
@@ -394,10 +394,34 @@ function cacheDomElements() {
     domElements.effectType = document.getElementById('effect-type');
     domElements.btnToggleUI = document.getElementById('btn-toggle-ui');
     domElements.sidebar = document.getElementById('sidebar');
+    domElements.canvasContainer = document.getElementById('canvas-container');
+    domElements.threadType = document.getElementById('thread-type');
+    domElements.btnAbout = document.getElementById('btn-about');
+    domElements.langBtnFr = document.getElementById('lang-btn-fr');
+    domElements.langBtnEn = document.getElementById('lang-btn-en');
+    domElements.aboutModal = document.getElementById('about-modal');
+    domElements.modalContentInner = document.getElementById('modal-content-inner');
+    domElements.btnCloseAbout = document.getElementById('btn-close-about');
+    domElements.btnImportSrt = document.getElementById('btn-import-srt');
+    domElements.btnSrtHelp = document.getElementById('btn-srt-help');
+    domElements.srtExamples = document.getElementById('srt-examples');
+    domElements.btnGenerate = document.getElementById('btn-generate');
+    domElements.btnGenPatchwork = document.getElementById('btn-generate-patchwork');
+    domElements.btnGenPatchworkZip = document.getElementById('btn-generate-patchwork-zip');
+    domElements.weaveS = document.getElementById('weave-s');
+    domElements.btnExportPng = document.getElementById('btn-export-png');
+    domElements.btnExportTxt = document.getElementById('btn-export-txt');
+    domElements.btnExportAll = document.getElementById('btn-export-all');
+    domElements.colorList = document.getElementById('color-list');
+    domElements.generatedStripesList = document.getElementById('generated-stripes-list');
+    domElements.patchworkQty = document.getElementById('patchwork-qty');
+    domElements.patchworkSize = document.getElementById('patchwork-size');
+    domElements.patchworkInfo = document.getElementById('patchwork-info');
+    domElements.importText = document.getElementById('import-text');
 }
 
 function initCanvas() {
-    let container = document.getElementById('canvas-container');
+    let container = domElements.canvasContainer;
     if (!container) return;
 
     let w = container.offsetWidth;
@@ -430,68 +454,68 @@ function bindEvents() {
     });
 
     // Move inline events to JS
-    const btnAbout = document.getElementById('btn-about');
+    const btnAbout = domElements.btnAbout;
     if (btnAbout) btnAbout.addEventListener('click', openAboutModal);
 
-    const langBtnFr = document.getElementById('lang-btn-fr');
+    const langBtnFr = domElements.langBtnFr;
     if (langBtnFr) langBtnFr.addEventListener('click', () => setLanguage('fr'));
 
-    const langBtnEn = document.getElementById('lang-btn-en');
+    const langBtnEn = domElements.langBtnEn;
     if (langBtnEn) langBtnEn.addEventListener('click', () => setLanguage('en'));
 
-    const aboutModal = document.getElementById('about-modal');
+    const aboutModal = domElements.aboutModal;
     if (aboutModal) aboutModal.addEventListener('click', closeAboutModal);
 
-    const modalContentInner = document.getElementById('modal-content-inner');
+    const modalContentInner = domElements.modalContentInner;
     if (modalContentInner) modalContentInner.addEventListener('click', (e) => e.stopPropagation());
 
-    const btnCloseAbout = document.getElementById('btn-close-about');
+    const btnCloseAbout = domElements.btnCloseAbout;
     if (btnCloseAbout) btnCloseAbout.addEventListener('click', closeAboutModal);
 
-    const btnImportSrt = document.getElementById('btn-import-srt');
+    const btnImportSrt = domElements.btnImportSrt;
     if (btnImportSrt) btnImportSrt.addEventListener('click', importSRT);
 
-    const btnSrtHelp = document.getElementById('btn-srt-help');
+    const btnSrtHelp = domElements.btnSrtHelp;
     if (btnSrtHelp) {
         btnSrtHelp.addEventListener('click', showSrtHelp);
         btnSrtHelp.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showSrtHelp(); } });
     }
 
-    const srtExamples = document.getElementById('srt-examples');
+    const srtExamples = domElements.srtExamples;
     if (srtExamples) srtExamples.addEventListener('change', (e) => loadExample(e.target.value));
 
-    const btnGenerate = document.getElementById('btn-generate');
+    const btnGenerate = domElements.btnGenerate;
     if (btnGenerate) btnGenerate.addEventListener('click', () => handleGenerateClick());
 
-    const btnGenPatchwork = document.getElementById('btn-generate-patchwork');
+    const btnGenPatchwork = domElements.btnGenPatchwork;
     if (btnGenPatchwork) btnGenPatchwork.addEventListener('click', () => generatePatchwork());
 
-    const btnGenPatchworkZip = document.getElementById('btn-generate-patchwork-zip');
+    const btnGenPatchworkZip = domElements.btnGenPatchworkZip;
     if (btnGenPatchworkZip) btnGenPatchworkZip.addEventListener('click', () => generatePatchworkZIP());
 
-    const btnUndo = document.getElementById('btn-undo');
+    const btnUndo = domElements.undoBtn;
     if (btnUndo) btnUndo.addEventListener('click', undo);
 
     const weaveZ = document.getElementById('weave-z');
     if (weaveZ) weaveZ.addEventListener('change', updateZoom);
 
-    const weaveS = document.getElementById('weave-s');
+    const weaveS = domElements.weaveS;
     if (weaveS) weaveS.addEventListener('change', updateZoom);
 
-    const checkSym = document.getElementById('check-sym');
+    const checkSym = domElements.sym;
     if (checkSym) checkSym.addEventListener('change', updateSymmetry);
 
-    const threadType = document.getElementById('thread-type');
+    const threadType = domElements.threadType;
     if (threadType) threadType.addEventListener('change', updateThreadDiameter);
 
-    const inThreadMm = document.getElementById('in-threadmm');
+    const inThreadMm = domElements.threadMm;
     if (inThreadMm) inThreadMm.addEventListener('input', () => {
         updateScaleInfo();
         redrawTartan();
         saveState();
     });
 
-    const inZoom = document.getElementById('in-zoom');
+    const inZoom = domElements.zoom;
     if (inZoom) inZoom.addEventListener('input', updateZoom);
 
     if (domElements.effectType) {
@@ -505,17 +529,17 @@ function bindEvents() {
         domElements.btnToggleUI.addEventListener('click', toggleSidebar);
     }
 
-    const btnExportPng = document.getElementById('btn-export-png');
+    const btnExportPng = domElements.btnExportPng;
     if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
 
-    const btnExportTxt = document.getElementById('btn-export-txt');
+    const btnExportTxt = domElements.btnExportTxt;
     if (btnExportTxt) btnExportTxt.addEventListener('click', exportTXT);
 
-    const btnExportAll = document.getElementById('btn-export-all');
+    const btnExportAll = domElements.btnExportAll;
     if (btnExportAll) btnExportAll.addEventListener('click', exportAll);
 
     // Touch events for Pinch-to-Zoom on canvas container
-    const canvasContainer = document.getElementById('canvas-container');
+    const canvasContainer = domElements.canvasContainer;
     if (canvasContainer) {
         let initialPinchDistance = null;
         let initialZoom = null;
@@ -615,8 +639,8 @@ function setLanguage(lang) {
     });
 
     // Update language buttons active state
-    let btnFr = document.getElementById('lang-btn-fr');
-    let btnEn = document.getElementById('lang-btn-en');
+    let btnFr = domElements.langBtnFr;
+    let btnEn = domElements.langBtnEn;
     if (btnFr && btnEn) {
         if (lang === 'fr') {
             btnFr.classList.add('active');
@@ -633,7 +657,7 @@ function setLanguage(lang) {
 // ================= 4. Palette UI =================
 
 function windowResized() {
-    let container = document.getElementById('canvas-container');
+    let container = domElements.canvasContainer;
     if(container) {
         resizeCanvas(container.offsetWidth, container.offsetHeight);
         if (window.redrawTartan) window.redrawTartan();
@@ -825,7 +849,7 @@ function updateActualSett() {
 
 // === THREAD TYPE SELECTOR ===
 function updateThreadDiameter() {
-    const select = document.getElementById('thread-type');
+    const select = domElements.threadType;
     const input = domElements.threadMm;
 
     if (select.value === 'custom') {
@@ -971,7 +995,7 @@ function openColorPicker(editIndex = -1) {
 
 function updateUserPaletteUI() {
     let t = TRANSLATIONS[currentLang];
-    let listContainer = document.getElementById('color-list');
+    let listContainer = domElements.colorList;
     if(!listContainer) return;
 
     listContainer.textContent = '';
@@ -1055,7 +1079,7 @@ function updateUserPaletteUI() {
 }
 
 function updateGeneratedListUI() {
-    let container = document.getElementById('generated-stripes-list');
+    let container = domElements.generatedStripesList;
     let srtInput = domElements.srtDisplay;
     let idLabel = domElements.genId;
 
@@ -1663,12 +1687,12 @@ window.updateScaleInfo = function(totalThreadsOverride) {
 // Globally mapped UI handlers
 let aboutModalElement = null;
 window.openAboutModal = function() {
-    if (!aboutModalElement) aboutModalElement = document.getElementById('about-modal');
+    if (!aboutModalElement) aboutModalElement = domElements.aboutModal;
     if (aboutModalElement) aboutModalElement.style.display = 'flex';
 }
 window.closeAboutModal = function(e) {
     if(e && e.target !== e.currentTarget) return; // Ignore clicks inside modal content if handled differently, but we use stopPropagation so this is safe
-    if (!aboutModalElement) aboutModalElement = document.getElementById('about-modal');
+    if (!aboutModalElement) aboutModalElement = domElements.aboutModal;
     if (aboutModalElement) aboutModalElement.style.display = 'none';
 }
 window.updateZoom = function() { redrawTartan(); saveState(); }
@@ -1780,7 +1804,7 @@ function injectDynamicStyles() {
 // Function to match SRT code with examples in the select dropdown
 function matchSrtWithExamples() {
     let srtInput = domElements.srtDisplay;
-    let srtExamples = document.getElementById('srt-examples');
+    let srtExamples = domElements.srtExamples;
     if (!srtInput || !srtExamples) return;
 
     // We match by checking if the dropdown value string is included in the SRT output
@@ -1801,7 +1825,7 @@ function matchSrtWithExamples() {
 let importInputElement = null;
 window.loadExample = function(val) {
     if(!val) return;
-    if (!importInputElement) importInputElement = document.getElementById('import-text');
+    if (!importInputElement) importInputElement = domElements.importText;
     if(importInputElement) {
         importInputElement.value = val;
         importSRT();
@@ -1810,7 +1834,7 @@ window.loadExample = function(val) {
 
 // --- IMPORT SRT (OFFICIAL LOGIC) ---
 window.importSRT = function() {
-    if (!importInputElement) importInputElement = document.getElementById('import-text');
+    if (!importInputElement) importInputElement = domElements.importText;
     let input = importInputElement;
     if(!input) return;
     let text = input.value.trim().toUpperCase();
@@ -1935,9 +1959,9 @@ window.showSrtHelp = function() {
 };
 
 window.updatePatchworkInfo = function() {
-    let qtyInput = document.getElementById('patchwork-qty');
-    let sizeInput = document.getElementById('patchwork-size');
-    let infoDiv = document.getElementById('patchwork-info');
+    let qtyInput = domElements.patchworkQty;
+    let sizeInput = domElements.patchworkSize;
+    let infoDiv = domElements.patchworkInfo;
     if(!qtyInput || !sizeInput || !infoDiv) return;
 
     let qty = parseInt(qtyInput.value) || 10;
@@ -1973,8 +1997,8 @@ window.generatePatchwork = function() {
         alert("La fonctionnalité Patchwork est actuellement en maintenance.");
     }
     return;
-    let qtyInput = document.getElementById('patchwork-qty');
-    let sizeInput = document.getElementById('patchwork-size');
+    let qtyInput = domElements.patchworkQty;
+    let sizeInput = domElements.patchworkSize;
     if (!qtyInput || !sizeInput) return;
 
     let qty = parseInt(qtyInput.value) || 10;
@@ -2124,8 +2148,8 @@ window.generatePatchworkZIP = async function() {
         return;
     }
 
-    let qtyInput = document.getElementById('patchwork-qty');
-    let sizeInput = document.getElementById('patchwork-size');
+    let qtyInput = domElements.patchworkQty;
+    let sizeInput = domElements.patchworkSize;
     if (!qtyInput || !sizeInput) return;
 
     let qty = parseInt(qtyInput.value) || 10;
