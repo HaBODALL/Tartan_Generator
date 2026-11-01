@@ -1980,7 +1980,7 @@ window.updatePatchworkInfo = function() {
     let estimatedBytes = totalW * totalH * 0.5;
     let estimatedMB = (estimatedBytes / (1024 * 1024)).toFixed(1);
 
-    infoDiv.innerHTML = `${totalW}x${totalH} px &bull; ~${estimatedMB} MB`;
+    infoDiv.textContent = `${totalW}x${totalH} px \u2022 ~${estimatedMB} MB`;
 };
 
 window.addEventListener('DOMContentLoaded', () => {
