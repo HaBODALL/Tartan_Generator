@@ -7,3 +7,6 @@
 ## 2024-05-13 - [Focus indicators for Custom UI Components]
 **Learning:** Adding custom keyboard events and ARIA roles (e.g. `role="button"` and `tabindex="0"`) on `div`-based UI components is excellent for a11y, but often developers intentionally suppress default browser outlines via CSS (like `outline: none`). This leaves keyboard-only users without any visible focus state.
 **Action:** Always ensure that removing default `outline` styles is paired with explicit, visible `:focus-visible` styling—especially targeting common tags and interactive attributes like `[role="button"]` and `[tabindex]:not([tabindex="-1"])`—so keyboard users maintain spatial awareness on the page.
+## 2026-11-01 - Clipboard API in Playwright Tests
+**Learning:** When writing temporary Playwright tests to verify clipboard interactions (like a "click to copy" button), the default browser context may deny clipboard access.
+**Action:** When writing temporary Playwright tests that interact with clipboard APIs, ensure the browser context is explicitly initialized with clipboard permissions (e.g., `browser.new_context(permissions=['clipboard-write', 'clipboard-read'])`) to prevent access denial.
