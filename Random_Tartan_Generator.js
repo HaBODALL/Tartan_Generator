@@ -1493,26 +1493,31 @@ function redrawTartan() {
 
     // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads
     if (rows > 0) {
-        let currentWeftColor = warpSeq[0];
-        drawingContext.fillStyle = currentWeftColor;
-        drawingContext.beginPath();
+        let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
+        let zoom4 = zoom * 4;
+        let zoom8 = zoom * 8;
 
-            let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
-            let maxCol = cols - 2;
-            let zoom2 = zoom * 2;
-            let zoom4 = zoom * 4;
+        // ⚡ Bolt Optimization: Collect all unique colors in the weft to batch operations by color
+        let uniqueWeftColors = [];
+        for(let y = 0; y < seqLen; y++) {
+            let c = warpSeq[y];
+            if (uniqueWeftColors.indexOf(c) === -1) uniqueWeftColors.push(c);
+        }
+
+        let zoom2 = zoom * 2;
+        let maxCol = cols - 2;
+
+        // ⚡ Bolt Optimization: Loop over each unique color, and only execute path actions per color
+        for (let colorIdx = 0; colorIdx < uniqueWeftColors.length; colorIdx++) {
+            let weftColor = uniqueWeftColors[colorIdx];
+            drawingContext.fillStyle = weftColor;
+            drawingContext.beginPath();
 
             for (let y = 0; y < rows; y++) {
+                let rowColor = warpSeq[y % seqLen];
+                if (rowColor !== weftColor) continue;
+
                 let yZoom = y * zoom;
-                let weftColor = warpSeq[y % seqLen];
-
-                if (weftColor !== currentWeftColor) {
-                    drawingContext.fill();
-                    drawingContext.fillStyle = weftColor;
-                    currentWeftColor = weftColor;
-                    drawingContext.beginPath();
-                }
-
                 let xStart = shifts[y & 3];
 
                 if (xStart === 3 && weftColor !== warpColors[0]) {
@@ -1545,7 +1550,7 @@ function redrawTartan() {
                     }
 
                     x += 8;
-                    xZoom += zoom4 * 2;
+                    xZoom += zoom8;
                 }
 
                 while (x <= maxCol) {
@@ -1565,7 +1570,8 @@ function redrawTartan() {
                     drawingContext.rect(xZoom, yZoom, zoom, zoom);
                 }
             }
-        drawingContext.fill();
+            drawingContext.fill();
+        }
     }
 
     // --- POST-PROCESSING EFFECTS OVER STANDARD BLOCKS ---

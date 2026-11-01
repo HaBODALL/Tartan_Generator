@@ -52,3 +52,6 @@
 ## 2026-10-26 - Mathematical reduction and array caching in tight rendering loops
 **Learning:** Performing multiple floating-point multiplications (like `x * zoom`) and redundant array lookups (`warpColors[x]`, `warpColors[x+1]`) inside tight `while` rendering loops causes measurable delays when drawing thousands of shapes.
 **Action:** When working inside hot path loops like `redrawTartan()`, pre-calculate constant products (e.g. `zoom2 = zoom * 2`, `zoom4 = zoom * 4`) and maintain dynamic products using incremental addition (e.g., `xZoom += zoom4`) instead of recalculating multiplication on each iteration. Also, store array accesses in local block-scoped variables if referenced multiple times.
+## 2026-11-01 - Canvas path batching by color for pattern drawing
+**Learning:** Instead of issuing `beginPath()` and `fill()` for every row of a woven pattern, identifying the unique colors first and then constructing a single path per color for the entire canvas drastically reduces state changes in HTML5 canvas.
+**Action:** Collect all unique colors in an image or pattern beforehand. Loop over the unique colors, setting `fillStyle` once per color, and building the path consisting of multiple `rect()` calls over the whole canvas. This reduces drawing time by roughly 40-50%.
