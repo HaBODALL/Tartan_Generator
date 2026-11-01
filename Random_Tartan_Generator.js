@@ -161,7 +161,9 @@ let domElements = {
     undoBtn: null,
     effectType: null,
     btnToggleUI: null,
-    sidebar: null
+    sidebar: null,
+    btnCopySrt: null,
+    copyToast: null
 };
 
 // Multilingual management
@@ -395,6 +397,8 @@ function cacheDomElements() {
     domElements.btnToggleUI = document.getElementById('btn-toggle-ui');
     domElements.sidebar = document.getElementById('sidebar');
     domElements.canvasContainer = document.getElementById('canvas-container');
+    domElements.btnCopySrt = document.getElementById('btn-copy-srt');
+    domElements.copyToast = document.getElementById('copy-toast');
     domElements.threadType = document.getElementById('thread-type');
     domElements.btnAbout = document.getElementById('btn-about');
     domElements.langBtnFr = document.getElementById('lang-btn-fr');
@@ -537,6 +541,20 @@ function bindEvents() {
 
     const btnExportAll = domElements.btnExportAll;
     if (btnExportAll) btnExportAll.addEventListener('click', exportAll);
+
+    if (domElements.btnCopySrt && domElements.copyToast && domElements.srtDisplay) {
+        domElements.btnCopySrt.addEventListener('click', () => {
+            domElements.srtDisplay.select();
+            navigator.clipboard.writeText(domElements.srtDisplay.value).then(() => {
+                domElements.copyToast.classList.add('show');
+                setTimeout(() => {
+                    domElements.copyToast.classList.remove('show');
+                }, 2000);
+            }).catch(err => {
+                console.error("Could not copy text: ", err);
+            });
+        });
+    }
 
     // Touch events for Pinch-to-Zoom on canvas container
     const canvasContainer = domElements.canvasContainer;

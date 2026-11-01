@@ -376,7 +376,12 @@
     .import-box { display: flex; gap: 5px; margin-bottom: 20px; }
     .import-input { flex-grow: 1; background: #111; border: 1px solid #444; color: #0f0; padding: 5px; font-family: monospace; font-size: 11px; }
 
-    .srt-display { width: 100%; background: #000; border: 1px solid #444; color: #3498db; font-family: monospace; font-size: 12px; padding: 10px; resize: none; margin-bottom: 10px; }
+    .srt-container { position: relative; width: 100%; margin-bottom: 10px; }
+    .srt-display { width: 100%; background: #000; border: 1px solid #444; color: #3498db; font-family: monospace; font-size: 12px; padding: 10px; padding-right: 35px; resize: none; margin-bottom: 0; }
+    .btn-copy-srt { position: absolute; right: 5px; top: 5px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 4px 6px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+    .btn-copy-srt:hover { background: #444; color: #fff; }
+    .copy-toast { position: absolute; right: 40px; top: 8px; background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; opacity: 0; pointer-events: none; transition: opacity 0.3s; font-weight: bold; }
+    .copy-toast.show { opacity: 1; }
 
     .btn-secondary { padding: 8px 12px; background: #333; color: #fff; border: 1px solid #444; cursor: pointer; border-radius: 3px; font-size: 11px; white-space: nowrap;}
     .btn-secondary:hover { background: #444; }
@@ -605,7 +610,11 @@
   <summary data-i18n="sec_srt">Code SRT du Tartan</summary>
   <div class="details-content">
 
-      <textarea id="srt-display" class="srt-display" readonly aria-label="Code SRT du Tartan"></textarea>
+      <div class="srt-container">
+          <textarea id="srt-display" class="srt-display" readonly aria-label="Code SRT du Tartan"></textarea>
+          <button id="btn-copy-srt" class="btn-copy-srt" aria-label="Copier le code SRT" title="Copier">📋</button>
+          <div id="copy-toast" class="copy-toast">Copié !</div>
+      </div>
 
         </div>
 </details>
