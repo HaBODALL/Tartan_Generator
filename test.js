@@ -17,7 +17,8 @@ global.TRANSLATIONS = { fr: {}, en: {} };
 
 // Evaluate the code to make functions available
 try {
-    eval(code);
+    const vm = require('vm');
+    vm.runInThisContext(code);
 } catch (e) {
     // Ignore p5 initialization errors, we just want to test pure functions
 }
