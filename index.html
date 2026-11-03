@@ -17,19 +17,6 @@
       flex-direction: column;
     }
 
-    /* ACCESSIBILITY: Screen-reader only class */
-    .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-    }
-
     /* ACCESSIBILITY: Focus rings for keyboard navigation */
     :focus-visible {
       outline: 2px solid #3498db !important;
@@ -436,12 +423,12 @@
       <h1>Random Tartan Generator</h1>
       <span class="version-badge">v1.1.2</span>
     </div>
-    <button class="btn-about-header" id="btn-about" data-i18n="btn_about">ℹ️ À propos</button>
+    <button class="btn-about-header" id="btn-about" data-i18n="btn_about" aria-label="About the app">ℹ️ À propos</button>
     <div class="lang-switch">
-      <button id="lang-btn-fr" class="lang-btn active">
+      <button id="lang-btn-fr" class="lang-btn active" aria-label="Passer en français">
         FR
       </button>
-      <button id="lang-btn-en" class="lang-btn">
+      <button id="lang-btn-en" class="lang-btn" aria-label="Switch to English">
         EN
       </button>
     </div>
@@ -469,15 +456,12 @@
       <!-- SECTION: IMPORT -->
       <div class="import-box" style="position: relative;">
           <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." aria-label="Code SRT à importer" maxlength="2000" style="padding-right: 30px;">
-          <label for="import-text" class="sr-only">Code SRT à importer</label>
-          <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." style="padding-right: 30px;">
           <div id="btn-srt-help" role="button" tabindex="0" aria-label="Aide sur le code SRT" style="position: absolute; right: 120px; top: 12px; color: #888; cursor: pointer; font-weight: bold;">(?)</div>
-          <button class="btn-secondary" id="btn-import-srt" data-i18n="btn_import">IMPORTER</button>
+          <button class="btn-secondary" id="btn-import-srt" data-i18n="btn_import" aria-label="Importer le code SRT">IMPORTER</button>
       </div>
 
       <div style="margin-bottom: 15px;">
-          <label for="srt-examples" class="sr-only">Charger un exemple de tartan</label>
-          <select id="srt-examples" style="width:100%; background:#222; color:#ccc; border:1px solid #444; padding:5px; border-radius:3px;">
+          <select id="srt-examples" style="width:100%; background:#222; color:#ccc; border:1px solid #444; padding:5px; border-radius:3px;" aria-label="Charger un exemple de tartan">
               <option value="" data-i18n="opt_load_example">-- Charger un exemple --</option>
               <option value="R/72 B8 K12 Y2 K12 W2 K12 G24 R8 K2 R/4">Royal Stewart (Sym)</option>
               <option value="B/24 K4 B4 K4 B4 K20 G24 K6 G24 K4 G4 K4 G/24">Black Watch (Sym)</option>
@@ -492,20 +476,20 @@
 
       <!-- SECTION: GENERATION -->
       <div class="generate-row">
-          <button class="btn-generate" id="btn-generate">
+          <button class="btn-generate" id="btn-generate" aria-label="Générer un nouveau tartan">
               <span data-i18n="btn_generate">GÉNÉRER</span>
           </button>
-          <button class="btn-undo" id="btn-undo" disabled title="Aucun historique">
+          <button class="btn-undo" id="btn-undo" disabled title="Aucun historique" aria-label="Annuler la dernière action">
               ↩️ <span data-i18n="btn_undo">Annuler</span>
           </button>
       </div>
 
       <div class="locks-container">
           <label class="checkbox-lock" for="lock-colors">
-              <input type="checkbox" id="lock-colors"> <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
+              <input type="checkbox" id="lock-colors" aria-label="Conserver Couleurs"> <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
           </label>
           <label class="checkbox-lock" for="lock-structure">
-              <input type="checkbox" id="lock-structure"> <span data-i18n="chk_keep_struct">Conserver Structure</span>
+              <input type="checkbox" id="lock-structure" aria-label="Conserver Structure"> <span data-i18n="chk_keep_struct">Conserver Structure</span>
           </label>
       </div>
 
@@ -520,7 +504,7 @@
                  <input type="checkbox" id="check-sym" checked> <span data-i18n="chk_symmetry">Symétrie</span>
              </label>
              <label class="checkbox-lock" for="check-mode-check" style="font-size:15px; color:#888;">
-                 <input type="checkbox" id="check-mode-check">
+                 <input type="checkbox" id="check-mode-check" aria-label="Mode damier">
                  <span data-i18n="chk_check_mode"> Damier</span>
                  <span class="info-icon" data-i18n-title="desc_check_mode" title="Génère des bandes de largeurs égales" style="margin-left: 5px; cursor: help; font-size: 12px; color: #555;">ⓘ</span>
              </label>
@@ -542,22 +526,22 @@
         <div class="control-row">
             <label for="in-stripes" data-i18n="lbl_stripes">Nombre de bandes (Cible)</label>
             <div style="display:flex; align-items:center; gap:10px;">
-                <input type="number" id="in-stripes" value="6" min="2" max="20" style="width:60px;">
+                <input type="number" id="in-stripes" value="6" min="2" max="20" style="width:60px;" aria-label="Nombre de bandes">
                 <span id="stripes-actual" style="color:#888; font-size:11px;"></span>
             </div>
         </div>
         <div class="control-row">
             <label id="lbl-limits" data-i18n="lbl_limits">Limites de fils par bande (Min/Max)</label>
             <div style="display:flex; gap:10px;">
-              <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum">
-              <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum">
+              <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum" aria-label="Minimum fils par bande">
+              <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum" aria-label="Maximum fils par bande">
             </div>
         </div>
         <!-- Sett / Densité -->
         <div class="control-row">
             <label for="in-sett" data-i18n="lbl_sett">Densité (Sett)</label>
             <div style="display:flex; align-items:center; gap:10px;">
-                <input type="number" id="in-sett" value="260" min="150" max="300" step="2" style="width:70px;">
+                <input type="number" id="in-sett" value="260" min="150" max="300" step="2" style="width:70px;" aria-label="Densité Sett">
                 <span id="sett-actual" style="color:#888; font-size:11px;"></span>
             </div>
         </div>
@@ -576,20 +560,20 @@
         <div class="control-row">
             <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
             <div style="display:flex; gap:10px; align-items:center;">
-                <select id="thread-type">
+                <select id="thread-type" aria-label="Type de fil">
                     <option value="custom" data-i18n="opt_custom">Personnalisé</option>
                     <option value="0.69" data-i18n="opt_merino">Mérinos</option>
                     <option value="0.83" data-i18n="opt_cotton">Coton</option>
                     <option value="1.11" data-i18n="opt_wool">Laine</option>
                 </select>
-                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;">
+                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;" aria-label="Diamètre du fil en mm">
                 <span style="color:#666; font-size:11px;">mm</span>
             </div>
         </div>
 
         <div class="control-row">
             <label for="in-zoom" data-i18n="lbl_zoom">Zoom Visuel</label>
-            <input type="number" id="in-zoom" value="2.0" step="0.5" min="0.5" max="12">
+            <input type="number" id="in-zoom" value="2.0" step="0.5" min="0.5" max="12" aria-label="Zoom Visuel">
         </div>
 
         <div class="control-row">
@@ -627,8 +611,7 @@
   <div class="details-content">
 
       <div class="srt-container">
-          <label for="srt-display" class="sr-only">Code SRT du Tartan</label>
-          <textarea id="srt-display" class="srt-display" readonly></textarea>
+          <textarea id="srt-display" class="srt-display" readonly aria-label="Code SRT du Tartan"></textarea>
           <button id="btn-copy-srt" class="btn-copy-srt" aria-label="Copier le code SRT" title="Copier">📋</button>
           <div id="copy-toast" class="copy-toast" aria-live="polite">Copié !</div>
       </div>
@@ -641,9 +624,9 @@
   <div class="details-content">
 
       <div class="export-buttons">
-          <button class="btn-export" id="btn-export-png">Image</button>
-          <button class="btn-export" id="btn-export-txt" data-i18n="btn_details">Détails</button>
-          <button class="btn-export btn-primary" id="btn-export-all" data-i18n="btn_export_all">Exporter tout</button>
+          <button class="btn-export" id="btn-export-png" aria-label="Exporter en image PNG">Image</button>
+          <button class="btn-export" id="btn-export-txt" data-i18n="btn_details" aria-label="Exporter les détails en texte">Détails</button>
+          <button class="btn-export btn-primary" id="btn-export-all" data-i18n="btn_export_all" aria-label="Tout exporter">Exporter tout</button>
       </div>
 
         </div>
@@ -655,12 +638,12 @@
 
       <div class="controls-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 5px;">
           <div>
-              <label data-i18n="lbl_patch_qty" for="patchwork-qty">Quantité (10-100)</label>
-              <input type="number" id="patchwork-qty" value="10" min="10" max="100" class="input-number" disabled style="opacity: 0.5; cursor: not-allowed;">
+              <label data-i18n="lbl_patch_qty">Quantité (10-100)</label>
+              <input type="number" id="patchwork-qty" value="10" min="10" max="100" class="input-number" aria-label="Nombre de tartans à générer" disabled style="opacity: 0.5; cursor: not-allowed;">
           </div>
           <div>
-              <label data-i18n="lbl_patch_size" for="patchwork-size">Taille Tuile (px)</label>
-              <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number" disabled style="opacity: 0.5; cursor: not-allowed;">
+              <label data-i18n="lbl_patch_size">Taille Tuile (px)</label>
+              <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number" aria-label="Taille de la tuile en pixels" disabled style="opacity: 0.5; cursor: not-allowed;">
           </div>
       </div>
       <div style="font-size: 11px; color: #888; margin-bottom: 15px; text-align: center;" id="patchwork-info">
