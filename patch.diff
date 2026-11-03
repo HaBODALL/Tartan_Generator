@@ -1,0 +1,48 @@
+--- index.html
++++ index.html
+@@ -9,6 +9,16 @@
+     * { margin: 0; padding: 0; box-sizing: border-box; }
+     body {
+       height: 100vh; width: 100vw; overflow: hidden;
++    }
++
++    /* ACCESSIBILITY: Screen-reader only class */
++    .sr-only {
++        position: absolute;
++        width: 1px;
++        height: 1px;
++        padding: 0;
++        margin: -1px;
++        overflow: hidden;
++        clip: rect(0, 0, 0, 0);
++        white-space: nowrap;
++        border: 0;
+     }
+
+     /* ACCESSIBILITY: Focus rings for keyboard navigation */
+@@ -455,15 +465,15 @@
+     <div class="sidebar" id="sidebar">
+       <!-- SECTION: IMPORT -->
+       <div class="import-box" style="position: relative;">
+-          <label for="import-text" style="display:none">Code SRT à importer</label>
++          <label for="import-text" class="sr-only">Code SRT à importer</label>
+           <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." style="padding-right: 30px;">
+           <div id="btn-srt-help" role="button" tabindex="0" aria-label="Aide sur le code SRT" style="position: absolute; right: 120px; top: 12px; color: #888; cursor: pointer; font-weight: bold;">(?)</div>
+           <button class="btn-secondary" id="btn-import-srt" data-i18n="btn_import">IMPORTER</button>
+       </div>
+
+       <div style="margin-bottom: 15px;">
+-          <label for="srt-examples" style="display:none">Charger un exemple de tartan</label>
++          <label for="srt-examples" class="sr-only">Charger un exemple de tartan</label>
+           <select id="srt-examples" style="width:100%; background:#222; color:#ccc; border:1px solid #444; padding:5px; border-radius:3px;">
+               <option value="" data-i18n="opt_load_example">-- Charger un exemple --</option>
+               <option value="R/72 B8 K12 Y2 K12 W2 K12 G24 R8 K2 R/4">Royal Stewart (Sym)</option>
+@@ -613,8 +623,8 @@
+   <div class="details-content">
+
+       <div class="srt-container">
+-          <label for="srt-display" style="display:none">Code SRT du Tartan</label>
++          <label for="srt-display" class="sr-only">Code SRT du Tartan</label>
+           <textarea id="srt-display" class="srt-display" readonly></textarea>
+           <button id="btn-copy-srt" class="btn-copy-srt" aria-label="Copier le code SRT" title="Copier">📋</button>
+           <div id="copy-toast" class="copy-toast" aria-live="polite">Copié !</div>
