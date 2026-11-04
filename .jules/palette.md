@@ -10,3 +10,6 @@
 ## 2026-11-01 - Clipboard API in Playwright Tests
 **Learning:** When writing temporary Playwright tests to verify clipboard interactions (like a "click to copy" button), the default browser context may deny clipboard access.
 **Action:** When writing temporary Playwright tests that interact with clipboard APIs, ensure the browser context is explicitly initialized with clipboard permissions (e.g., `browser.new_context(permissions=['clipboard-write', 'clipboard-read'])`) to prevent access denial.
+## 2026-11-02 - Toast Notifications Accessibility
+**Learning:** Custom UI toast notifications (e.g. for "Copied!" actions) fail to notify screen readers if they lack `aria-live` attributes. Adding `aria-label` attributes matching exactly the button text causes redundancies and overwrites translated text content.
+**Action:** Always append `aria-live="polite"` or `aria-live="assertive"` on custom toast/notification containers in the DOM. Do not add redundant `aria-label` attributes to buttons containing valid text.

@@ -443,8 +443,8 @@
         <h3 id="about-title" data-i18n="title_about" style="margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px;">À propos</h3>
         <p id="about-p1" data-i18n="txt_about_p1" style="margin-bottom:10px; line-height:1.4; font-size:14px; color:#ddd;">Random Tartan Generator est un outil open-source (CC BY-SA 4.0) permettant de créer des motifs de tartan. Il s'appuie sur le format du Scottish Register of Tartans (SRT).</p>
         <p id="about-p2" data-i18n="txt_about_p2" style="margin-bottom:20px; line-height:1.4; font-size:14px; color:#ddd;">Vous pouvez l'utiliser pour la conception, ou exporter les motifs pour Ink/Stitch.</p>
-        <div style="text-align:right;">
-          <button class="btn-cancel" id="btn-close-about" data-i18n="btn_close">Fermer</button>
+        <div style="text-align:center;">
+          <button class="btn-secondary" id="btn-close-about" data-i18n="btn_close" style="padding: 8px 20px; border-radius: 20px; font-size: 13px;">Fermer</button>
         </div>
       </div>
     </div>
@@ -454,9 +454,9 @@
 
     <div class="sidebar" id="sidebar">
       <!-- SECTION: IMPORT -->
+      <label style="font-size: 14px; color: #aaa; margin-bottom: 5px; display: block;" for="import-text">Code <span id="btn-srt-help" style="border-bottom: 1px dashed #888; cursor: pointer;" data-i18n-title="srt_help_tooltip" role="button" tabindex="0" aria-label="Aide sur le code SRT">SRT</span></label>
       <div class="import-box" style="position: relative;">
-          <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import" placeholder="Coller le code SRT ici (ex: K4 R32)..." aria-label="Code SRT à importer" style="padding-right: 30px;">
-          <div id="btn-srt-help" role="button" tabindex="0" aria-label="Aide sur le code SRT" style="position: absolute; right: 120px; top: 12px; color: #888; cursor: pointer; font-weight: bold;">(?)</div>
+          <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import_short" placeholder="Coller ici (ex: K4 R32)..." aria-label="Code SRT à importer">
           <button class="btn-secondary" id="btn-import-srt" data-i18n="btn_import" aria-label="Importer le code SRT">IMPORTER</button>
       </div>
 
@@ -613,7 +613,7 @@
       <div class="srt-container">
           <textarea id="srt-display" class="srt-display" readonly aria-label="Code SRT du Tartan"></textarea>
           <button id="btn-copy-srt" class="btn-copy-srt" aria-label="Copier le code SRT" title="Copier">📋</button>
-          <div id="copy-toast" class="copy-toast">Copié !</div>
+          <div id="copy-toast" class="copy-toast" aria-live="polite">Copié !</div>
       </div>
 
         </div>
