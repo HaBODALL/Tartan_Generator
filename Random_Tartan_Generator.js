@@ -1511,9 +1511,11 @@ function redrawTartan() {
         }
     }
 
+    // Pre-calculate shift offsets for twill patterns
+    let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
+
     // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads
     if (rows > 0) {
-        let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
         let zoom4 = zoom * 4;
         let zoom8 = zoom * 8;
 
@@ -1531,63 +1533,46 @@ function redrawTartan() {
         for (let colorIdx = 0; colorIdx < uniqueWeftColors.length; colorIdx++) {
             let weftColor = uniqueWeftColors[colorIdx];
             drawingContext.fillStyle = weftColor;
-            drawingContext.beginPath();
 
-            for (let y = 0; y < rows; y++) {
-                let rowColor = warpSeq[y % seqLen];
-                if (rowColor !== weftColor) continue;
-
-                let yZoom = y * zoom;
-                let xStart = shifts[y & 3];
-
+            // ⚡ Bolt Optimization: Pre-calculate horizontal weft thread rectangles for each possible shift
+            let shiftRects = [[], [], [], []];
+            for (let s = 0; s < 4; s++) {
+                let xStart = shifts[s];
                 if (xStart === 3 && weftColor !== warpColors[0]) {
-                    drawingContext.rect(0, yZoom, zoom, zoom);
+                    shiftRects[s].push([0, zoom]);
                 }
-
                 let x = xStart;
-                let maxColUnrolled = maxCol - 4;
                 let xZoom = x * zoom;
-
-                while (x <= maxColUnrolled) {
-                    let c0 = warpColors[x];
-                    let c1 = warpColors[x + 1];
-                    if (weftColor !== c0) {
-                        if (weftColor !== c1) drawingContext.rect(xZoom, yZoom, zoom2, zoom);
-                        else drawingContext.rect(xZoom, yZoom, zoom, zoom);
-                    } else if (weftColor !== c1) {
-                        drawingContext.rect(xZoom + zoom, yZoom, zoom, zoom);
-                    }
-
-                    let x4 = x + 4;
-                    let x4Zoom = xZoom + zoom4;
-                    let c4 = warpColors[x4];
-                    let c5 = warpColors[x4 + 1];
-                    if (weftColor !== c4) {
-                        if (weftColor !== c5) drawingContext.rect(x4Zoom, yZoom, zoom2, zoom);
-                        else drawingContext.rect(x4Zoom, yZoom, zoom, zoom);
-                    } else if (weftColor !== c5) {
-                        drawingContext.rect(x4Zoom + zoom, yZoom, zoom, zoom);
-                    }
-
-                    x += 8;
-                    xZoom += zoom8;
-                }
-
                 while (x <= maxCol) {
                     let c0 = warpColors[x];
                     let c1 = warpColors[x + 1];
                     if (weftColor !== c0) {
-                        if (weftColor !== c1) drawingContext.rect(xZoom, yZoom, zoom2, zoom);
-                        else drawingContext.rect(xZoom, yZoom, zoom, zoom);
+                        if (weftColor !== c1) { shiftRects[s].push([xZoom, zoom2]); }
+                        else { shiftRects[s].push([xZoom, zoom]); }
                     } else if (weftColor !== c1) {
-                        drawingContext.rect(xZoom + zoom, yZoom, zoom, zoom);
+                        shiftRects[s].push([xZoom + zoom, zoom]);
                     }
                     x += 4;
                     xZoom += zoom4;
                 }
-
                 if (x < cols && weftColor !== warpColors[x]) {
-                    drawingContext.rect(xZoom, yZoom, zoom, zoom);
+                    shiftRects[s].push([xZoom, zoom]);
+                }
+            }
+
+            drawingContext.beginPath();
+
+            // ⚡ Bolt Optimization: Draw all rows that share the same shift grouping
+            for (let s = 0; s < 4; s++) {
+                let sr = shiftRects[s];
+                if (sr.length === 0) continue;
+                for (let y = s; y < rows; y += 4) {
+                    let rowColor = warpSeq[y % seqLen];
+                    if (rowColor !== weftColor) continue;
+                    let yZoom = y * zoom;
+                    for(let i = 0; i < sr.length; i++) {
+                        drawingContext.rect(sr[i][0], yZoom, sr[i][1], zoom);
+                    }
                 }
             }
             drawingContext.fill();
@@ -1683,7 +1668,7 @@ function drawLoadingScreen() {
 }
 
 // Update size info (cm)
-window.updateScaleInfo = function(totalThreadsOverride) {
+function updateScaleInfo(totalThreadsOverride) {
     let domThread = domElements.threadMm;
     // By default, threadThickness = 0.5mm (Chunky wool) or use a Sett
     // Si on veut un Sett de 30 threads/cm => 1 fil = 0.33mm.
@@ -1709,6 +1694,7 @@ window.updateScaleInfo = function(totalThreadsOverride) {
 
     return { count: totalThreads, size: sizeCm.toFixed(2) };
 }
+window.updateScaleInfo = updateScaleInfo;
 
 // Globally mapped UI handlers
 let aboutModalElement = null;
@@ -1865,6 +1851,12 @@ window.importSRT = function() {
     if(!input) return;
     let text = input.value.trim().toUpperCase();
     if(!text) { alert(TRANSLATIONS[currentLang].msg_import_err); return; }
+
+    // 🛡️ Sentinel: Pre-validate input format to reject anomalous payloads
+    if (!/^[A-Z0-9\s\.\/]+$/.test(text)) {
+        alert(TRANSLATIONS[currentLang].msg_import_err);
+        return;
+    }
 
     let domSym = domElements.sym;
     let isAsymmetricImport = false;

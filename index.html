@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
   <title>Random Tartan Generator V1.1.2</title>
   <style>
     /* ==================== BASE DARK ==================== */
@@ -638,11 +638,11 @@
 
       <div class="controls-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 5px;">
           <div>
-              <label data-i18n="lbl_patch_qty">Quantité (10-100)</label>
+              <label for="patchwork-qty" data-i18n="lbl_patch_qty">Quantité (10-100)</label>
               <input type="number" id="patchwork-qty" value="10" min="10" max="100" class="input-number" aria-label="Nombre de tartans à générer" disabled style="opacity: 0.5; cursor: not-allowed;">
           </div>
           <div>
-              <label data-i18n="lbl_patch_size">Taille Tuile (px)</label>
+              <label for="patchwork-size" data-i18n="lbl_patch_size">Taille Tuile (px)</label>
               <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number" aria-label="Taille de la tuile en pixels" disabled style="opacity: 0.5; cursor: not-allowed;">
           </div>
       </div>
@@ -660,7 +660,7 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="libraries/jszip.min.js"></script>
   <script src="p5.min.js"></script>
   <script src="Random_Tartan_Generator.js"></script>
 </body>

@@ -55,3 +55,7 @@
 ## 2026-11-01 - Canvas path batching by color for pattern drawing
 **Learning:** Instead of issuing `beginPath()` and `fill()` for every row of a woven pattern, identifying the unique colors first and then constructing a single path per color for the entire canvas drastically reduces state changes in HTML5 canvas.
 **Action:** Collect all unique colors in an image or pattern beforehand. Loop over the unique colors, setting `fillStyle` once per color, and building the path consisting of multiple `rect()` calls over the whole canvas. This reduces drawing time by roughly 40-50%.
+
+## 2026-11-02 - Batched shift offsets for twill patterns
+**Learning:** The twill weave pattern repeats its offsets (shifts) based on the row modulus (e.g. `y % 4`). Rather than evaluating the pattern and generating the rectangles row-by-row, it is vastly more efficient to compute the four possible row layouts once, and then simply insert these pre-calculated rectangles for each row.
+**Action:** In rendering loops dealing with patterned offsets, pre-calculate the rectangle coordinates for each unique offset pattern (shift) horizontally, store them in arrays, and loop over the columns grouping by the shift pattern to minimize redundant condition evaluations and multiplications.
