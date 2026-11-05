@@ -1539,7 +1539,7 @@ function redrawTartan() {
             for (let s = 0; s < 4; s++) {
                 let xStart = shifts[s];
                 if (xStart === 3 && weftColor !== warpColors[0]) {
-                    shiftRects[s].push([0, zoom]);
+                    shiftRects[s].push(0, zoom);
                 }
                 let x = xStart;
                 let xZoom = x * zoom;
@@ -1547,16 +1547,16 @@ function redrawTartan() {
                     let c0 = warpColors[x];
                     let c1 = warpColors[x + 1];
                     if (weftColor !== c0) {
-                        if (weftColor !== c1) { shiftRects[s].push([xZoom, zoom2]); }
-                        else { shiftRects[s].push([xZoom, zoom]); }
+                        if (weftColor !== c1) { shiftRects[s].push(xZoom, zoom2); }
+                        else { shiftRects[s].push(xZoom, zoom); }
                     } else if (weftColor !== c1) {
-                        shiftRects[s].push([xZoom + zoom, zoom]);
+                        shiftRects[s].push(xZoom + zoom, zoom);
                     }
                     x += 4;
                     xZoom += zoom4;
                 }
                 if (x < cols && weftColor !== warpColors[x]) {
-                    shiftRects[s].push([xZoom, zoom]);
+                    shiftRects[s].push(xZoom, zoom);
                 }
             }
 
@@ -1570,8 +1570,8 @@ function redrawTartan() {
                     let rowColor = warpSeq[y % seqLen];
                     if (rowColor !== weftColor) continue;
                     let yZoom = y * zoom;
-                    for(let i = 0; i < sr.length; i++) {
-                        drawingContext.rect(sr[i][0], yZoom, sr[i][1], zoom);
+                    for(let i = 0; i < sr.length; i += 2) {
+                        drawingContext.rect(sr[i], yZoom, sr[i+1], zoom);
                     }
                 }
             }
