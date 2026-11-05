@@ -30,6 +30,10 @@ function assertEqual(actual, expected, message) {
     console.info(`✅ ${message}`);
 }
 
+function assertSilent(condition, message) {
+    if (!condition) throw new Error(`TEST FAILED: ${message}`);
+}
+
 function runTests() {
     let failed = 0;
     const testCases = [
@@ -126,6 +130,36 @@ function runTests() {
                 }
             }
             console.info('✅ fillTwillPixels follows the twill rule');
+        },
+        () => {
+            // Test addColorToOneStripe: exactly one stripe changes, no duplicate neighbor, no color lost
+            const make = () => ['R', 'G', 'R', 'B', 'G'].map(code => ({ code, hex: '#' + code, count: 4 }));
+            const color = { code: 'K', hex: '#K' };
+            for (let run = 0; run < 50; run++) {
+                const stripes = make();
+                assertSilent(addColorToOneStripe(stripes, color), 'addColorToOneStripe finds a stripe');
+                const changed = stripes.filter((s, i) => s.code !== make()[i].code).length;
+                assertSilent(changed === 1, 'addColorToOneStripe changes one stripe');
+                ['R', 'G', 'B', 'K'].forEach(c => assertSilent(stripes.some(s => s.code === c), 'addColorToOneStripe keeps every color'));
+            }
+            const full = [{ code: 'K', hex: '#K' }, { code: 'R', hex: '#R' }, { code: 'K', hex: '#K' }];
+            assertEqual(addColorToOneStripe(full, color), false, 'addColorToOneStripe leaves the pattern alone when no stripe fits');
+        },
+        () => {
+            // Test replaceColorInStripes
+            const c = code => ({ code, hex: '#' + code });
+            const stripe = code => ({ ...c(code), count: 4 });
+            const codes = list => list.map(s => s.code).join();
+
+            const avoided = replaceColorInStripes(['R', 'X', 'G'].map(stripe), '#X', [c('R'), c('G'), c('B')]);
+            assertEqual(codes(avoided), 'R,B,G', 'replaceColorInStripes avoids both neighbors');
+
+            const consecutive = replaceColorInStripes(['R', 'X', 'X', 'G'].map(stripe), '#X', [c('R'), c('G'), c('B')]);
+            assertEqual(consecutive.some((s, i) => i > 0 && s.hex === consecutive[i - 1].hex), false, 'replaceColorInStripes leaves no identical neighbors');
+
+            const merged = replaceColorInStripes(['R', 'X', 'G'].map(stripe), '#X', [c('R'), c('G')]);
+            assertEqual(merged.length, 2, 'replaceColorInStripes merges when there is no choice');
+            assertEqual(merged.reduce((sum, s) => sum + s.count, 0), 12, 'replaceColorInStripes keeps the thread count');
         }
     ];
 
