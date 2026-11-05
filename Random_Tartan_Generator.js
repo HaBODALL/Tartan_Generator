@@ -130,6 +130,13 @@ const MAX_HISTORY = 10;      // Max number of states kept
 let committedSettings = null; // Structure settings of the current pattern
 let appMessage = null;       // Message shown in the sidebar: { key, isError }
 
+// Thread relief shading (declared early: the render functions use them)
+const RELIEF_LEVELS = 64;
+const RELIEF_MIN = 0.45;
+const RELIEF_MAX = 1.15;
+const RELIEF_MIN_PIXELS = 3; // Below this many device pixels per thread, relief is invisible
+let reliefMasks = { k: 0, masks: null };
+
 // DOM Element Caching for Performance
 let domElements = {
     zoom: null,
@@ -200,6 +207,7 @@ const TRANSLATIONS = {
         opt_eff_overlay: "Filtre Overlay",
         opt_eff_noise: "Bruit (Grain)",
         opt_eff_exp: "Expérimental (Tous)",
+        opt_eff_relief: "Relief des fils",
         opt_wool: "Laine",
         opt_merino: "Mérinos",
         opt_cotton: "Coton",
@@ -264,6 +272,7 @@ const TRANSLATIONS = {
         opt_eff_overlay: "Overlay Filter",
         opt_eff_noise: "Noise (Grain)",
         opt_eff_exp: "Experimental (All)",
+        opt_eff_relief: "Thread relief",
         opt_wool: "Wool",
         opt_merino: "Merino",
         opt_cotton: "Cotton",
@@ -1608,6 +1617,97 @@ function fillTwillPixels(pixels, tileW, tileH, threadColors, isZTwist) {
     }
 }
 
+// --- Thread relief ---------------------------------------------------------
+// Each thread is drawn on k x k pixels and shaded like a round yarn: lighter along its
+// middle, darker at its edges and where it dives under the crossing thread.
+
+// across: 0..1 over the thread width; along: 0..1 over its float (two threads long)
+function reliefFactor(across, along) {
+    const roundness = 1 - 0.28 * Math.pow(2 * across - 1, 2);
+    const dive = 1 - 0.35 * Math.pow(2 * along - 1, 4);
+    const light = 1 + 0.1 * (0.5 - across); // Light from the top left
+    return roundness * dive * light * 1.08;
+}
+
+// Four k x k masks of shading levels: weft float start/end, warp float start/end.
+function getReliefMasks(k) {
+    if (reliefMasks.k === k) return reliefMasks.masks;
+    const masks = [0, 1, 2, 3].map(() => new Uint8Array(k * k));
+    for (let py = 0; py < k; py++) {
+        for (let px = 0; px < k; px++) {
+            const a = (px + 0.5) / k;
+            const b = (py + 0.5) / k;
+            for (let type = 0; type < 4; type++) {
+                const isWeft = type < 2;
+                const half = type & 1; // Floats span two threads: first or second half
+                const across = isWeft ? b : a;
+                const along = (half + (isWeft ? a : b)) / 2;
+                const f = Math.min(RELIEF_MAX, Math.max(RELIEF_MIN, reliefFactor(across, along)));
+                masks[type][py * k + px] = Math.round((f - RELIEF_MIN) / (RELIEF_MAX - RELIEF_MIN) * (RELIEF_LEVELS - 1));
+            }
+        }
+    }
+    reliefMasks = { k, masks };
+    return masks;
+}
+
+function shadePixel(pixel, factor) {
+    const r = Math.min(255, Math.round((pixel & 0xFF) * factor));
+    const g = Math.min(255, Math.round(((pixel >>> 8) & 0xFF) * factor));
+    const b = Math.min(255, Math.round(((pixel >>> 16) & 0xFF) * factor));
+    return (0xFF000000 | (b << 16) | (g << 8) | r) >>> 0;
+}
+
+// Same twill as fillTwillPixels, at k pixels per thread, with yarn shading.
+function fillTwillRelief(pixels, tileW, tileH, threadColors, isZTwist, k) {
+    const shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
+    const masks = getReliefMasks(k);
+    const shades = [];
+    const shadeBase = new Map();
+    const baseFor = (color) => {
+        let base = shadeBase.get(color);
+        if (base === undefined) {
+            base = shades.length;
+            for (let l = 0; l < RELIEF_LEVELS; l++) {
+                shades.push(shadePixel(color, RELIEF_MIN + l * (RELIEF_MAX - RELIEF_MIN) / (RELIEF_LEVELS - 1)));
+            }
+            shadeBase.set(color, base);
+        }
+        return base;
+    };
+    const weftOver = (x, y) => ((x - shifts[y & 3]) & 3) < 2;
+    const rowPixels = tileW * k;
+
+    for (let y = 0; y < tileH; y++) {
+        for (let x = 0; x < tileW; x++) {
+            let color, type;
+            if (weftOver(x, y)) {
+                color = threadColors[y];
+                type = ((x - shifts[y & 3]) & 3) === 0 ? 0 : 1;
+            } else {
+                color = threadColors[x];
+                type = weftOver(x, y - 1) ? 2 : 3;
+            }
+            const base = baseFor(color);
+            const mask = masks[type];
+            let offset = y * k * rowPixels + x * k;
+            for (let py = 0; py < k; py++) {
+                const m = py * k;
+                for (let px = 0; px < k; px++) pixels[offset + px] = shades[base + mask[m + px]];
+                offset += rowPixels;
+            }
+        }
+    }
+}
+
+// Pixels per thread in the tile: about one tile pixel per device pixel, or 1 without relief.
+function getTileScale(effectType, zoom) {
+    if (effectType !== 'relief') return 1;
+    const devicePixels = zoom * pixelDensity();
+    if (devicePixels < RELIEF_MIN_PIXELS) return 1;
+    return Math.min(16, Math.round(devicePixels));
+}
+
 let weaveTileCanvas = null;
 
 function redrawTartan() {
@@ -1632,22 +1732,29 @@ function redrawTartan() {
     let tileW = Math.min(period, cols);
     let tileH = Math.min(period, rows);
 
+    // Pixels per thread in the tile (more than 1 only for the relief effect)
+    let k = getTileScale(effectType, zoom);
+
     if (!weaveTileCanvas) weaveTileCanvas = document.createElement('canvas');
-    weaveTileCanvas.width = tileW;
-    weaveTileCanvas.height = tileH;
+    weaveTileCanvas.width = tileW * k;
+    weaveTileCanvas.height = tileH * k;
 
     let tileCtx = weaveTileCanvas.getContext('2d');
-    let tile = tileCtx.createImageData(tileW, tileH);
+    let tile = tileCtx.createImageData(tileW * k, tileH * k);
     let threadColors = buildThreadColors(tartanStripes, isSymmetric, Math.max(tileW, tileH));
-    fillTwillPixels(new Uint32Array(tile.data.buffer), tileW, tileH, threadColors, isZTwist);
+    let tilePixels = new Uint32Array(tile.data.buffer);
+    if (k > 1) fillTwillRelief(tilePixels, tileW, tileH, threadColors, isZTwist, k);
+    else fillTwillPixels(tilePixels, tileW, tileH, threadColors, isZTwist);
     tileCtx.putImageData(tile, 0, 0);
 
     drawingContext.save();
-    // Crisp threads when enlarged; blend them when several threads share a device pixel
-    drawingContext.imageSmoothingEnabled = zoom * pixelDensity() < 1;
-    drawingContext.scale(zoom, zoom);
+    // Flat: crisp threads when enlarged, blended when several share a device pixel.
+    // Relief: the tile is close to device resolution, so smooth any small rescaling.
+    let devicePixels = zoom * pixelDensity();
+    drawingContext.imageSmoothingEnabled = k > 1 ? devicePixels !== k : devicePixels < 1;
+    drawingContext.scale(zoom / k, zoom / k);
     drawingContext.fillStyle = drawingContext.createPattern(weaveTileCanvas, 'repeat');
-    drawingContext.fillRect(0, 0, cols, rows);
+    drawingContext.fillRect(0, 0, cols * k, rows * k);
     drawingContext.restore();
 
     // --- POST-PROCESSING EFFECTS OVER STANDARD BLOCKS ---

@@ -132,6 +132,33 @@ function runTests() {
             console.info('✅ fillTwillPixels follows the twill rule');
         },
         () => {
+            // Test fillTwillRelief: same twill ownership as fillTwillPixels, shaded around the base color
+            const colors = [hexToPixel('#FF0000'), hexToPixel('#00FF00'), hexToPixel('#0000FF'), hexToPixel('#FFFF00'), hexToPixel('#FF00FF')];
+            const k = 6, w = 5, h = 5;
+            for (const isZ of [true, false]) {
+                const flat = new Uint32Array(w * h);
+                fillTwillPixels(flat, w, h, colors, isZ);
+                const relief = new Uint32Array(w * k * h * k);
+                fillTwillRelief(relief, w, h, colors, isZ, k);
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const base = flat[y * w + x];
+                        const centre = relief[(y * k + k / 2) * w * k + x * k + k / 2];
+                        // Pure colors stay pure: the same channels are lit
+                        const lit = p => [p & 0xFF, (p >>> 8) & 0xFF, (p >>> 16) & 0xFF].map(c => c > 0).join();
+                        if (lit(centre) !== lit(base)) throw new Error(`TEST FAILED: relief owner wrong at ${x},${y}`);
+                    }
+                }
+            }
+            console.info('✅ fillTwillRelief keeps the twill');
+            const masks = getReliefMasks(8);
+            const level = (m, px, py) => masks[m][py * 8 + px];
+            assertSilent(level(0, 3, 4) > level(0, 3, 0), 'relief is lighter in the middle of a thread');
+            assertSilent(level(0, 7, 4) > level(0, 0, 4), 'relief darkens where a float dives under');
+            assertSilent(level(2, 4, 3) > level(2, 0, 3), 'warp relief runs across x');
+            console.info('✅ relief masks shade like a round yarn');
+        },
+        () => {
             // Test addColorToOneStripe: exactly one stripe changes, no duplicate neighbor, no color lost
             const make = () => ['R', 'G', 'R', 'B', 'G'].map(code => ({ code, hex: '#' + code, count: 4 }));
             const color = { code: 'K', hex: '#K' };
