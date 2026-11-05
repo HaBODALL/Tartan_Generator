@@ -59,3 +59,7 @@
 ## 2026-11-02 - Batched shift offsets for twill patterns
 **Learning:** The twill weave pattern repeats its offsets (shifts) based on the row modulus (e.g. `y % 4`). Rather than evaluating the pattern and generating the rectangles row-by-row, it is vastly more efficient to compute the four possible row layouts once, and then simply insert these pre-calculated rectangles for each row.
 **Action:** In rendering loops dealing with patterned offsets, pre-calculate the rectangle coordinates for each unique offset pattern (shift) horizontally, store them in arrays, and loop over the columns grouping by the shift pattern to minimize redundant condition evaluations and multiplications.
+
+## 2026-11-10 - Flat Array Optimization in Tight Loops
+**Learning:** In tight Javascript rendering loops (such as HTML5 Canvas drawing), pushing consecutive grouped elements into a single flat array (e.g., `[x, width, ...]`) rather than creating arrays of sub-arrays (e.g., `[[x, width], ...]`) reduces garbage collection pressure and allocation overhead.
+**Action:** When accumulating coordinates or parameters for batch processing, use a 1D flat array and iterate with an appropriate step (e.g., `i += 2`) to minimize object allocation overhead.
