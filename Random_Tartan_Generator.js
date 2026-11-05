@@ -115,18 +115,11 @@ const SRT_PALETTE = [
    SECTION 2 : GLOBAL VARIABLES
    ========================================== */
 
-let canvas;
-let pixelDensity_val = 1;
-
 // Tartan state
 let tartanStripes = [];      // Generated stripes [{color, width, colorCode}, ...]
 let userPalette = [];        // User palette [{hex, code, name}, ...]
-let isSymmetric = true;      // Symmetric mode enabled
 
 // Rendering parameters
-let threadSize = 2.0;        // Pixel size of a thread (zoom)
-let threadMM = 0.3;          // Actual thread diameter in mm
-let settValue = 260;         // Sett (threads per 10cm)
 
 // Generation ID
 let generationID = 0;
@@ -134,10 +127,6 @@ let generationID = 0;
 // HISTORY (UNDO)
 let historyStack = [];       // Stack of previous states
 const MAX_HISTORY = 10;      // Max number of states kept
-
-// Off-screen graphics for performance
-let patternBuffer = null;
-let needsRedraw = true;
 
 // DOM Element Caching for Performance
 let domElements = {
@@ -301,15 +290,11 @@ function setup() {
     bindEvents();
 
     // Initial Startup
-    setTimeout(() => {
-        if (!loadState()) {
-            if (window.randomizeUserPalette && window.handleGenerateClick) {
-                randomizeUserPalette();
-                window.handleGenerateClick();
-            }
-        }
-        setLanguage('fr');
-    }, 100);
+    if (!loadState()) {
+        randomizeUserPalette();
+        window.handleGenerateClick();
+    }
+    setLanguage('fr');
 }
 
 function saveState() {
@@ -325,7 +310,7 @@ function saveState() {
         sett: domElements.sett?.value || 260,
         threadMm: domElements.threadMm?.value || 0.30,
         zoom: domElements.zoom?.value || 2.0,
-        weaveZ: domElements.weaveZ?.checked || true,
+        weaveZ: domElements.weaveZ?.checked ?? true,
         effectType: domElements.effectType?.value || 'none'
     };
     try {
@@ -333,6 +318,13 @@ function saveState() {
     } catch(e) {
         console.warn("Could not save to localStorage", e);
     }
+}
+
+// For inputs that fire continuously (zoom, pinch): localStorage writes are synchronous.
+let saveStateTimer = null;
+function scheduleSaveState() {
+    clearTimeout(saveStateTimer);
+    saveStateTimer = setTimeout(saveState, 250);
 }
 
 function loadState() {
@@ -444,8 +436,7 @@ function bindEvents() {
     let inputsToWatch = [
         'in-stripes',
         'in-maxwidth',
-        'in-sett',
-        'check-sym'
+        'in-sett'
     ];
 
     inputsToWatch.forEach(id => {
@@ -518,7 +509,7 @@ function bindEvents() {
     if (inThreadMm) inThreadMm.addEventListener('input', () => {
         updateScaleInfo();
         redrawTartan();
-        saveState();
+        scheduleSaveState();
     });
 
     const inZoom = domElements.zoom;
@@ -608,14 +599,22 @@ function bindEvents() {
     }
 }
 document.addEventListener('keydown', (e) => {
-    // Ignore if focus is in an input
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    // Form controls keep all their keys (typing, arrows, type-ahead)
+    if (e.target.closest('input, textarea, select')) return;
 
-    switch(e.key.toLowerCase()) {
+    const key = e.key.toLowerCase();
+
+    // Space activates the focused button, link or disclosure
+    if (key === ' ' && e.target.closest('button, summary, a, [role="button"]')) return;
+
+    // Browser shortcuts (Ctrl+P, Ctrl+S...) stay untouched, except undo
+    if (e.altKey || ((e.ctrlKey || e.metaKey) && key !== 'z')) return;
+
+    switch(key) {
         case ' ':       // Space = Generate
         case 'g':
             e.preventDefault();
-            handleGenerateClick();  // ← CORRIGÉ
+            handleGenerateClick();
             break;
         case 's':       // S = Export all
             e.preventDefault();
@@ -836,21 +835,8 @@ function updateActualSett() {
         return;
     }
 
-    // Calculate total number of threads
-    let totalThreads = 0;
-    for (let s of tartanStripes) {
-        totalThreads += s.count || 0;
-    }
-
-    // Avoid division by zero
-    if (totalThreads === 0 || threadMM <= 0) {
-        display.textContent = '';
-        return;
-    }
-
-    // Calculate actual sett (threads per 10cm)
-    let widthCm = totalThreads * threadMM / 10;
-    let actualSett = Math.round(totalThreads / widthCm * 10);
+    // Same measure as the generator's target: the threads listed in the stripes
+    let actualSett = sumStripeThreads(tartanStripes);
 
     // Comparison with target
     let targetSett = parseInt(domElements.sett?.value) || 260;
@@ -1252,18 +1238,11 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
         return;
     }
 
-    // 4. UI Management
-    drawLoadingScreen();
-
-    // 5. Generation with delay
-    setTimeout(() => {
-        generateNewTartan(keepColors, keepStructure); // ← PASS PARAMS
-
-        if(typeof redrawTartan === 'function') redrawTartan();
-        if(typeof updateGeneratedListUI === 'function') updateGeneratedListUI();
-        saveState();
-
-    }, 50);
+    // 4. Generation
+    generateNewTartan(keepColors, keepStructure);
+    redrawTartan();
+    updateGeneratedListUI();
+    saveState();
 }
 
 window.generateNewTartan = function generateNewTartan(lockColors = false, lockStructure = false) {
@@ -1331,9 +1310,6 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
             previousColorCode = newColor.code;
         });
 
-        if (lockColors) {
-        } else {
-        }
         return;
     }
 
@@ -1342,11 +1318,6 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
     // If checkbox is NOT checked, we might want to regenerate palette entirely?
     // For now, assume "Keep Colors" means "Do not touch the left list".
     // If 'lock-palette' is FALSE, we could trigger a randomizeUserPalette()?
-
-    if (!lockColors) {
-        // Optionnel : Si l'utilisateur veut que le bouton génère aussi une nouvelle palette
-        // Pour l'instant, on laisse l'utilisateur gérer sa palette manuellement.
-    }
 
     // --- CASE D: STANDARD GENERATION ---
 
@@ -1420,164 +1391,109 @@ function shuffleArray(array) {
 // 6. RENDERING (WEAVING)
 // =========================================================================
 
+// Threads listed in the stripes, i.e. the half-sett of a symmetric tartan.
+function sumStripeThreads(stripes) {
+    let total = 0;
+    for (let i = 0; i < stripes.length; i++) total += stripes[i].count || 0;
+    return total;
+}
+
+// Number of threads in one full repeat of the sett.
+function countSettThreads(stripes, isSymmetric) {
+    let total = sumStripeThreads(stripes);
+    // Both pivots appear once per repeat, the stripes between them twice (A-B-C-B, then A again)
+    if (isSymmetric && stripes.length >= 2) {
+        total = total * 2 - stripes[0].count - stripes[stripes.length - 1].count;
+    }
+    return total;
+}
+
+// Twill rows shift by one thread per row, so the weave repeats every lcm(threads, 4) threads.
+function getWeavePeriod(settThreads) {
+    if (settThreads % 4 === 0) return settThreads;
+    return settThreads % 2 === 0 ? settThreads * 2 : settThreads * 4;
+}
+
+function hexToPixel(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    // ImageData pixels are little-endian ABGR once viewed as a Uint32Array
+    return (0xFF000000 | ((n & 0xFF) << 16) | (n & 0xFF00) | (n >>> 16)) >>> 0;
+}
+
+// Colors of the first `length` threads, wrapping around the sett.
+// Only what is needed is expanded, so huge imported counts (K999999) stay cheap.
+function buildThreadColors(stripes, isSymmetric, length) {
+    const colors = new Uint32Array(length);
+    const last = stripes.length - 1;
+    let filled = 0;
+    const fill = (stripe) => {
+        const end = Math.min(filled + stripe.count, length);
+        if (end > filled) colors.fill(hexToPixel(stripe.hex), filled, end);
+        filled = end;
+    };
+    while (filled < length) {
+        for (let i = 0; i <= last && filled < length; i++) fill(stripes[i]);
+        if (isSymmetric) {
+            for (let i = last - 1; i >= 1 && filled < length; i--) fill(stripes[i]);
+        }
+    }
+    return colors;
+}
+
+// 2/2 twill at one pixel per thread: the weft passes over two threads, under two.
+function fillTwillPixels(pixels, tileW, tileH, threadColors, isZTwist) {
+    const shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
+    let offset = 0;
+    for (let y = 0; y < tileH; y++) {
+        const weft = threadColors[y];
+        const shift = shifts[y & 3];
+        for (let x = 0; x < tileW; x++) {
+            pixels[offset++] = ((x - shift) & 3) < 2 ? weft : threadColors[x];
+        }
+    }
+}
+
+let weaveTileCanvas = null;
+
 function redrawTartan() {
     // Security: If no data, draw nothing
     if(!tartanStripes || tartanStripes.length === 0) return;
 
-    // 1. Retrieve rendering parameters
     // Zoom defines the size of a "thread" in pixels on screen
-    let domZoom = domElements.zoom;
-    let zoom = domZoom ? (parseFloat(domZoom.value) || 2.0) : 2.0;
+    let zoom = parseFloat(domElements.zoom?.value) || 2.0;
+    let isSymmetric = domElements.sym ? domElements.sym.checked : false;
+    let isZTwist = domElements.weaveZ ? domElements.weaveZ.checked : true; // Default Z
 
-    // Symmetry check
-    let domSym = domElements.sym;
-    let isSymmetric = domSym ? domSym.checked : false;
+    let seqLen = countSettThreads(tartanStripes, isSymmetric);
+    if (seqLen <= 0) return;
 
-    // Retrieve weaving direction (Z or S)
-    let domWeaveZ = domElements.weaveZ;
-    let isZTwist = domWeaveZ ? domWeaveZ.checked : true; // Default Z
-
-    // 2. Construction de la séquence de threads (WARP - Chaîne)
-    // On convertit "Rouge: 4 threads, Bleu: 6 threads" en un tableau [R,R,R,R, B,B,B,B,B,B]
-    // ⚡ Bolt Optimization: Use fast array allocation for warp sequence
-    let estLen = 0;
-    for (let i = 0, len = tartanStripes.length; i < len; i++) {
-        estLen += tartanStripes[i].count;
-    }
-    estLen *= isSymmetric ? 2 : 1;
-    let warpSeq = new Array(estLen);
-    let idx = 0;
-
-    // Part A (Forward)
-    for(let i = 0, len = tartanStripes.length; i < len; i++) {
-        let s = tartanStripes[i];
-        let hex = s.hex;
-        let count = s.count;
-        for(let k=0; k<count; k++) warpSeq[idx++] = hex;
-    }
-
-    // Part B (Backward - if symmetric)
-    // Do not repeat last block to avoid doubling (A-B-C-B-A and not A-B-C-C-B-A)
-    // Note: In complex tartans, symmetry sometimes pivots differently. Simple pivot here.
-    if (isSymmetric) {
-        for(let i = tartanStripes.length - 2; i >= 0; i--) {
-            let s = tartanStripes[i];
-            let hex = s.hex;
-            let count = s.count;
-            for(let k=0; k<count; k++) warpSeq[idx++] = hex;
-        }
-        // NOTE: If you want total symmetry including last stripe: change index to length-1
-    }
-
-    warpSeq.length = idx; // Truncate just in case
-    let seqLen = idx;
-
-    // 3. Canvas Preparation
-    clear();
-    background(20);
-    noStroke();
-
-    // Calcul du nombre de threads à dessiner pour remplir l'écran
     let cols = Math.ceil(width / zoom);
     let rows = Math.ceil(height / zoom);
-
-    // 4. WEAVING LOOP (Twill 2/2)
-    // This is where the magic happens.
-    // Standard tartan algorithm is a 2/2 twill: 2 over, 2 under, shifted by 1 each line.
-
     let effectType = domElements.effectType ? domElements.effectType.value : 'none';
 
-    // ⚡ Bolt Optimization: Pre-calculate warp sequence colors for each column
-    let warpColors = new Array(cols);
-    for (let x = 0; x < cols; x++) {
-        warpColors[x] = warpSeq[x % seqLen];
-    }
+    // Weave one repeat at one pixel per thread, then let the browser tile and scale it.
+    // The cost depends on the sett, not on the screen size or the zoom.
+    let period = getWeavePeriod(seqLen);
+    let tileW = Math.min(period, cols);
+    let tileH = Math.min(period, rows);
 
-    // --- STANDARD BLOCKS RENDERING ---
+    if (!weaveTileCanvas) weaveTileCanvas = document.createElement('canvas');
+    weaveTileCanvas.width = tileW;
+    weaveTileCanvas.height = tileH;
 
-    // ⚡ Bolt Optimization: Draw entire warp vertically, grouping adjacent identical colors
-    if (cols > 0) {
-        let currentWarpColor = warpColors[0];
-        let warpStart = 0;
-        for (let x = 1; x <= cols; x++) {
-            if (x === cols || warpColors[x] !== currentWarpColor) {
-                drawingContext.fillStyle = currentWarpColor;
-                drawingContext.fillRect(warpStart * zoom, 0, (x - warpStart) * zoom, rows * zoom);
-                if (x < cols) {
-                    currentWarpColor = warpColors[x];
-                    warpStart = x;
-                }
-            }
-        }
-    }
+    let tileCtx = weaveTileCanvas.getContext('2d');
+    let tile = tileCtx.createImageData(tileW, tileH);
+    let threadColors = buildThreadColors(tartanStripes, isSymmetric, Math.max(tileW, tileH));
+    fillTwillPixels(new Uint32Array(tile.data.buffer), tileW, tileH, threadColors, isZTwist);
+    tileCtx.putImageData(tile, 0, 0);
 
-    // Pre-calculate shift offsets for twill patterns
-    let shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
-
-    // ⚡ Bolt Optimization: Draw only the visible weft (horizontal) threads
-    if (rows > 0) {
-        let zoom4 = zoom * 4;
-        let zoom8 = zoom * 8;
-
-        // ⚡ Bolt Optimization: Collect all unique colors in the weft to batch operations by color
-        let uniqueWeftColors = [];
-        for(let y = 0; y < seqLen; y++) {
-            let c = warpSeq[y];
-            if (uniqueWeftColors.indexOf(c) === -1) uniqueWeftColors.push(c);
-        }
-
-        let zoom2 = zoom * 2;
-        let maxCol = cols - 2;
-
-        // ⚡ Bolt Optimization: Loop over each unique color, and only execute path actions per color
-        for (let colorIdx = 0; colorIdx < uniqueWeftColors.length; colorIdx++) {
-            let weftColor = uniqueWeftColors[colorIdx];
-            drawingContext.fillStyle = weftColor;
-
-            // ⚡ Bolt Optimization: Pre-calculate horizontal weft thread rectangles for each possible shift
-            let shiftRects = [[], [], [], []];
-            for (let s = 0; s < 4; s++) {
-                let xStart = shifts[s];
-                if (xStart === 3 && weftColor !== warpColors[0]) {
-                    shiftRects[s].push([0, zoom]);
-                }
-                let x = xStart;
-                let xZoom = x * zoom;
-                while (x <= maxCol) {
-                    let c0 = warpColors[x];
-                    let c1 = warpColors[x + 1];
-                    if (weftColor !== c0) {
-                        if (weftColor !== c1) { shiftRects[s].push([xZoom, zoom2]); }
-                        else { shiftRects[s].push([xZoom, zoom]); }
-                    } else if (weftColor !== c1) {
-                        shiftRects[s].push([xZoom + zoom, zoom]);
-                    }
-                    x += 4;
-                    xZoom += zoom4;
-                }
-                if (x < cols && weftColor !== warpColors[x]) {
-                    shiftRects[s].push([xZoom, zoom]);
-                }
-            }
-
-            drawingContext.beginPath();
-
-            // ⚡ Bolt Optimization: Draw all rows that share the same shift grouping
-            for (let s = 0; s < 4; s++) {
-                let sr = shiftRects[s];
-                if (sr.length === 0) continue;
-                for (let y = s; y < rows; y += 4) {
-                    let rowColor = warpSeq[y % seqLen];
-                    if (rowColor !== weftColor) continue;
-                    let yZoom = y * zoom;
-                    for(let i = 0; i < sr.length; i++) {
-                        drawingContext.rect(sr[i][0], yZoom, sr[i][1], zoom);
-                    }
-                }
-            }
-            drawingContext.fill();
-        }
-    }
+    drawingContext.save();
+    // Crisp threads when enlarged; blend them when several threads share a device pixel
+    drawingContext.imageSmoothingEnabled = zoom * pixelDensity() < 1;
+    drawingContext.scale(zoom, zoom);
+    drawingContext.fillStyle = drawingContext.createPattern(weaveTileCanvas, 'repeat');
+    drawingContext.fillRect(0, 0, cols, rows);
+    drawingContext.restore();
 
     // --- POST-PROCESSING EFFECTS OVER STANDARD BLOCKS ---
     if (effectType === 'overlay') {
@@ -1674,14 +1590,7 @@ function updateScaleInfo(totalThreadsOverride) {
     // Si on veut un Sett de 30 threads/cm => 1 fil = 0.33mm.
     let threadMm = domThread ? (parseFloat(domThread.value) || 0.5) : 0.5;
 
-    let totalThreads = 0;
-    if (totalThreadsOverride) {
-        totalThreads = totalThreadsOverride;
-    } else {
-        tartanStripes.forEach(s => totalThreads += s.count);
-        let domSym = domElements.sym;
-        if(domSym && domSym.checked) totalThreads = (totalThreads * 2) - tartanStripes[tartanStripes.length-1].count; // Approx symmetry
-    }
+    let totalThreads = totalThreadsOverride || countSettThreads(tartanStripes, domElements.sym?.checked || false);
 
     // Calculate width: (NbThreads * Thickness mm) / 10 to get cm
     let sizeCm = (totalThreads * threadMm) / 10;
@@ -1707,9 +1616,9 @@ window.closeAboutModal = function(e) {
     if (!aboutModalElement) aboutModalElement = domElements.aboutModal;
     if (aboutModalElement) aboutModalElement.style.display = 'none';
 }
-window.updateZoom = function() { redrawTartan(); saveState(); }
+window.updateZoom = function() { redrawTartan(); scheduleSaveState(); }
 window.updateSymmetry = function() {
-    // We might need to update SRT text if symmetry changes display
+    updateGeneratedListUI(); // The SRT notation depends on symmetry
     redrawTartan();
     saveState();
 }
@@ -1753,13 +1662,13 @@ function exportTXT() {
     content += buildInkStitchCode(tartanStripes, isSymmetric);
     content += `\n\n`;
     // Statistics
-    let totalThreads = tartanStripes.reduce((sum, s) => sum + (s.count || 0), 0);
+    let settThreads = countSettThreads(tartanStripes, isSymmetric);
     let threadMM = parseFloat(domElements.threadMm?.value) || 1.11;
-    let sizeCM = ((totalThreads * 2 * threadMM) / 10).toFixed(1);
+    let sizeCM = ((settThreads * threadMM) / 10).toFixed(1);
 
     content += `STATISTIQUES:\n`;
-    content += `- Demi-sett: ${totalThreads} fils\n`;
-    content += `- Sett complet: ${totalThreads * 2} fils\n`;
+    if (isSymmetric) content += `- Demi-sett: ${sumStripeThreads(tartanStripes)} fils\n`;
+    content += `- Sett complet: ${settThreads} fils\n`;
     content += `- Largeur estimée: ${sizeCM} cm (fil ${threadMM}mm)\n`;
     content += `- Nombre de bandes: ${tartanStripes.length}\n\n`;
 
@@ -2154,6 +2063,17 @@ window.generatePatchwork = function() {
 // ============================================================================
 // PATCHWORK EXPORT AS ZIP (Individual Tiles)
 // ============================================================================
+function loadJSZip() {
+    if (typeof JSZip !== 'undefined') return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        let script = document.createElement('script');
+        script.src = 'libraries/jszip.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
 window.generatePatchworkZIP = async function() {
     if (currentLang === 'en') {
         alert("The Patchwork ZIP feature is currently under maintenance.");
@@ -2161,7 +2081,9 @@ window.generatePatchworkZIP = async function() {
         alert("La fonctionnalité Patchwork ZIP est actuellement en maintenance.");
     }
     return;
-    if (typeof JSZip === 'undefined') {
+    try {
+        await loadJSZip();
+    } catch (error) {
         alert("La bibliothèque JSZip n'est pas chargée. Impossible de créer le ZIP.");
         return;
     }

@@ -23,12 +23,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Run tests
+        run: node test.js
+      - name: Collect site files
+        run: |
+          mkdir -p _site/libraries
+          cp index.html Random_Tartan_Generator.js p5.min.js LICENSE _site/
+          cp libraries/jszip.min.js _site/libraries/
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '_site'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

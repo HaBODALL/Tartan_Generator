@@ -1,0 +1,5 @@
+*.orig
+*.rej
+*.diff
+.DS_Store
+Thumbs.db
