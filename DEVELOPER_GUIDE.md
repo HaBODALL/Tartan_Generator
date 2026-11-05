@@ -38,7 +38,7 @@ To effectively modify this codebase, you need to understand three main concepts:
 
 ### A. The p5.js Loop (`setup()` and `draw()`)
 *   `setup()`: Runs once when the page loads. It initializes the canvas size, binds UI events, and sets up the initial state.
-*   `draw()`: Normally an infinite loop in p5.js, but for performance reasons, we use `noLoop()` in `setup()`. The canvas is only redrawn when a specific action occurs (e.g., resizing, changing a color, generating a new pattern). The UI triggers the `redrawTartan()` function, which eventually calls p5's `redraw()`.
+*   `draw()`: Normally an infinite loop in p5.js, but for performance reasons, we use `noLoop()` in `setup()`. The canvas is only redrawn when a specific action occurs (e.g., resizing, changing a color, generating a new pattern). The UI calls `redrawTartan()` directly: it weaves one repeat of the pattern at one pixel per thread into an offscreen canvas, then fills the main canvas with it as a scaled, repeating pattern.
 
 ### B. Vanilla DOM Manipulation
 Since there is no frontend framework, UI interactions are handled via standard JavaScript: `document.getElementById()`, `addEventListener()`, and reading/writing `value` or `textContent`.
@@ -113,7 +113,7 @@ Pour modifier ce code efficacement, trois concepts principaux sont à maîtriser
 
 ### A. Le cycle de vie p5.js (`setup()` et `draw()`)
 *   `setup()` : S'exécute une seule fois au chargement. Il initialise la taille de la toile, attache les événements à l'UI et configure l'état initial.
-*   `draw()` : Habituellement une boucle infinie dans p5.js, mais pour des raisons de performances, nous utilisons `noLoop()` dans `setup()`. Le canevas n'est redessiné que lorsqu'une action spécifique se produit (redimensionnement, changement de couleur, génération). L'interface déclenche la fonction `redrawTartan()`, qui appelle in fine la méthode `redraw()` de p5.js.
+*   `draw()` : Habituellement une boucle infinie dans p5.js, mais pour des raisons de performances, nous utilisons `noLoop()` dans `setup()`. Le canevas n'est redessiné que lorsqu'une action spécifique se produit (redimensionnement, changement de couleur, génération). L'interface appelle directement `redrawTartan()` : cette fonction tisse une répétition du motif, à raison d'un pixel par fil, dans un canevas hors écran, puis remplit le canevas principal avec ce motif répété et mis à l'échelle.
 
 ### B. Manipulation du DOM (Vanilla JS)
 En l'absence de framework, les interactions avec l'interface sont gérées en JavaScript standard : `document.getElementById()`, `addEventListener()`, et la lecture/écriture des propriétés `value` ou `textContent`.
