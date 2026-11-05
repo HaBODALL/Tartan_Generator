@@ -127,6 +127,8 @@ let generationID = 0;
 // HISTORY (UNDO)
 let historyStack = [];       // Stack of previous states
 const MAX_HISTORY = 10;      // Max number of states kept
+let committedSettings = null; // Structure settings of the current pattern
+let appMessage = null;       // Message shown in the sidebar: { key, isError }
 
 // DOM Element Caching for Performance
 let domElements = {
@@ -204,6 +206,10 @@ const TRANSLATIONS = {
         opt_custom: "Personnalisé",
         lbl_weave_dir: "Sens du tissage",
         btn_undo: "Annuler",
+        title_undo: "Annuler ({n} étapes disponibles)",
+        sec_history: "Historique (10 motifs max)",
+        hist_empty: "Les motifs précédents apparaîtront ici.",
+        hist_restore: "Revenir à ce motif",
         btn_export_all: "Exporter tout",
         btn_about: "ℹ️ À propos",
         title_about: "À propos",
@@ -264,6 +270,10 @@ const TRANSLATIONS = {
         opt_custom: "Custom",
         lbl_weave_dir: "Weave direction",
         btn_undo: "Undo",
+        title_undo: "Undo ({n} steps available)",
+        sec_history: "History (10 patterns max)",
+        hist_empty: "Previous patterns will appear here.",
+        hist_restore: "Go back to this pattern",
         btn_export_all: "Export All",
         btn_about: "ℹ️ About",
         title_about: "About",
@@ -311,7 +321,9 @@ function saveState() {
         threadMm: domElements.threadMm?.value || 0.30,
         zoom: domElements.zoom?.value || 2.0,
         weaveZ: domElements.weaveZ?.checked ?? true,
-        effectType: domElements.effectType?.value || 'none'
+        effectType: domElements.effectType?.value || 'none',
+        threadType: domElements.threadType?.value || 'custom',
+        history: historyStack
     };
     try {
         localStorage.setItem('tartanGeneratorState', JSON.stringify(state));
@@ -338,6 +350,9 @@ function loadState() {
         tartanStripes = state.stripes;
         userPalette = state.palette || [];
         generationID = state.generationID || 0;
+        historyStack = Array.isArray(state.history)
+            ? state.history.filter(h => h && Array.isArray(h.stripes) && h.stripes.length > 0).slice(-MAX_HISTORY)
+            : [];
 
         if (domElements.sym) domElements.sym.checked = state.symmetric;
         if (domElements.checkMode) domElements.checkMode.checked = state.checkMode;
@@ -358,9 +373,17 @@ function loadState() {
             domElements.effectType.value = state.effectType;
         }
 
+        if (domElements.threadType && state.threadType) {
+            domElements.threadType.value = state.threadType;
+            if (domElements.threadType.selectedIndex < 0) domElements.threadType.value = 'custom';
+            applyThreadTypeUI();
+        }
+
+        commitStructureSettings();
         updateUserPaletteUI();
         updateGeneratedListUI();
         redrawTartan();
+        updateUndoButton();
         return true;
     } catch(e) {
         console.warn("Could not load from localStorage", e);
@@ -416,6 +439,8 @@ function cacheDomElements() {
     domElements.patchworkSize = document.getElementById('patchwork-size');
     domElements.patchworkInfo = document.getElementById('patchwork-info');
     domElements.importText = document.getElementById('import-text');
+    domElements.appMessage = document.getElementById('app-message');
+    domElements.historyList = document.getElementById('history-list');
 }
 
 function initCanvas() {
@@ -435,6 +460,7 @@ function initCanvas() {
 function bindEvents() {
     let inputsToWatch = [
         'in-stripes',
+        'in-minwidth',
         'in-maxwidth',
         'in-sett'
     ];
@@ -442,11 +468,8 @@ function bindEvents() {
     inputsToWatch.forEach(id => {
         let el = document.getElementById(id);
         if(el) {
-            el.addEventListener('input', () => {
-                if (window.handleGenerateClick) {
-                    window.handleGenerateClick(true);
-                }
-            });
+            // 'change' waits for the end of typing: "260" is not read as "2", then "26"
+            el.addEventListener('change', () => window.handleGenerateClick(true));
         }
     });
 
@@ -672,6 +695,8 @@ function setLanguage(lang) {
 
     // Refresh language-dependent UI (Palette, Modal...)
     updateUserPaletteUI();
+    updateUndoButton();
+    renderAppMessage();
 }
 // ================= 4. Palette UI =================
 
@@ -704,37 +729,88 @@ function randomizeUserPalette() {
     updateUserPaletteUI();
 }
 
-function addToPalette(srtIndex) {
-    let t = TRANSLATIONS[currentLang];
+// Gives the new color to one stripe, so the rest of the pattern stays as it is.
+// Prefers a stripe whose current color is also used elsewhere, so no color disappears.
+function addColorToOneStripe(stripes, color) {
+    const isFree = (i) => stripes[i].hex !== color.hex
+        && stripes[i - 1]?.code !== color.code
+        && stripes[i + 1]?.code !== color.code;
+    const uses = new Map();
+    stripes.forEach(s => uses.set(s.hex, (uses.get(s.hex) || 0) + 1));
 
+    const free = stripes.map((s, i) => i).filter(isFree);
+    const spare = free.filter(i => uses.get(stripes[i].hex) > 1);
+    const candidates = spare.length > 0 ? spare : free;
+    if (candidates.length === 0) return false;
+
+    const stripe = stripes[candidates[Math.floor(Math.random() * candidates.length)]];
+    stripe.code = color.code;
+    stripe.hex = color.hex;
+    return true;
+}
+
+// Replaces a removed color without creating two identical stripes side by side.
+// When the remaining palette leaves no choice, identical neighbors merge into one stripe.
+function replaceColorInStripes(stripes, removedHex, palette) {
+    stripes.forEach((s, i) => {
+        if (s.hex !== removedHex) return;
+        const prevCode = stripes[i - 1]?.code;
+        const next = stripes[i + 1];
+        const nextCode = next && next.hex !== removedHex ? next.code : undefined;
+        const color = palette.find(c => c.code !== prevCode && c.code !== nextCode)
+            || palette.find(c => c.code !== prevCode)
+            || palette[0];
+        s.code = color.code;
+        s.hex = color.hex;
+    });
+
+    const merged = [];
+    stripes.forEach(s => {
+        const last = merged[merged.length - 1];
+        if (last && last.hex === s.hex) last.count += s.count;
+        else merged.push(s);
+    });
+    return merged;
+}
+
+function refreshAfterPaletteChange() {
+    showAppMessage(null);
+    updateUserPaletteUI();
+    updateGeneratedListUI();
+    redrawTartan();
+    saveState();
+}
+
+function addToPalette(srtIndex) {
     if (userPalette.length >= 8) {
-        alert(t.msg_palette_max);
+        showAppMessage('msg_palette_max', true);
         return;
     }
 
     let colorObj = SRT_PALETTE[srtIndex];
 
     if (userPalette.some(c => c.hex === colorObj.hex)) {
-        alert(t.msg_palette_dup);
+        showAppMessage('msg_palette_dup', true);
         return;
     }
 
+    pushToHistory();
     userPalette.push(colorObj);
-    updateUserPaletteUI();
-    regenerateColorsOnly();
+    addColorToOneStripe(tartanStripes, colorObj);
+    refreshAfterPaletteChange();
 }
 
 function modifyPalette(userIndex, srtIndex) {
-    let t = TRANSLATIONS[currentLang];
     let oldColor = userPalette[userIndex];
     let newColor = SRT_PALETTE[srtIndex];
 
     let existsElsewhere = userPalette.some((c, i) => c.hex === newColor.hex && i !== userIndex);
     if (existsElsewhere) {
-        alert(t.msg_palette_dup);
+        showAppMessage('msg_palette_dup', true);
         return;
     }
 
+    pushToHistory();
     userPalette[userIndex] = newColor;
 
     tartanStripes.forEach(stripe => {
@@ -744,61 +820,37 @@ function modifyPalette(userIndex, srtIndex) {
         }
     });
 
-    updateUserPaletteUI();
-    updateGeneratedListUI();
-    redrawTartan();
-    saveState();
+    refreshAfterPaletteChange();
 }
 
 function removeFromPalette(index) {
     if (userPalette.length <= 2) {
-        alert("Minimum 2 colors required");
+        showAppMessage('msg_palette_min', true);
         return;
     }
 
+    pushToHistory();
     let removedColor = userPalette[index];
     userPalette.splice(index, 1);
-    updateUserPaletteUI();
-
-    let replacement = userPalette[0];
-
-    tartanStripes.forEach(stripe => {
-        if (stripe.hex === removedColor.hex) {
-            stripe.code = replacement.code;
-            stripe.hex = replacement.hex;
-        }
-    });
-
-    updateGeneratedListUI();
-    redrawTartan();
-    saveState();
+    tartanStripes = replaceColorInStripes(tartanStripes, removedColor.hex, userPalette);
+    refreshAfterPaletteChange();
 }
 
-function regenerateColorsOnly() {
-    if (tartanStripes.length === 0) return;
-
-    let previousColorCode = null;
-    tartanStripes.forEach(stripe => {
-        let randomColor;
-        let hasDifferentColor = userPalette.some(c => c.code !== previousColorCode);
-
-        if (!hasDifferentColor) {
-            randomColor = userPalette[Math.floor(Math.random() * userPalette.length)];
-        } else {
-            do {
-                randomColor = userPalette[Math.floor(Math.random() * userPalette.length)];
-            } while (randomColor.code === previousColorCode);
-        }
-
-        stripe.code = randomColor.code;
-        stripe.hex = randomColor.hex;
-        previousColorCode = randomColor.code;
-    });
-
-    updateGeneratedListUI();
-    redrawTartan();
-    saveState();
+// === SIDEBAR MESSAGES ===
+function showAppMessage(key, isError = false) {
+    appMessage = key ? { key, isError } : null;
+    renderAppMessage();
 }
+
+function renderAppMessage() {
+    const el = domElements.appMessage;
+    if (!el) return;
+    el.hidden = !appMessage;
+    el.classList.toggle('error', !!appMessage?.isError);
+    el.textContent = appMessage ? TRANSLATIONS[currentLang][appMessage.key] : '';
+    if (appMessage) el.scrollIntoView({ block: 'nearest' });
+}
+
 // === DISPLAY ACTUAL VALUES ===
 
 function updateActualValues() {
@@ -854,7 +906,7 @@ function updateActualSett() {
 }
 
 // === THREAD TYPE SELECTOR ===
-function updateThreadDiameter() {
+function applyThreadTypeUI() {
     const select = domElements.threadType;
     const input = domElements.threadMm;
 
@@ -870,23 +922,45 @@ function updateThreadDiameter() {
         input.style.cursor = 'not-allowed';
         input.value = select.value;
     }
+}
 
+function updateThreadDiameter() {
+    applyThreadTypeUI();
     updateScaleInfo();
+    saveState();
 }
 
 
 // === GESTION HISTORY ===
 
-function pushToHistory() {
-    let state = {
+function readStructureSettings() {
+    return {
+        minWidth: domElements.minWidth?.value,
+        maxWidth: domElements.maxWidth?.value,
+        targetStripes: domElements.targetStripes?.value,
+        sett: domElements.sett?.value,
+        checkMode: domElements.checkMode?.checked || false,
+        symmetric: domElements.sym?.checked || false
+    };
+}
+
+// The fields may already hold the next values when history is saved, so remember
+// the settings that produced the current pattern.
+function commitStructureSettings() {
+    committedSettings = readStructureSettings();
+}
+
+function createHistoryEntry() {
+    return {
         stripes: JSON.parse(JSON.stringify(tartanStripes)),
         palette: JSON.parse(JSON.stringify(userPalette)),
-        symmetric: domElements.sym?.checked || false,
-        generationID: generationID,
-        timestamp: Date.now()
+        settings: committedSettings || readStructureSettings(),
+        generationID: generationID
     };
+}
 
-    historyStack.push(state);
+function pushToHistory() {
+    historyStack.push(createHistoryEntry());
 
     if (historyStack.length > MAX_HISTORY) {
         historyStack.shift();
@@ -895,38 +969,103 @@ function pushToHistory() {
     updateUndoButton();
 }
 
-function undo() {
-    if (historyStack.length === 0) {
-        return;
-    }
+function applyHistoryEntry(entry) {
+    tartanStripes = entry.stripes;
+    userPalette = entry.palette;
+    generationID = entry.generationID;
 
-    let previousState = historyStack.pop();
+    const s = entry.settings;
+    if (domElements.minWidth) domElements.minWidth.value = s.minWidth;
+    if (domElements.maxWidth) domElements.maxWidth.value = s.maxWidth;
+    if (domElements.targetStripes) domElements.targetStripes.value = s.targetStripes;
+    if (domElements.sett) domElements.sett.value = s.sett;
+    if (domElements.checkMode) domElements.checkMode.checked = s.checkMode;
+    if (domElements.sym) domElements.sym.checked = s.symmetric;
+    commitStructureSettings();
 
-    tartanStripes = previousState.stripes;
-    userPalette = previousState.palette;
-    generationID = previousState.generationID;
-
-    let symCheck = domElements.sym;
-    if (symCheck) symCheck.checked = previousState.symmetric;
-
-    let idDisplay = domElements.genId;
-    if (idDisplay) idDisplay.textContent = generationID;
-
-    // Rafraîchir l'UI
+    showAppMessage(null);
     updateUserPaletteUI();
     updateGeneratedListUI();
     redrawTartan();
     updateUndoButton();
-    updateActualValues();
     saveState();
+}
+
+function undo() {
+    if (historyStack.length === 0) return;
+    applyHistoryEntry(historyStack.pop());
+}
+
+// Goes back to any pattern. The current one joins the history, so nothing is lost.
+function restoreHistoryEntry(index) {
+    const entry = historyStack.splice(index, 1)[0];
+    if (!entry) return;
+    historyStack.push(createHistoryEntry());
+    applyHistoryEntry(entry);
 }
 
 function updateUndoButton() {
     let btn = domElements.undoBtn;
     if (btn) {
         btn.disabled = (historyStack.length === 0);
-        btn.title = `Undo (${historyStack.length} steps available)`;
+        btn.title = TRANSLATIONS[currentLang].title_undo.replace('{n}', historyStack.length);
     }
+    updateHistoryList();
+}
+
+// One full repeat of the pattern, squeezed into the thumbnail.
+function drawHistoryThumbnail(canvas, entry) {
+    const size = canvas.width;
+    const symmetric = entry.settings?.symmetric || false;
+    const settThreads = countSettThreads(entry.stripes, symmetric);
+    if (settThreads <= 0) return;
+
+    const sampled = Math.min(settThreads, 4096);
+    const threads = buildThreadColors(entry.stripes, symmetric, sampled);
+    const colors = new Uint32Array(size);
+    for (let i = 0; i < size; i++) colors[i] = threads[Math.floor(i * sampled / size)];
+
+    const ctx = canvas.getContext('2d');
+    const image = ctx.createImageData(size, size);
+    fillTwillPixels(new Uint32Array(image.data.buffer), size, size, colors, domElements.weaveZ?.checked ?? true);
+    ctx.putImageData(image, 0, 0);
+}
+
+function updateHistoryList() {
+    const list = domElements.historyList;
+    if (!list) return;
+    const t = TRANSLATIONS[currentLang];
+    list.textContent = '';
+
+    if (historyStack.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'history-empty';
+        empty.textContent = t.hist_empty;
+        list.appendChild(empty);
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    // Most recent first
+    for (let i = historyStack.length - 1; i >= 0; i--) {
+        const entry = historyStack[i];
+        const srt = buildSRTCode(entry.stripes, entry.settings?.symmetric || false);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'history-thumb';
+        button.title = `${t.hist_restore}\n${srt}`;
+        button.setAttribute('aria-label', `${t.hist_restore} : ${srt}`);
+        button.addEventListener('click', () => restoreHistoryEntry(i));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        drawHistoryThumbnail(canvas, entry);
+
+        button.appendChild(canvas);
+        fragment.appendChild(button);
+    }
+    list.appendChild(fragment);
 }
 
 // Expose to HTML
@@ -1216,41 +1355,46 @@ injectDynamicStyles();
 
 // --- Click Handler (Conductor) ---
 window.handleGenerateClick = function(isUpdateOnly = false) {
-
-    // SAVE CURRENT STATE BEFORE ANY MODIFICATION
-    if (tartanStripes.length > 0 && !isUpdateOnly) {
-        pushToHistory();
-    }
-
-    // 1. Read checkbox state (USE SAME IDs EVERYWHERE)
     let keepColors = domElements.lockColors?.checked || false;
     let keepStructure = domElements.lockStructure?.checked || false;
 
-    // 2. If colors are NOT kept → randomize palette
-    // But only if it's not a simple "visual update" (slider)
-    if(!keepColors && !isUpdateOnly) {
-        randomizeUserPalette();
-    }
+    // A locked structure ignores the structure settings
+    if (isUpdateOnly && keepStructure) return;
 
-    // 3. Security check
-    if(userPalette.length <= 1) {
-        alert(TRANSLATIONS[currentLang].msg_palette_min);
+    // Validate before changing anything, so a refusal leaves palette and pattern in sync
+    let params = null;
+    if (!keepStructure || tartanStripes.length === 0) {
+        params = readGenerationParams();
+        if (params.errorKey) {
+            showAppMessage(params.errorKey, true);
+            return;
+        }
+    }
+    if ((keepColors || isUpdateOnly) && userPalette.length <= 1) {
+        showAppMessage('msg_palette_min', true);
         return;
     }
 
-    // 4. Generation
+    if (tartanStripes.length > 0) pushToHistory();
+
+    // If colors are NOT kept, the palette changes too, except for a settings update
+    if (!keepColors && !isUpdateOnly) randomizeUserPalette();
+
     generateNewTartan(keepColors, keepStructure);
+    commitStructureSettings();
+    showAppMessage(params?.noticeKey || null);
     redrawTartan();
     updateGeneratedListUI();
     saveState();
 }
 
-window.generateNewTartan = function generateNewTartan(lockColors = false, lockStructure = false) {
-    // 1. Retrieve HTML parameters
+// Reads and normalizes the structure settings. Returns errorKey when they cannot produce a pattern.
+function readGenerationParams() {
     let minW = parseInt(domElements.minWidth?.value) || 2;
     let maxW = parseInt(domElements.maxWidth?.value) || 124;
     let targetStripes = parseInt(domElements.targetStripes?.value) || 12;
     let targetSett = parseInt(domElements.sett?.value) || 260;
+    let noticeKey = null;
 
     // Option "Check Mode" (Equal widths)
     let isCheckMode = domElements.checkMode?.checked || false;
@@ -1266,7 +1410,7 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
     }
 
     if (isCheckMode && minW !== maxW) {
-        alert(TRANSLATIONS[currentLang].msg_err_check_mode_forced);
+        noticeKey = 'msg_err_check_mode_forced';
         let lower = Math.min(minW, maxW);
         minW = lower;
         maxW = lower;
@@ -1276,15 +1420,23 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
         minW = maxW;
     }
 
-    if (targetStripes * minW > targetSett) {
-        alert(TRANSLATIONS[currentLang].msg_err_sett_too_low);
-        return;
+    const errorKey = targetStripes * minW > targetSett ? 'msg_err_sett_too_low' : null;
+    return { minW, maxW, targetStripes, targetSett, isCheckMode, noticeKey, errorKey };
+}
+
+// Returns false, without changing the pattern, when the settings cannot produce one.
+window.generateNewTartan = function generateNewTartan(lockColors = false, lockStructure = false) {
+    const keepsStructure = lockStructure && tartanStripes.length > 0;
+    let params = null;
+    if (!keepsStructure) {
+        params = readGenerationParams();
+        if (params.errorKey) return false;
     }
 
     generationID = Math.floor(Math.random() * 1000000);
 
     // --- CASE A/B: KEEP STRUCTURE, SHUFFLE COLORS ---
-    if (lockStructure && tartanStripes.length > 0) {
+    if (keepsStructure) {
         // We keep the widths (count) but assign new colors from the current palette
         let previousColorCode = null;
 
@@ -1310,8 +1462,10 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
             previousColorCode = newColor.code;
         });
 
-        return;
+        return true;
     }
+
+    const { minW, maxW, targetStripes, targetSett, isCheckMode } = params;
 
     // --- CASE C: KEEP COLORS (Palette doesn't change, but order and widths change) ---
     // Note: In current code, "Keep color" is implicit because 'userPalette' is used.
@@ -1378,6 +1532,7 @@ for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
     totalThreads += finalWidth; // ✅ Update counter
 }
 tartanStripes = tempStripes;
+return true;
 }
 
 // Utility shuffle function (Fisher-Yates)
@@ -1618,6 +1773,7 @@ window.closeAboutModal = function(e) {
 }
 window.updateZoom = function() { redrawTartan(); scheduleSaveState(); }
 window.updateSymmetry = function() {
+    commitStructureSettings();
     updateGeneratedListUI(); // The SRT notation depends on symmetry
     redrawTartan();
     saveState();
@@ -1871,6 +2027,8 @@ window.importSRT = function() {
 
     tartanStripes = newStripes;
     userPalette = Array.from(newPaletteMap.values());
+    commitStructureSettings();
+    showAppMessage(null);
 
     updateUserPaletteUI();
     redrawTartan();
