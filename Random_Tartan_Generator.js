@@ -225,10 +225,24 @@ const TRANSLATIONS = {
         txt_about_p2: "Vous pouvez l'utiliser pour la conception, ou exporter les motifs pour Ink/Stitch.",
         btn_close: "Fermer",
         title_toggle_ui: "Afficher/Masquer le panneau",
-        sec_patchwork: "Export Patchwork (Grille)",
+        sec_patchwork: "Patchwork (planche d'inspiration)",
         lbl_patch_qty: "Quantité (10-100)",
-        lbl_patch_size: "Taille Tuile (px)",
-        btn_gen_patchwork: "GÉNÉRER PATCHWORK (Maintenance)",
+        lbl_patch_size: "Tuile à l'export (px)",
+        lbl_patch_scale: "Échelle des tuiles",
+        opt_scale_fit: "Motif entier",
+        opt_scale_zoom: "Zoom actuel",
+        btn_gen_patchwork: "OUVRIR LA PLANCHE",
+        btn_gen_patchwork_zip: "Exporter ZIP",
+        btn_patch_new: "Nouveau lot",
+        btn_patch_png: "Exporter PNG",
+        btn_patch_close: "Fermer",
+        title_patch_board: "Planche patchwork : cliquez un motif pour le reprendre",
+        patch_pick: "Reprendre ce motif",
+        patch_exporting: "Export en cours…",
+        patch_done: "Export terminé.",
+        msg_patch_too_big: "Export trop grand : réduisez la quantité ou la taille des tuiles (50 mégapixels au maximum).",
+        msg_patch_error: "L'export a échoué. Réessayez avec moins de tuiles ou des tuiles plus petites.",
+        msg_zip_missing: "La bibliothèque JSZip n'a pas pu être chargée : l'export ZIP est impossible.",
         msg_err_sett_too_low: "Génération impossible : Le Sett cible est trop petit pour le nombre de bandes et la largeur minimale. (Ex: 10 bandes x 50 fils Min = 500 fils > Sett cible).",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
@@ -290,10 +304,24 @@ const TRANSLATIONS = {
         txt_about_p2: "You can use it for design, or export patterns for Ink/Stitch.",
         btn_close: "Close",
         title_toggle_ui: "Show/Hide panel",
-        sec_patchwork: "Patchwork Export (Grid)",
+        sec_patchwork: "Patchwork (mood board)",
         lbl_patch_qty: "Quantity (10-100)",
-        lbl_patch_size: "Tile Size (px)",
-        btn_gen_patchwork: "GENERATE PATCHWORK (Maintenance)",
+        lbl_patch_size: "Export tile (px)",
+        lbl_patch_scale: "Tile scale",
+        opt_scale_fit: "Whole pattern",
+        opt_scale_zoom: "Current zoom",
+        btn_gen_patchwork: "OPEN MOOD BOARD",
+        btn_gen_patchwork_zip: "Export ZIP",
+        btn_patch_new: "New batch",
+        btn_patch_png: "Export PNG",
+        btn_patch_close: "Close",
+        title_patch_board: "Mood board: click a pattern to use it",
+        patch_pick: "Use this pattern",
+        patch_exporting: "Exporting…",
+        patch_done: "Export finished.",
+        msg_patch_too_big: "Export too large: lower the quantity or the tile size (50 megapixels at most).",
+        msg_patch_error: "The export failed. Try fewer or smaller tiles.",
+        msg_zip_missing: "The JSZip library could not be loaded, so the ZIP export is unavailable.",
         msg_err_sett_too_low: "Generation impossible: Target Sett is too small for the number of stripes and minimum width. (E.g., 10 stripes x 50 threads Min = 500 threads > Target Sett).",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
@@ -447,6 +475,13 @@ function cacheDomElements() {
     domElements.patchworkQty = document.getElementById('patchwork-qty');
     domElements.patchworkSize = document.getElementById('patchwork-size');
     domElements.patchworkInfo = document.getElementById('patchwork-info');
+    domElements.patchworkScale = document.getElementById('patchwork-scale');
+    domElements.patchworkBoard = document.getElementById('patchwork-board');
+    domElements.patchworkGrid = document.getElementById('patchwork-grid');
+    domElements.patchworkStatus = document.getElementById('patchwork-status');
+    domElements.btnPatchworkNew = document.getElementById('btn-patchwork-new');
+    domElements.btnPatchworkPng = document.getElementById('btn-patchwork-png');
+    domElements.btnPatchworkClose = document.getElementById('btn-patchwork-close');
     domElements.importText = document.getElementById('import-text');
     domElements.appMessage = document.getElementById('app-message');
     domElements.historyList = document.getElementById('history-list');
@@ -521,6 +556,12 @@ function bindEvents() {
 
     const btnGenPatchworkZip = domElements.btnGenPatchworkZip;
     if (btnGenPatchworkZip) btnGenPatchworkZip.addEventListener('click', () => generatePatchworkZIP());
+
+    if (domElements.btnPatchworkNew) domElements.btnPatchworkNew.addEventListener('click', () => generatePatchwork());
+    if (domElements.btnPatchworkPng) domElements.btnPatchworkPng.addEventListener('click', () => exportPatchworkPNG());
+    if (domElements.btnPatchworkClose) domElements.btnPatchworkClose.addEventListener('click', closePatchworkBoard);
+    if (domElements.patchworkScale) domElements.patchworkScale.addEventListener('change', renderPatchworkBoard);
+    watchPatchworkGrid();
 
     const btnUndo = domElements.undoBtn;
     if (btnUndo) btnUndo.addEventListener('click', undo);
@@ -631,6 +672,15 @@ function bindEvents() {
     }
 }
 document.addEventListener('keydown', (e) => {
+    // While the mood board is open, only Escape is handled (it closes the board)
+    if (isPatchworkOpen()) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closePatchworkBoard();
+        }
+        return;
+    }
+
     // Form controls keep all their keys (typing, arrows, type-ahead)
     if (e.target.closest('input, textarea, select')) return;
 
@@ -706,6 +756,7 @@ function setLanguage(lang) {
     updateUserPaletteUI();
     updateUndoButton();
     renderAppMessage();
+    if (isPatchworkOpen()) renderPatchworkBoard();
 }
 // ================= 4. Palette UI =================
 
@@ -722,19 +773,22 @@ function formatColorLabel(p) {
     return `${p.name}${varStr} (${p.code})`;
 }
 
-function randomizeUserPalette() {
+function pickRandomPalette() {
     let numColors = Math.floor(random(2, 6));
-    userPalette = [];
-
+    let palette = [];
     let tempPalette = [...SRT_PALETTE];
 
     for(let i = 0; i < numColors; i++) {
         if(tempPalette.length === 0) break;
         let randIndex = Math.floor(random(tempPalette.length));
-        userPalette.push(tempPalette[randIndex]);
+        palette.push(tempPalette[randIndex]);
         tempPalette.splice(randIndex, 1);
     }
+    return palette;
+}
 
+function randomizeUserPalette() {
+    userPalette = pickRandomPalette();
     updateUserPaletteUI();
 }
 
@@ -1434,6 +1488,63 @@ function readGenerationParams() {
 }
 
 // Returns false, without changing the pattern, when the settings cannot produce one.
+// Picks a color from the palette, different from the previous stripe when possible.
+function pickColorAvoiding(palette, previousCode) {
+    if (!palette.some(c => c.code !== previousCode)) {
+        return palette[Math.floor(Math.random() * palette.length)];
+    }
+    let color;
+    do {
+        color = palette[Math.floor(Math.random() * palette.length)];
+    } while (color.code === previousCode);
+    return color;
+}
+
+// Same widths, new colors from the palette.
+function recolorStripes(stripes, palette) {
+    let previousCode = null;
+    return stripes.map(s => {
+        const color = pickColorAvoiding(palette, previousCode);
+        previousCode = color.code;
+        return { code: color.code, hex: color.hex, count: s.count };
+    });
+}
+
+// New stripes from normalized settings (see readGenerationParams).
+function createStripes(params, palette) {
+    const { minW, maxW, targetStripes, targetSett, isCheckMode } = params;
+    const randomEvenWidth = () => {
+        const minPair = minW / 2;
+        const maxPair = maxW / 2;
+        return (Math.floor(Math.random() * (maxPair - minPair + 1)) + minPair) * 2;
+    };
+    const fixedCheckWidth = isCheckMode ? randomEvenWidth() : 0;
+
+    const stripes = [];
+    let previousCode = null;
+    let totalThreads = 0;
+
+    // Generate until target sett is reached (or max number of stripes)
+    for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
+        const color = pickColorAvoiding(palette, previousCode);
+        previousCode = color.code;
+
+        let width = isCheckMode ? fixedCheckWidth : randomEvenWidth();
+
+        // Adjust if sett is exceeded
+        if (totalThreads + width > targetSett) {
+            width = targetSett - totalThreads;
+            if (width % 2 !== 0) width--; // Keep even
+            if (width < minW) break; // Too small, stop
+        }
+
+        stripes.push({ code: color.code, hex: color.hex, count: width });
+        totalThreads += width;
+    }
+    return stripes;
+}
+
+// Returns false, without changing the pattern, when the settings cannot produce one.
 window.generateNewTartan = function generateNewTartan(lockColors = false, lockStructure = false) {
     const keepsStructure = lockStructure && tartanStripes.length > 0;
     let params = null;
@@ -1443,105 +1554,10 @@ window.generateNewTartan = function generateNewTartan(lockColors = false, lockSt
     }
 
     generationID = Math.floor(Math.random() * 1000000);
-
-    // --- CASE A/B: KEEP STRUCTURE, SHUFFLE COLORS ---
-    if (keepsStructure) {
-        // We keep the widths (count) but assign new colors from the current palette
-        let previousColorCode = null;
-
-        // Shuffle the palette to increase randomness before assigning colors
-        let shuffledPalette = [...userPalette];
-        shuffleArray(shuffledPalette);
-
-        tartanStripes.forEach(bande => {
-            // Pick a new random color from shuffled palette, avoiding the same adjacent color
-            let newColor;
-            let hasDifferentColor = shuffledPalette.some(c => c.code !== previousColorCode);
-
-            if (!hasDifferentColor) {
-                newColor = shuffledPalette[Math.floor(Math.random() * shuffledPalette.length)];
-            } else {
-                do {
-                    newColor = shuffledPalette[Math.floor(Math.random() * shuffledPalette.length)];
-                } while (newColor.code === previousColorCode);
-            }
-
-            bande.code = newColor.code;
-            bande.hex = newColor.hex;
-            previousColorCode = newColor.code;
-        });
-
-        return true;
-    }
-
-    const { minW, maxW, targetStripes, targetSett, isCheckMode } = params;
-
-    // --- CASE C: KEEP COLORS (Palette doesn't change, but order and widths change) ---
-    // Note: In current code, "Keep color" is implicit because 'userPalette' is used.
-    // If checkbox is NOT checked, we might want to regenerate palette entirely?
-    // For now, assume "Keep Colors" means "Do not touch the left list".
-    // If 'lock-palette' is FALSE, we could trigger a randomizeUserPalette()?
-
-    // --- CASE D: STANDARD GENERATION ---
-
-let tempStripes = [];
-let previousColorCode = null;
-let totalThreads = 0; // ✅ Compteur de threads
-
-// Pre-calculate fixed width for Check mode
-let fixedCheckWidth = 0;
-if (isCheckMode) {
-    let minPair = minW / 2;
-    let maxPair = maxW / 2;
-    fixedCheckWidth = (Math.floor(Math.random() * (maxPair - minPair + 1)) + minPair) * 2;
-}
-
-// Generate until target sett is reached (or max number of stripes)
-for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
-
-    // 1. Color choice (avoid adjacent duplicate)
-    let selectedColor;
-    let hasDifferentColor = userPalette.some(c => c.code !== previousColorCode);
-
-    if (!hasDifferentColor) {
-        selectedColor = userPalette[Math.floor(Math.random() * userPalette.length)];
-    } else {
-        do {
-            selectedColor = userPalette[Math.floor(Math.random() * userPalette.length)];
-        } while (selectedColor.code === previousColorCode);
-    }
-
-    previousColorCode = selectedColor.code;
-
-    // 2. Width choice
-    let finalWidth;
-
-    if (isCheckMode) {
-        finalWidth = fixedCheckWidth;
-    } else {
-        let minPair = minW / 2;
-        let maxPair = maxW / 2;
-        let randomPair = Math.floor(Math.random() * (maxPair - minPair + 1)) + minPair;
-        finalWidth = randomPair * 2;
-    }
-
-    // ✅ Adjust if sett is exceeded
-    if (totalThreads + finalWidth > targetSett) {
-        finalWidth = targetSett - totalThreads;
-        if (finalWidth % 2 !== 0) finalWidth--; // Keep even
-        if (finalWidth < minW) break; // Too small, stop
-    }
-
-    tempStripes.push({
-        code: selectedColor.code,
-        hex: selectedColor.hex,
-        count: finalWidth
-    });
-
-    totalThreads += finalWidth; // ✅ Update counter
-}
-tartanStripes = tempStripes;
-return true;
+    tartanStripes = keepsStructure
+        ? recolorStripes(tartanStripes, userPalette)
+        : createStripes(params, userPalette);
+    return true;
 }
 
 // Utility shuffle function (Fisher-Yates)
@@ -2182,152 +2198,294 @@ window.addEventListener('DOMContentLoaded', () => {
     if (sizeInput) sizeInput.addEventListener('input', updatePatchworkInfo);
 });
 
-window.generatePatchwork = function() {
-    if (currentLang === 'en') {
-        alert("The Patchwork feature is currently under maintenance.");
-    } else {
-        alert("La fonctionnalité Patchwork est actuellement en maintenance.");
-    }
-    return;
-    let qtyInput = domElements.patchworkQty;
-    let sizeInput = domElements.patchworkSize;
-    if (!qtyInput || !sizeInput) return;
+// ============================================================================
+// PATCHWORK: MOOD BOARD OF GENERATED PATTERNS
+// ============================================================================
+// Each batch follows the sidebar settings and locks: "Conserver Couleurs" keeps the palette
+// for every tile, "Conserver Structure" keeps the current widths and only changes the colors.
 
-    let qty = parseInt(qtyInput.value) || 10;
-    let tileSize = parseInt(sizeInput.value) || 300;
+const PATCHWORK_MAX_PIXELS = 50e6;
+let patchworkBatch = [];
+let patchworkOpener = null;
+let patchworkGridSize = '';
+let patchworkLayoutTimer = 0;
 
-    qty = Math.max(1, Math.min(100, qty));
-    tileSize = Math.max(50, Math.min(2000, tileSize));
+function isPatchworkOpen() {
+    return !!domElements.patchworkBoard && !domElements.patchworkBoard.hidden;
+}
 
-    let cols = Math.ceil(Math.sqrt(qty));
-    let rows = Math.ceil(qty / cols);
+function readPatchworkQty() {
+    let qty = parseInt(domElements.patchworkQty?.value) || 10;
+    return Math.max(1, Math.min(100, qty));
+}
 
-    let totalW = cols * tileSize;
-    let totalH = rows * tileSize;
+function readPatchworkTileSize() {
+    let size = parseInt(domElements.patchworkSize?.value) || 300;
+    return Math.max(50, Math.min(2000, size));
+}
 
-    drawLoadingScreen();
+// Returns null and shows why when the settings cannot produce patterns.
+function createPatchworkBatch(qty) {
+    const keepColors = domElements.lockColors?.checked || false;
+    const keepStructure = (domElements.lockStructure?.checked || false) && tartanStripes.length > 0;
 
-    // Small timeout to allow DOM to update loading screen
-    setTimeout(() => {
-        let pg = createGraphics(totalW, totalH);
-        pg.background(255);
-
-        // No need to restore these variables since they don't exist globally
-
-        // Temporarily adjust scale for the tile rendering
-        // We want the pattern to fill the tileSize, scaling proportionally based on current visualization settings
-        let threadDiameterMM = parseFloat(domElements.threadW?.value) || 0.3;
-        let ppi = 96;
-        let mmPerInch = 25.4;
-        let pxPerThread = (threadDiameterMM / mmPerInch) * ppi;
-        let tileScale = pxPerThread;
-
-        // Loop and render tiles
-        let count = 0;
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                if (count >= qty) break;
-
-                // 1. Generate random pattern based on current sidebar limits
-                // We use generateNewTartan directly to mutate the global state (threadsArray)
-                generateNewTartan(false, false);
-
-                // --- AJUSTEMENT D'ÉCHELLE DYNAMIQUE ---
-                // Nous voulons que la tuile (tileSize) affiche environ 2.5 répétitions du motif.
-                // Le motif entier fait `tartanStripes.length` fils.
-                // Donc 1 fil doit mesurer = tileSize / (tartanStripes.length * 2.5) pixels.
-                let totalThreads = tartanStripes.length;
-                let repetitions = 2.5;
-                let dynamicTileScale = tileSize / (totalThreads * repetitions);
-
-                // On met à jour l'échelle spécifiquement pour cette tuile
-                let tileScale = dynamicTileScale;
-                // ---------------------------------------
-
-                // 2. Render that specific tile
-                let ox = c * tileSize;
-                let oy = r * tileSize;
-
-                pg.push();
-                pg.translate(ox, oy);
-
-                // Use the same native canvas rendering logic we optimized, but draw to `pg` (p5.Graphics)
-                let ctx = pg.drawingContext;
-
-                // Base structure (horizontal & vertical)
-                let yOffset = 0;
-                let i = 0;
-                while (true) {
-                    let col = tartanStripes[i % tartanStripes.length];
-                    let currentY = yOffset * tileScale;
-                    if (currentY >= tileSize) break;
-
-                    ctx.fillStyle = col.hex;
-                    ctx.fillRect(0, currentY, tileSize, tileScale + 0.5);
-                    yOffset++;
-                    i++;
-                }
-
-                let xOffset = 0;
-                let j = 0;
-                while (true) {
-                    let col = tartanStripes[j % tartanStripes.length];
-                    let currentX = xOffset * tileScale;
-                    if (currentX >= tileSize) break;
-
-                    ctx.fillStyle = col.hex;
-                    // Note: to apply alpha correctly we can just draw half-opacity blocks on top, or we can weave.
-                    // For the patchwork, standard fast weave block rendering is enough
-                    ctx.globalAlpha = 0.5;
-                    ctx.fillRect(currentX, 0, tileScale + 0.5, tileSize);
-                    ctx.globalAlpha = 1.0;
-                    xOffset++;
-                    j++;
-                }
-
-                // Fast weave (twill) overlay
-                ctx.fillStyle = "#000000";
-                ctx.globalAlpha = 0.15; // Simple shadow overlay to simulate weave for performance on large canvases
-
-                let isZTwist = domElements.weaveZ ? domElements.weaveZ.checked : true;
-                ctx.beginPath();
-                for (let ty = 0; ty * tileScale < tileSize; ty++) {
-                    for (let tx = 0; tx * tileScale < tileSize; tx++) {
-                        let isWarpOverWeft = false;
-                        if (isZTwist) {
-                            isWarpOverWeft = ((tx - ty) % 4 === 0) || ((tx - ty) % 4 === 1) || ((tx - ty) % 4 === -3);
-                        } else {
-                            isWarpOverWeft = ((tx + ty) % 4 === 0) || ((tx + ty) % 4 === 1) || ((tx + ty) % 4 === -3);
-                        }
-
-                        if (isWarpOverWeft) {
-                           ctx.rect(tx * tileScale, ty * tileScale, tileScale+0.5, tileScale+0.5);
-                        }
-                    }
-                }
-                ctx.fill();
-                ctx.globalAlpha = 1.0;
-
-                pg.pop();
-                count++;
-            }
+    let params = null;
+    if (!keepStructure) {
+        params = readGenerationParams();
+        if (params.errorKey) {
+            showAppMessage(params.errorKey, true);
+            return null;
         }
+    }
+    if (keepColors && userPalette.length <= 1) {
+        showAppMessage('msg_palette_min', true);
+        return null;
+    }
+    showAppMessage(params?.noticeKey || null);
 
-        // Restore original states
-        redrawTartan();
+    const symmetric = domElements.sym?.checked || false;
+    const batch = [];
+    for (let i = 0; i < qty; i++) {
+        const palette = keepColors ? userPalette : pickRandomPalette();
+        const stripes = keepStructure ? recolorStripes(tartanStripes, palette) : createStripes(params, palette);
+        if (stripes.length === 0) continue;
+        // Keep only the colors the pattern uses, in palette order
+        const used = palette.filter(c => stripes.some(s => s.hex === c.hex));
+        batch.push({ stripes, palette: used, symmetric, generationID: Math.floor(Math.random() * 1000000) });
+    }
+    return batch;
+}
 
-        // Save image
-        save(pg, `Tartan_Patchwork_${qty}_tiles_${getFormattedDate()}.png`);
+// Draws a pattern into a square canvas. "fit" shows one full repeat; "zoom" uses the main zoom.
+function renderPatternCanvas(canvas, entry, scaleMode) {
+    const size = canvas.width;
+    const ctx = canvas.getContext('2d');
+    const settThreads = countSettThreads(entry.stripes, entry.symmetric);
+    if (settThreads <= 0) return;
 
-    }, 50);
+    const zoom = parseFloat(domElements.zoom?.value) || 2.0;
+    const threadPx = scaleMode === 'zoom' ? zoom : size / settThreads;
+    const threads = Math.ceil(size / threadPx);
+    const isZTwist = domElements.weaveZ?.checked ?? true;
+
+    // Very small threads: sample the colors instead of drawing more threads than pixels
+    const drawn = Math.min(threads, 4096);
+    let threadColors = buildThreadColors(entry.stripes, entry.symmetric, Math.min(threads, 16384));
+    if (threadColors.length !== drawn) {
+        const sampled = new Uint32Array(drawn);
+        for (let i = 0; i < drawn; i++) sampled[i] = threadColors[Math.floor(i * threadColors.length / drawn)];
+        threadColors = sampled;
+    }
+
+    const relief = domElements.effectType?.value === 'relief' && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
+    const k = relief ? Math.min(16, Math.round(threadPx)) : 1;
+
+    const tile = document.createElement('canvas');
+    tile.width = drawn * k;
+    tile.height = drawn * k;
+    const tileCtx = tile.getContext('2d');
+    const image = tileCtx.createImageData(tile.width, tile.height);
+    const pixels = new Uint32Array(image.data.buffer);
+    if (k > 1) fillTwillRelief(pixels, drawn, drawn, threadColors, isZTwist, k);
+    else fillTwillPixels(pixels, drawn, drawn, threadColors, isZTwist);
+    tileCtx.putImageData(image, 0, 0);
+
+    const target = drawn === threads ? threads * threadPx : size;
+    const exact = Number.isInteger(threadPx / k) && threadPx >= k;
+    ctx.imageSmoothingEnabled = !exact;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(tile, 0, 0, tile.width, tile.height, 0, 0, target, target);
+}
+
+function readPatchworkScale() {
+    return domElements.patchworkScale?.value === 'zoom' ? 'zoom' : 'fit';
+}
+
+function setPatchworkStatus(key) {
+    if (domElements.patchworkStatus) domElements.patchworkStatus.textContent = key ? TRANSLATIONS[currentLang][key] : '';
+}
+
+// Lays the tiles out to fill the board without scrolling, then draws them.
+function renderPatchworkBoard() {
+    const grid = domElements.patchworkGrid;
+    if (!grid || !isPatchworkOpen()) return;
+    const t = TRANSLATIONS[currentLang];
+    grid.textContent = '';
+
+    const n = patchworkBatch.length;
+    if (n === 0) return;
+    patchworkGridSize = grid.clientWidth + 'x' + grid.clientHeight;
+    const gap = 6;
+    const w = Math.max(1, grid.clientWidth);
+    const h = Math.max(1, grid.clientHeight);
+    const cols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * w / h))));
+    const rows = Math.ceil(n / cols);
+    const cell = Math.max(24, Math.floor(Math.min((w - gap * (cols - 1)) / cols, (h - gap * (rows - 1)) / rows)));
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${cell}px)`;
+    grid.style.gridAutoRows = `${cell}px`;
+
+    const density = window.devicePixelRatio || 1;
+    const scaleMode = readPatchworkScale();
+    const fragment = document.createDocumentFragment();
+    patchworkBatch.forEach((entry, index) => {
+        const srt = buildSRTCode(entry.stripes, entry.symmetric);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'patchwork-tile';
+        button.title = `${t.patch_pick}\n${srt}`;
+        button.setAttribute('aria-label', `${t.patch_pick} : ${srt}`);
+        button.addEventListener('click', () => usePatchworkTile(index));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(cell * density);
+        canvas.height = canvas.width;
+        renderPatternCanvas(canvas, entry, scaleMode);
+
+        button.appendChild(canvas);
+        fragment.appendChild(button);
+    });
+    grid.appendChild(fragment);
+}
+
+// Makes a tile the current pattern. The previous pattern goes to the history.
+function usePatchworkTile(index) {
+    const entry = patchworkBatch[index];
+    if (!entry) return;
+    if (tartanStripes.length > 0) pushToHistory();
+
+    tartanStripes = JSON.parse(JSON.stringify(entry.stripes));
+    userPalette = JSON.parse(JSON.stringify(entry.palette));
+    generationID = entry.generationID;
+    if (domElements.sym) domElements.sym.checked = entry.symmetric;
+    commitStructureSettings();
+
+    closePatchworkBoard();
+    showAppMessage(null);
+    updateUserPaletteUI();
+    updateGeneratedListUI();
+    redrawTartan();
+    updateUndoButton();
+    saveState();
+}
+
+function closePatchworkBoard() {
+    if (!domElements.patchworkBoard) return;
+    domElements.patchworkBoard.hidden = true;
+    // Back to the control that opened the board, or to the open button
+    const target = patchworkOpener?.isConnected ? patchworkOpener : domElements.btnGenPatchwork;
+    patchworkOpener = null;
+    target?.focus();
+}
+
+// The grid changes size with the window and with the header (a long status line wraps it)
+function watchPatchworkGrid() {
+    const grid = domElements.patchworkGrid;
+    if (!grid || typeof ResizeObserver === 'undefined') return;
+    new ResizeObserver(() => {
+        // Redraw after the layout settles, outside the observer callback
+        clearTimeout(patchworkLayoutTimer);
+        patchworkLayoutTimer = setTimeout(() => {
+            const size = grid.clientWidth + 'x' + grid.clientHeight;
+            if (size !== patchworkGridSize && isPatchworkOpen()) renderPatchworkBoard();
+        }, 50);
+    }).observe(grid);
+}
+
+// Opens the board with a new batch (also used by "Nouveau lot").
+window.generatePatchwork = function() {
+    const board = domElements.patchworkBoard;
+    if (!board) return;
+    const batch = createPatchworkBatch(readPatchworkQty());
+    if (!batch) {
+        closePatchworkBoard();
+        return;
+    }
+    patchworkBatch = batch;
+    const wasOpen = isPatchworkOpen();
+    if (!wasOpen) patchworkOpener = document.activeElement;
+    board.hidden = false;
+    setPatchworkStatus(null);
+    renderPatchworkBoard();
+    if (!wasOpen) domElements.patchworkGrid.querySelector('button')?.focus();
 };
 
+function ensurePatchworkBatch() {
+    if (patchworkBatch.length > 0) return true;
+    const batch = createPatchworkBatch(readPatchworkQty());
+    if (!batch) return false;
+    patchworkBatch = batch;
+    return true;
+}
 
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 0);
+}
 
+function canvasToBlob(canvas) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob failed')), 'image/png');
+    });
+}
 
-// ============================================================================
-// PATCHWORK EXPORT AS ZIP (Individual Tiles)
-// ============================================================================
+function showPatchworkError(key) {
+    if (isPatchworkOpen()) setPatchworkStatus(key);
+    else showAppMessage(key, true);
+}
+
+let patchworkExporting = false;
+
+// Exports the current batch as one image: the tiles side by side, without gaps.
+window.exportPatchworkPNG = async function() {
+    if (patchworkExporting || !ensurePatchworkBatch()) return;
+    // A new batch may be drawn during the export: keep this one
+    const batch = patchworkBatch;
+    const tileSize = readPatchworkTileSize();
+    const n = batch.length;
+    const cols = Math.ceil(Math.sqrt(n));
+    const rows = Math.ceil(n / cols);
+    if (cols * rows * tileSize * tileSize > PATCHWORK_MAX_PIXELS) {
+        showPatchworkError('msg_patch_too_big');
+        return;
+    }
+
+    patchworkExporting = true;
+    setPatchworkStatus('patch_exporting');
+    try {
+        const sheet = document.createElement('canvas');
+        sheet.width = cols * tileSize;
+        sheet.height = rows * tileSize;
+        const ctx = sheet.getContext('2d');
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, sheet.width, sheet.height);
+
+        const tile = document.createElement('canvas');
+        tile.width = tileSize;
+        tile.height = tileSize;
+        const scaleMode = readPatchworkScale();
+        for (let i = 0; i < n; i++) {
+            tile.getContext('2d').clearRect(0, 0, tileSize, tileSize);
+            renderPatternCanvas(tile, batch[i], scaleMode);
+            ctx.drawImage(tile, (i % cols) * tileSize, Math.floor(i / cols) * tileSize);
+        }
+        downloadBlob(await canvasToBlob(sheet), `Tartan_Patchwork_${n}_tiles_${getFormattedDate()}.png`);
+        setPatchworkStatus('patch_done');
+    } catch (error) {
+        console.error('Patchwork PNG export failed:', error);
+        showPatchworkError('msg_patch_error');
+    } finally {
+        patchworkExporting = false;
+    }
+};
+
 function loadJSZip() {
     if (typeof JSZip !== 'undefined') return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -2339,158 +2497,47 @@ function loadJSZip() {
     });
 }
 
+// Exports the current batch as one PNG per tile, with their SRT and Ink/Stitch codes.
 window.generatePatchworkZIP = async function() {
-    if (currentLang === 'en') {
-        alert("The Patchwork ZIP feature is currently under maintenance.");
-    } else {
-        alert("La fonctionnalité Patchwork ZIP est actuellement en maintenance.");
-    }
-    return;
+    if (patchworkExporting || !ensurePatchworkBatch()) return;
+    // A new batch may be drawn during the export: keep this one
+    const batch = patchworkBatch;
+    patchworkExporting = true;
     try {
         await loadJSZip();
     } catch (error) {
-        alert("La bibliothèque JSZip n'est pas chargée. Impossible de créer le ZIP.");
+        patchworkExporting = false;
+        showPatchworkError('msg_zip_missing');
         return;
     }
 
-    let qtyInput = domElements.patchworkQty;
-    let sizeInput = domElements.patchworkSize;
-    if (!qtyInput || !sizeInput) return;
+    setPatchworkStatus('patch_exporting');
+    try {
+        const tileSize = readPatchworkTileSize();
+        const scaleMode = readPatchworkScale();
+        const zip = new JSZip();
+        const pad = String(batch.length).length;
+        let codes = "Tartan Generator - Patchwork\n============================\n\n";
 
-    let qty = parseInt(qtyInput.value) || 10;
-    let tileSize = parseInt(sizeInput.value) || 300;
-
-    qty = Math.max(1, Math.min(100, qty));
-    tileSize = Math.max(50, Math.min(2000, tileSize));
-
-    drawLoadingScreen();
-
-    // Small timeout to let UI update
-    setTimeout(async () => {
-        try {
-            let zip = new JSZip();
-            let imgFolder = zip.folder("tartans_images");
-            let srtContent = "Tartan Generator - Patchwork SRT Codes\n======================================\n\n";
-
-            // We use a single small graphics object and reuse it
-            let pg = createGraphics(tileSize, tileSize);
-
-            for (let count = 0; count < qty; count++) {
-                // Generate new pattern
-                generateNewTartan(false, false);
-                let currentSRT = generateSRT();
-
-                srtContent += `Tartan_${count + 1}: ${currentSRT}\n`;
-
-                // Clear background
-                pg.background(255);
-
-                let totalThreads = tartanStripes.length;
-                let repetitions = 2.5;
-                let tileScale = tileSize / (totalThreads * repetitions);
-
-                let ctx = pg.drawingContext;
-
-                // 1. Draw horizontal (base)
-                let yOffset = 0;
-                let i = 0;
-                while (true) {
-                    let col = tartanStripes[i % tartanStripes.length];
-                    let currentY = yOffset * tileScale;
-                    if (currentY >= tileSize) break;
-
-                    ctx.fillStyle = col.hex;
-                    ctx.fillRect(0, currentY, tileSize, tileScale + 0.5);
-                    yOffset++;
-                    i++;
-                }
-
-                // 2. Draw vertical (overlay)
-                let xOffset = 0;
-                let j = 0;
-                while (true) {
-                    let col = tartanStripes[j % tartanStripes.length];
-                    let currentX = xOffset * tileScale;
-                    if (currentX >= tileSize) break;
-
-                    ctx.fillStyle = col.hex;
-
-                    if (domElements.effectType && domElements.effectType.value === 'applat') {
-                        // Flat mode: 50% opacity block
-                        ctx.globalAlpha = 0.5;
-                        ctx.fillRect(currentX, 0, tileScale + 0.5, tileSize);
-                        ctx.globalAlpha = 1.0;
-                    } else {
-                        // Twill weaving
-                        let xPx = currentX;
-                        let wPx = tileScale + 0.5;
-                        let cy = 0;
-                        let rowIdx = 0;
-
-                        ctx.beginPath();
-                        while (cy < tileSize) {
-                            let yPx = cy;
-                            let hPx = tileScale + 0.5;
-
-                            let threadXIndex = j % tartanStripes.length;
-                            let threadYIndex = rowIdx % tartanStripes.length;
-
-                            let isForeground = false;
-                            if (weaveDirection === 'Z') {
-                                isForeground = ((threadXIndex - threadYIndex) % 4 + 4) % 4 < 2;
-                            } else {
-                                isForeground = ((threadXIndex + threadYIndex) % 4) < 2;
-                            }
-
-                            if (isForeground) {
-                                ctx.rect(xPx, yPx, wPx, hPx);
-                            }
-
-                            cy += tileScale;
-                            rowIdx++;
-                        }
-                        ctx.fill();
-                    }
-                    xOffset++;
-                    j++;
-                }
-
-                // Convert to blob and add to zip
-                await new Promise((resolve) => {
-                    pg.elt.toBlob((blob) => {
-                        imgFolder.file(`tartan_${count + 1}.png`, blob);
-                        resolve();
-                    }, 'image/png');
-                });
-            }
-
-            // Clean up p5.Graphics
-            pg.remove();
-
-            // Add SRT file
-            zip.file("codes_srt.txt", srtContent);
-
-            // Generate zip file
-            let content = await zip.generateAsync({type:"blob"});
-
-            // Download
-            let a = document.createElement("a");
-            let url = URL.createObjectURL(content);
-            a.href = url;
-            a.download = `tartan_patchwork_${qty}_files.zip`;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 0);
-
-            // Restore previous state by regenerating one normal pattern
-            generateNewTartan(true, true);
-
-        } catch (error) {
-            console.error("Error generating ZIP:", error);
-            alert("Une erreur est survenue lors de la création du ZIP.");
+        const tile = document.createElement('canvas');
+        tile.width = tileSize;
+        tile.height = tileSize;
+        for (let i = 0; i < batch.length; i++) {
+            const entry = batch[i];
+            const name = `tartan_${String(i + 1).padStart(pad, '0')}_${String(entry.generationID).padStart(6, '0')}`;
+            tile.getContext('2d').clearRect(0, 0, tileSize, tileSize);
+            renderPatternCanvas(tile, entry, scaleMode);
+            zip.file(`${name}.png`, await canvasToBlob(tile));
+            codes += `${name}\n  SRT: ${buildSRTCode(entry.stripes, entry.symmetric)}\n  Ink/Stitch: ${buildInkStitchCode(entry.stripes, entry.symmetric)}\n\n`;
         }
-    }, 100);
-}
+        zip.file('codes.txt', codes);
+
+        downloadBlob(await zip.generateAsync({ type: 'blob' }), `Tartan_Patchwork_${batch.length}_tiles_${getFormattedDate()}.zip`);
+        setPatchworkStatus('patch_done');
+    } catch (error) {
+        console.error('Patchwork ZIP export failed:', error);
+        showPatchworkError('msg_patch_error');
+    } finally {
+        patchworkExporting = false;
+    }
+};

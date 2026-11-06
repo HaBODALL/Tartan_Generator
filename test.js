@@ -159,6 +159,30 @@ function runTests() {
             console.info('✅ relief masks shade like a round yarn');
         },
         () => {
+            // Test createStripes: widths even and within limits, sett respected, no identical neighbors
+            const palette = ['R', 'G', 'B', 'K'].map(code => ({ code, hex: '#' + code }));
+            for (let run = 0; run < 200; run++) {
+                const params = { minW: 4, maxW: 40, targetStripes: 8, targetSett: 200, isCheckMode: false };
+                const stripes = createStripes(params, palette);
+                assertSilent(stripes.length >= 1 && stripes.length <= 8, 'createStripes stripe count');
+                assertSilent(sumStripeThreads(stripes) <= 200, 'createStripes respects the sett');
+                assertSilent(stripes.every(s => s.count % 2 === 0 && s.count >= 4 && s.count <= 40), 'createStripes widths');
+                assertSilent(stripes.every((s, i) => i === 0 || s.code !== stripes[i - 1].code), 'createStripes neighbors differ');
+            }
+            const check = createStripes({ minW: 6, maxW: 6, targetStripes: 5, targetSett: 260, isCheckMode: true }, palette);
+            assertEqual(new Set(check.map(s => s.count)).size, 1, 'createStripes check mode uses one width');
+            console.info('✅ createStripes follows the settings');
+        },
+        () => {
+            // Test recolorStripes: same widths, new objects, no identical neighbors
+            const palette = ['R', 'G'].map(code => ({ code, hex: '#' + code }));
+            const source = [6, 4, 8, 2].map(count => ({ code: 'X', hex: '#X', count }));
+            const out = recolorStripes(source, palette);
+            assertEqual(out.map(s => s.count).join(), '6,4,8,2', 'recolorStripes keeps widths');
+            assertEqual(source[0].code, 'X', 'recolorStripes leaves the source untouched');
+            assertSilent(out.every((s, i) => i === 0 || s.code !== out[i - 1].code), 'recolorStripes neighbors differ');
+        },
+        () => {
             // Test addColorToOneStripe: exactly one stripe changes, no duplicate neighbor, no color lost
             const make = () => ['R', 'G', 'R', 'B', 'G'].map(code => ({ code, hex: '#' + code, count: 4 }));
             const color = { code: 'K', hex: '#K' };

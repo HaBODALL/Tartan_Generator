@@ -474,6 +474,57 @@
         font-size: 12px;
     }
 
+    /* ==================== PATCHWORK BOARD ==================== */
+    .patchwork-board {
+        position: absolute;
+        inset: 0;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        background: #050505;
+    }
+    .patchwork-board[hidden] { display: none; }
+    .patchwork-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        color: #ccc;
+        font-size: 13px;
+        padding-right: 40px; /* room for the sidebar toggle */
+    }
+    .patchwork-title { flex: 1; min-width: 160px; }
+    .patchwork-status { color: #f5d08a; font-size: 12px; }
+    .patchwork-bar button { padding: 6px 12px; }
+    .patchwork-grid {
+        flex: 1;
+        min-height: 0;
+        overflow: auto; /* only on very small screens, where tiles hit their minimum size */
+        display: grid;
+        gap: 6px;
+        justify-content: center;
+        align-content: center;
+    }
+    .patchwork-tile {
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid #333;
+        border-radius: 3px;
+        background: none;
+        cursor: pointer;
+    }
+    .patchwork-tile:hover, .patchwork-tile:focus-visible {
+        border-color: #e74c3c;
+        outline: 2px solid #e74c3c;
+    }
+    .patchwork-tile canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
   </style>
 </head>
 <body>
@@ -511,6 +562,17 @@
     </div>
     <div id="canvas-container">
         <button id="btn-toggle-ui" class="btn-toggle-ui" aria-label="Afficher/Masquer le panneau" title="Afficher/Masquer le panneau" data-i18n-title="title_toggle_ui">▶</button>
+        <div id="patchwork-board" class="patchwork-board" role="dialog" aria-labelledby="patchwork-title" hidden>
+            <div class="patchwork-bar">
+                <span id="patchwork-title" class="patchwork-title" data-i18n="title_patch_board">Planche patchwork : cliquez un motif pour le reprendre</span>
+                <span id="patchwork-status" class="patchwork-status" aria-live="polite"></span>
+                <button type="button" class="btn-secondary" id="btn-patchwork-new" data-i18n="btn_patch_new">Nouveau lot</button>
+                <button type="button" class="btn-secondary" id="btn-patchwork-png" data-i18n="btn_patch_png">Exporter PNG</button>
+                <button type="button" class="btn-secondary" id="btn-generate-patchwork-zip" data-i18n="btn_gen_patchwork_zip">Exporter ZIP</button>
+                <button type="button" class="btn-secondary" id="btn-patchwork-close" data-i18n="btn_patch_close">Fermer</button>
+            </div>
+            <div id="patchwork-grid" class="patchwork-grid"></div>
+        </div>
     </div>
 
     <div class="sidebar" id="sidebar">
@@ -710,24 +772,30 @@
 </details>
 
 <details >
-  <summary data-i18n="sec_patchwork">Export Patchwork (Grille)</summary>
+  <summary data-i18n="sec_patchwork">Patchwork (planche d'inspiration)</summary>
   <div class="details-content">
 
       <div class="controls-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 5px;">
           <div>
               <label for="patchwork-qty" data-i18n="lbl_patch_qty">Quantité (10-100)</label>
-              <input type="number" id="patchwork-qty" value="10" min="10" max="100" class="input-number"  disabled style="opacity: 0.5; cursor: not-allowed;">
+              <input type="number" id="patchwork-qty" value="12" min="10" max="100" class="input-number">
           </div>
           <div>
-              <label for="patchwork-size" data-i18n="lbl_patch_size">Taille Tuile (px)</label>
-              <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number"  disabled style="opacity: 0.5; cursor: not-allowed;">
+              <label for="patchwork-size" data-i18n="lbl_patch_size">Tuile à l'export (px)</label>
+              <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number">
           </div>
+      </div>
+      <div class="control-row" style="margin-bottom: 5px;">
+          <label for="patchwork-scale" data-i18n="lbl_patch_scale">Échelle des tuiles</label>
+          <select id="patchwork-scale" style="background:#222; color:#ccc; border:1px solid #444; padding:4px; border-radius:3px; font-size:12px;">
+              <option value="fit" data-i18n="opt_scale_fit">Motif entier</option>
+              <option value="zoom" data-i18n="opt_scale_zoom">Zoom actuel</option>
+          </select>
       </div>
       <div style="font-size: 11px; color: #888; margin-bottom: 15px; text-align: center;" id="patchwork-info">
           <!-- Dynamic info here -->
       </div>
-      <button class="btn-primary" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork" style="width: 100%; margin-bottom: 20px; opacity: 0.5; cursor: not-allowed;" disabled>GÉNÉRER PATCHWORK (Maintenance)</button>
-      <button class="btn-primary btn-duo" id="btn-generate-patchwork-zip" data-i18n="btn_gen_patchwork_zip" style="width: 100%; margin-bottom: 20px; opacity: 0.5; cursor: not-allowed;" disabled>GÉNÉRER ZIP (Maintenance)</button>
+      <button class="btn-primary" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork" style="width: 100%; margin-bottom: 20px;">OUVRIR LA PLANCHE</button>
 
         </div>
 </details>
