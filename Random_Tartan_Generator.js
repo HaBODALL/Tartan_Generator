@@ -204,9 +204,8 @@ const TRANSLATIONS = {
         lbl_thread_type: "Type de fil",
         lbl_effect: "Effet Textile",
         opt_eff_none: "Aucun",
-        opt_eff_overlay: "Filtre Overlay",
         opt_eff_noise: "Bruit (Grain)",
-        opt_eff_exp: "Expérimental (Tous)",
+        opt_eff_exp: "Tous (relief + grain)",
         opt_eff_relief: "Relief des fils",
         opt_wool: "Laine",
         opt_merino: "Mérinos",
@@ -283,9 +282,8 @@ const TRANSLATIONS = {
         lbl_thread_type: "Thread type",
         lbl_effect: "Textile Effect",
         opt_eff_none: "None",
-        opt_eff_overlay: "Overlay Filter",
         opt_eff_noise: "Noise (Grain)",
-        opt_eff_exp: "Experimental (All)",
+        opt_eff_exp: "All (relief + grain)",
         opt_eff_relief: "Thread relief",
         opt_wool: "Wool",
         opt_merino: "Merino",
@@ -408,6 +406,8 @@ function loadState() {
 
         if (domElements.effectType && state.effectType) {
             domElements.effectType.value = state.effectType;
+            // An effect that no longer exists (e.g. the old overlay) falls back to none
+            if (!domElements.effectType.value) domElements.effectType.value = 'none';
         }
 
         if (domElements.threadType && state.threadType) {
@@ -1716,9 +1716,14 @@ function fillTwillRelief(pixels, tileW, tileH, threadColors, isZTwist, k) {
     }
 }
 
+// "Tous" combines the thread relief with the grain.
+function hasReliefEffect(effectType) {
+    return effectType === 'relief' || effectType === 'experimental';
+}
+
 // Pixels per thread in the tile: about one tile pixel per device pixel, or 1 without relief.
 function getTileScale(effectType, zoom) {
-    if (effectType !== 'relief') return 1;
+    if (!hasReliefEffect(effectType)) return 1;
     const devicePixels = zoom * pixelDensity();
     if (devicePixels < RELIEF_MIN_PIXELS) return 1;
     return Math.min(16, Math.round(devicePixels));
@@ -1773,14 +1778,8 @@ function redrawTartan() {
     drawingContext.fillRect(0, 0, cols * k, rows * k);
     drawingContext.restore();
 
-    // --- POST-PROCESSING EFFECTS OVER STANDARD BLOCKS ---
-    if (effectType === 'overlay') {
-        applyOverlayEffect(cols, rows, zoom);
-    } else if (effectType === 'noise') {
-        applyNoiseEffect(cols, rows, zoom);
-    } else if (effectType === 'experimental') {
-        // Both overlay and noise
-        applyOverlayEffect(cols, rows, zoom);
+    // Grain over the woven pattern ("Tous" adds it on top of the relief)
+    if (effectType === 'noise' || effectType === 'experimental') {
         applyNoiseEffect(cols, rows, zoom);
     }
 
@@ -1790,37 +1789,6 @@ function redrawTartan() {
 }
 
 // --- Textile Effect Implementations ---
-function applyOverlayEffect(cols, rows, zoom) {
-    // Generate a simple crosshatch pattern offscreen to simulate fabric
-    // Create it once and tile it
-    let patternSize = Math.max(10, zoom * 2);
-    if (!window.overlayPatternBuffer || window.overlayPatternBuffer.width !== patternSize) {
-        if (window.overlayPatternBuffer) {
-            window.overlayPatternBuffer.remove(); // Prevent memory leak by removing old buffer
-        }
-        let pg = createGraphics(patternSize, patternSize);
-        pg.clear();
-        pg.stroke(0, 0, 0, 40); // Dark faint lines
-        pg.strokeWeight(1);
-
-        // Draw diagonal crosshatch
-        for (let i = 0; i < patternSize * 2; i += 4) {
-            pg.line(0, i, i, 0);
-            pg.line(patternSize, i - patternSize, i - patternSize, patternSize);
-        }
-        window.overlayPatternBuffer = pg;
-    }
-
-    // Draw the pattern over the whole canvas
-    drawingContext.globalCompositeOperation = 'multiply';
-    let ptrn = drawingContext.createPattern(window.overlayPatternBuffer.canvas, 'repeat');
-    drawingContext.fillStyle = ptrn;
-    drawingContext.fillRect(0, 0, width, height);
-
-    // Reset blend mode
-    drawingContext.globalCompositeOperation = 'source-over';
-}
-
 function applyNoiseEffect(cols, rows, zoom) {
     // Generate static noise pattern once to avoid freezing the browser on every redraw
     let patternSize = 256;
@@ -2277,7 +2245,7 @@ function renderPatternCanvas(canvas, entry, scaleMode) {
         threadColors = sampled;
     }
 
-    const relief = domElements.effectType?.value === 'relief' && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
+    const relief = hasReliefEffect(domElements.effectType?.value) && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
     const k = relief ? Math.min(16, Math.round(threadPx)) : 1;
 
     const tile = document.createElement('canvas');
