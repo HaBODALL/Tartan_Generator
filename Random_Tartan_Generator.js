@@ -1,5 +1,5 @@
 // =====================================================
-//  RANDOM TARTAN GENERATOR V1.1.2 - P5.JS VERSION
+//  RANDOM TARTAN GENERATOR V1.2.0 - P5.JS VERSION
 //  By HaBOD, 2025 - CC BY-SA 4.0
 //  Based on a Sketch from steven kay, 2011 (https://openprocessing.org/sketch/25876) - CC BY-SA 2.0
 //  Complete rewrite with constraint-based workflow
