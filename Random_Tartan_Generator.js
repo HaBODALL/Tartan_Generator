@@ -204,8 +204,6 @@ const TRANSLATIONS = {
         lbl_thread_type: "Type de fil",
         lbl_effect: "Effet Textile",
         opt_eff_none: "Aucun",
-        opt_eff_noise: "Bruit (Grain)",
-        opt_eff_exp: "Tous (relief + grain)",
         opt_eff_relief: "Relief des fils",
         opt_wool: "Laine",
         opt_merino: "Mérinos",
@@ -282,8 +280,6 @@ const TRANSLATIONS = {
         lbl_thread_type: "Thread type",
         lbl_effect: "Textile Effect",
         opt_eff_none: "None",
-        opt_eff_noise: "Noise (Grain)",
-        opt_eff_exp: "All (relief + grain)",
         opt_eff_relief: "Thread relief",
         opt_wool: "Wool",
         opt_merino: "Merino",
@@ -405,8 +401,9 @@ function loadState() {
         }
 
         if (domElements.effectType && state.effectType) {
-            domElements.effectType.value = state.effectType;
-            // An effect that no longer exists (e.g. the old overlay) falls back to none
+            // "Tous" (experimental) kept the relief; the removed overlay and grain fall back to none
+            const effect = state.effectType === 'experimental' ? 'relief' : state.effectType;
+            domElements.effectType.value = effect;
             if (!domElements.effectType.value) domElements.effectType.value = 'none';
         }
 
@@ -1716,14 +1713,9 @@ function fillTwillRelief(pixels, tileW, tileH, threadColors, isZTwist, k) {
     }
 }
 
-// "Tous" combines the thread relief with the grain.
-function hasReliefEffect(effectType) {
-    return effectType === 'relief' || effectType === 'experimental';
-}
-
 // Pixels per thread in the tile: about one tile pixel per device pixel, or 1 without relief.
 function getTileScale(effectType, zoom) {
-    if (!hasReliefEffect(effectType)) return 1;
+    if (effectType !== 'relief') return 1;
     const devicePixels = zoom * pixelDensity();
     if (devicePixels < RELIEF_MIN_PIXELS) return 1;
     return Math.min(16, Math.round(devicePixels));
@@ -1778,46 +1770,9 @@ function redrawTartan() {
     drawingContext.fillRect(0, 0, cols * k, rows * k);
     drawingContext.restore();
 
-    // Grain over the woven pattern ("Tous" adds it on top of the relief)
-    if (effectType === 'noise' || effectType === 'experimental') {
-        applyNoiseEffect(cols, rows, zoom);
-    }
-
     // Update textual info (Actual dimensions)
     updateScaleInfo(seqLen);
     updateActualValues();
-}
-
-// --- Textile Effect Implementations ---
-function applyNoiseEffect(cols, rows, zoom) {
-    // Generate static noise pattern once to avoid freezing the browser on every redraw
-    let patternSize = 256;
-    if (!window.noiseBuffer || window.noiseBuffer.width !== patternSize) {
-        if (window.noiseBuffer) {
-            window.noiseBuffer.remove(); // Prevent memory leak by removing old buffer
-        }
-        let pg = createGraphics(patternSize, patternSize);
-        pg.pixelDensity(1);
-        pg.loadPixels();
-        let len = pg.pixels.length;
-        for (let i = 0; i < len; i += 4) {
-            let val = Math.random() * 255;
-            pg.pixels[i] = val;
-            pg.pixels[i+1] = val;
-            pg.pixels[i+2] = val;
-            // Low opacity noise (increased for visibility)
-            pg.pixels[i+3] = 45;
-        }
-        pg.updatePixels();
-        window.noiseBuffer = pg;
-    }
-
-    // We use soft-light for grain to make it more visible without destroying colors
-    drawingContext.globalCompositeOperation = 'soft-light';
-    let ptrn = drawingContext.createPattern(window.noiseBuffer.canvas, 'repeat');
-    drawingContext.fillStyle = ptrn;
-    drawingContext.fillRect(0, 0, width, height);
-    drawingContext.globalCompositeOperation = 'source-over';
 }
 
 // Utility function: Loading Screen
@@ -2245,7 +2200,7 @@ function renderPatternCanvas(canvas, entry, scaleMode) {
         threadColors = sampled;
     }
 
-    const relief = hasReliefEffect(domElements.effectType?.value) && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
+    const relief = domElements.effectType?.value === 'relief' && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
     const k = relief ? Math.min(16, Math.round(threadPx)) : 1;
 
     const tile = document.createElement('canvas');
