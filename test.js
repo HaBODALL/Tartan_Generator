@@ -197,6 +197,20 @@ function runTests() {
             assertSilent(out.every((s, i) => i === 0 || s.code !== out[i - 1].code), 'recolorStripes neighbors differ');
         },
         () => {
+            // Test buildTartanSVG: one repeat, sized in mm, one rectangle per stripe run
+            const stripes = [{ code: 'R', hex: '#C80000', count: 24 }, { code: 'K', hex: '#101010', count: 6 }, { code: 'Y', hex: '#FFE600', count: 2 }];
+            const svg = buildTartanSVG(stripes, true, true, 0.5);
+            const period = getWeavePeriod(countSettThreads(stripes, true)); // 24+6+2+6 = 38 threads, repeat 76
+            assertEqual(period, 76, 'SVG repeat');
+            assertSilent(svg.includes('width="38mm"') && svg.includes('viewBox="0 0 76 76"'), 'SVG sized in mm');
+            const warp = (svg.match(/height="76" fill="#/g) || []).length;
+            const weft = (svg.match(/fill="url\(#weft/g) || []).length;
+            assertEqual(warp, 8, 'SVG warp runs over two setts (R K Y K, twice)');
+            assertEqual(weft, warp, 'SVG has as many weft runs as warp runs');
+            assertEqual((svg.match(/<pattern /g) || []).length, 3, 'SVG has one twill pattern per color');
+            console.info('✅ buildTartanSVG draws one repeat');
+        },
+        () => {
             // Test addColorToOneStripe: exactly one stripe changes, no duplicate neighbor, no color lost
             const make = () => ['R', 'G', 'R', 'B', 'G'].map(code => ({ code, hex: '#' + code, count: 4 }));
             const color = { code: 'K', hex: '#K' };

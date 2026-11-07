@@ -189,6 +189,7 @@ const TRANSLATIONS = {
         sec_srt: "Code SRT du Tartan",
         sec_export: "Export",
         btn_details: "Détails",
+        title_export_svg: "Un motif complet en vectoriel, raccordable, à la taille réelle du tissu",
         msg_palette_max: "Max 8 couleurs.",
         msg_palette_dup: "Cette couleur est déjà présente !",
         msg_palette_min: "La palette doit contenir au minimum 2 couleurs !",
@@ -265,6 +266,7 @@ const TRANSLATIONS = {
         sec_srt: "Tartan SRT Code",
         sec_export: "Export",
         btn_details: "Details",
+        title_export_svg: "One full repeat as vectors, seamless, at the real fabric size",
         msg_palette_max: "Max 8 colors.",
         msg_palette_dup: "Color already in palette!",
         msg_palette_min: "Palette must have at least 2 colors!",
@@ -465,6 +467,7 @@ function cacheDomElements() {
     domElements.btnGenPatchworkZip = document.getElementById('btn-generate-patchwork-zip');
     domElements.weaveS = document.getElementById('weave-s');
     domElements.btnExportPng = document.getElementById('btn-export-png');
+    domElements.btnExportSvg = document.getElementById('btn-export-svg');
     domElements.btnExportTxt = document.getElementById('btn-export-txt');
     domElements.btnExportAll = document.getElementById('btn-export-all');
     domElements.colorList = document.getElementById('color-list');
@@ -598,6 +601,7 @@ function bindEvents() {
 
     const btnExportPng = domElements.btnExportPng;
     if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
+    if (domElements.btnExportSvg) domElements.btnExportSvg.addEventListener('click', exportSVG);
 
     const btnExportTxt = domElements.btnExportTxt;
     if (btnExportTxt) btnExportTxt.addEventListener('click', exportTXT);
@@ -1900,11 +1904,76 @@ function exportPNG() {
     saveCanvas(filename, 'png');
 }
 
+// --- EXPORT SVG ---
+// One full weave repeat, which tiles without seams, sized in mm from the thread diameter.
+// Warp: one rectangle per stripe. Weft: one rectangle per stripe, filled with a 4 x 4 twill
+// pattern of its color, so the file stays small whatever the sett.
+function buildTartanSVG(stripes, isSymmetric, isZTwist, threadMM) {
+    const period = getWeavePeriod(countSettThreads(stripes, isSymmetric));
+
+    // Color runs along one repeat: [start, length, hex]
+    const runs = [];
+    let pos = 0;
+    const add = (s) => {
+        if (pos >= period) return;
+        const len = Math.min(s.count, period - pos);
+        const last = runs[runs.length - 1];
+        if (last && last[2] === s.hex) last[1] += len;
+        else runs.push([pos, len, s.hex]);
+        pos += len;
+    };
+    while (pos < period) {
+        stripes.forEach(add);
+        if (isSymmetric) for (let i = stripes.length - 2; i >= 1; i--) add(stripes[i]);
+    }
+
+    // Weft cells over the warp in each of the 4 twill rows (same rule as fillTwillPixels)
+    const shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
+    const twillCells = (fill) => shifts.map((shift, y) =>
+        [0, 1].map(d => `<rect x="${(shift + d) % 4}" y="${y}" width="1" height="1" fill="${fill}"/>`).join('')
+    ).join('');
+
+    const colors = [...new Set(runs.map(r => r[2]))];
+    const patterns = colors.map((hex, i) =>
+        `<pattern id="weft${i}" width="4" height="4" patternUnits="userSpaceOnUse">${twillCells(hex)}</pattern>`
+    ).join('\n    ');
+    const warp = runs.map(([x, w, hex]) => `<rect x="${x}" y="0" width="${w}" height="${period}" fill="${hex}"/>`).join('\n    ');
+    const weft = runs.map(([y, h, hex]) => `<rect x="0" y="${y}" width="${period}" height="${h}" fill="url(#weft${colors.indexOf(hex)})"/>`).join('\n    ');
+
+    const sizeMM = +(period * threadMM).toFixed(2);
+    const srt = buildSRTCode(stripes, isSymmetric).replace(/[<>&"]/g, '');
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${sizeMM}mm" height="${sizeMM}mm" viewBox="0 0 ${period} ${period}" shape-rendering="crispEdges">
+  <title>Tartan ${srt}</title>
+  <desc>2/2 twill (${isZTwist ? 'Z' : 'S'}), one repeat of ${period} threads, thread ${threadMM} mm. Tiles seamlessly.</desc>
+  <defs>
+    ${patterns}
+  </defs>
+  <g id="warp">
+    ${warp}
+  </g>
+  <g id="weft">
+    ${weft}
+  </g>
+</svg>
+`;
+}
+
+function exportSVG() {
+    if (tartanStripes.length === 0) return;
+    const threadMM = parseFloat(domElements.threadMm?.value) || 1.11;
+    const svg = buildTartanSVG(tartanStripes, domElements.sym?.checked || false, domElements.weaveZ?.checked ?? true, threadMM);
+    downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), getFilename('svg'));
+}
+
 function exportAll() {
     exportPNG();
     setTimeout(() => {
+        exportSVG();
+    }, 400); // Delays avoid the browser blocking several downloads at once
+    setTimeout(() => {
         exportTXT();
-    }, 500); // Delay to avoid browser conflict
+    }, 800);
 }
 
 // Expose to HTML

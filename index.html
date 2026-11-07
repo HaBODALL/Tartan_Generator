@@ -400,6 +400,7 @@
     .btn-secondary:hover { background: #444; }
 
     .export-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+    .export-buttons .btn-primary { grid-column: 1 / -1; }
     .btn-export { background: #2c3e50; color: #ecf0f1; border: none; padding: 10px; cursor: pointer; font-size: 12px; border-radius: 3px; font-weight: bold;}
     .btn-export:hover { background: #34495e; }
     .btn-duo { background: #27ae60; }
@@ -761,6 +762,7 @@
 
       <div class="export-buttons">
           <button class="btn-export" id="btn-export-png" >Image</button>
+          <button class="btn-export" id="btn-export-svg" data-i18n-title="title_export_svg" title="Un motif complet en vectoriel, raccordable, à la taille réelle du tissu">SVG</button>
           <button class="btn-export" id="btn-export-txt" data-i18n="btn_details" >Détails</button>
           <button class="btn-export btn-primary" id="btn-export-all" data-i18n="btn_export_all" >Exporter tout</button>
       </div>
