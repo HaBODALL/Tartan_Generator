@@ -204,9 +204,6 @@ const TRANSLATIONS = {
         lbl_thread_type: "Type de fil",
         lbl_effect: "Effet Textile",
         opt_eff_none: "Aucun",
-        opt_eff_overlay: "Filtre Overlay",
-        opt_eff_noise: "Bruit (Grain)",
-        opt_eff_exp: "Expérimental (Tous)",
         opt_eff_relief: "Relief des fils",
         opt_wool: "Laine",
         opt_merino: "Mérinos",
@@ -283,9 +280,6 @@ const TRANSLATIONS = {
         lbl_thread_type: "Thread type",
         lbl_effect: "Textile Effect",
         opt_eff_none: "None",
-        opt_eff_overlay: "Overlay Filter",
-        opt_eff_noise: "Noise (Grain)",
-        opt_eff_exp: "Experimental (All)",
         opt_eff_relief: "Thread relief",
         opt_wool: "Wool",
         opt_merino: "Merino",
@@ -407,7 +401,10 @@ function loadState() {
         }
 
         if (domElements.effectType && state.effectType) {
-            domElements.effectType.value = state.effectType;
+            // "Tous" (experimental) kept the relief; the removed overlay and grain fall back to none
+            const effect = state.effectType === 'experimental' ? 'relief' : state.effectType;
+            domElements.effectType.value = effect;
+            if (!domElements.effectType.value) domElements.effectType.value = 'none';
         }
 
         if (domElements.threadType && state.threadType) {
@@ -1773,83 +1770,9 @@ function redrawTartan() {
     drawingContext.fillRect(0, 0, cols * k, rows * k);
     drawingContext.restore();
 
-    // --- POST-PROCESSING EFFECTS OVER STANDARD BLOCKS ---
-    if (effectType === 'overlay') {
-        applyOverlayEffect(cols, rows, zoom);
-    } else if (effectType === 'noise') {
-        applyNoiseEffect(cols, rows, zoom);
-    } else if (effectType === 'experimental') {
-        // Both overlay and noise
-        applyOverlayEffect(cols, rows, zoom);
-        applyNoiseEffect(cols, rows, zoom);
-    }
-
     // Update textual info (Actual dimensions)
     updateScaleInfo(seqLen);
     updateActualValues();
-}
-
-// --- Textile Effect Implementations ---
-function applyOverlayEffect(cols, rows, zoom) {
-    // Generate a simple crosshatch pattern offscreen to simulate fabric
-    // Create it once and tile it
-    let patternSize = Math.max(10, zoom * 2);
-    if (!window.overlayPatternBuffer || window.overlayPatternBuffer.width !== patternSize) {
-        if (window.overlayPatternBuffer) {
-            window.overlayPatternBuffer.remove(); // Prevent memory leak by removing old buffer
-        }
-        let pg = createGraphics(patternSize, patternSize);
-        pg.clear();
-        pg.stroke(0, 0, 0, 40); // Dark faint lines
-        pg.strokeWeight(1);
-
-        // Draw diagonal crosshatch
-        for (let i = 0; i < patternSize * 2; i += 4) {
-            pg.line(0, i, i, 0);
-            pg.line(patternSize, i - patternSize, i - patternSize, patternSize);
-        }
-        window.overlayPatternBuffer = pg;
-    }
-
-    // Draw the pattern over the whole canvas
-    drawingContext.globalCompositeOperation = 'multiply';
-    let ptrn = drawingContext.createPattern(window.overlayPatternBuffer.canvas, 'repeat');
-    drawingContext.fillStyle = ptrn;
-    drawingContext.fillRect(0, 0, width, height);
-
-    // Reset blend mode
-    drawingContext.globalCompositeOperation = 'source-over';
-}
-
-function applyNoiseEffect(cols, rows, zoom) {
-    // Generate static noise pattern once to avoid freezing the browser on every redraw
-    let patternSize = 256;
-    if (!window.noiseBuffer || window.noiseBuffer.width !== patternSize) {
-        if (window.noiseBuffer) {
-            window.noiseBuffer.remove(); // Prevent memory leak by removing old buffer
-        }
-        let pg = createGraphics(patternSize, patternSize);
-        pg.pixelDensity(1);
-        pg.loadPixels();
-        let len = pg.pixels.length;
-        for (let i = 0; i < len; i += 4) {
-            let val = Math.random() * 255;
-            pg.pixels[i] = val;
-            pg.pixels[i+1] = val;
-            pg.pixels[i+2] = val;
-            // Low opacity noise (increased for visibility)
-            pg.pixels[i+3] = 45;
-        }
-        pg.updatePixels();
-        window.noiseBuffer = pg;
-    }
-
-    // We use soft-light for grain to make it more visible without destroying colors
-    drawingContext.globalCompositeOperation = 'soft-light';
-    let ptrn = drawingContext.createPattern(window.noiseBuffer.canvas, 'repeat');
-    drawingContext.fillStyle = ptrn;
-    drawingContext.fillRect(0, 0, width, height);
-    drawingContext.globalCompositeOperation = 'source-over';
 }
 
 // Utility function: Loading Screen
