@@ -1,0 +1,26 @@
+name: Tests
+
+# Runs the tests on every pull request, before merging.
+# Deployment stays in deploy.yml, which runs them again on main.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check syntax
+        run: node --check Random_Tartan_Generator.js
+      - name: Run tests
+        run: node test.js
