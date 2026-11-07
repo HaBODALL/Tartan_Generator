@@ -174,6 +174,20 @@ function runTests() {
             console.info('✅ createStripes follows the settings');
         },
         () => {
+            // Test random palettes: one shade per SRT code, so neighbors never share a code
+            for (let run = 0; run < 300; run++) {
+                const palette = pickRandomPalette();
+                assertSilent(new Set(palette.map(c => c.code)).size === palette.length, 'random palette has distinct codes');
+            }
+            // Hand-picked shades of one code: neighbors still differ in color
+            const reds = [{ code: 'R', hex: '#C80000' }, { code: 'R', hex: '#FF0000' }];
+            for (let run = 0; run < 50; run++) {
+                const stripes = createStripes({ minW: 4, maxW: 20, targetStripes: 8, targetSett: 200, isCheckMode: false }, reds);
+                assertSilent(stripes.every((s, i) => i === 0 || s.hex !== stripes[i - 1].hex), 'shades of one code alternate');
+            }
+            console.info('✅ random palettes use one shade per code');
+        },
+        () => {
             // Test recolorStripes: same widths, new objects, no identical neighbors
             const palette = ['R', 'G'].map(code => ({ code, hex: '#' + code }));
             const source = [6, 4, 8, 2].map(count => ({ code: 'X', hex: '#X', count }));

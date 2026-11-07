@@ -781,8 +781,11 @@ function pickRandomPalette() {
     for(let i = 0; i < numColors; i++) {
         if(tempPalette.length === 0) break;
         let randIndex = Math.floor(random(tempPalette.length));
-        palette.push(tempPalette[randIndex]);
-        tempPalette.splice(randIndex, 1);
+        let picked = tempPalette[randIndex];
+        palette.push(picked);
+        // One shade per SRT code: shades sharing a code (e.g. several reds "R")
+        // read as the same color in the SRT code and could end up side by side
+        tempPalette = tempPalette.filter(c => c.code !== picked.code);
     }
     return palette;
 }
@@ -1489,23 +1492,21 @@ function readGenerationParams() {
 
 // Returns false, without changing the pattern, when the settings cannot produce one.
 // Picks a color from the palette, different from the previous stripe when possible.
-function pickColorAvoiding(palette, previousCode) {
-    if (!palette.some(c => c.code !== previousCode)) {
-        return palette[Math.floor(Math.random() * palette.length)];
-    }
-    let color;
-    do {
-        color = palette[Math.floor(Math.random() * palette.length)];
-    } while (color.code === previousCode);
-    return color;
+// Prefers another SRT code; if every color shares the previous code (shades of one color
+// chosen by hand), at least another shade. Same color only with a one-color palette.
+function pickColorAvoiding(palette, previous) {
+    let choices = palette.filter(c => c.code !== previous?.code);
+    if (choices.length === 0) choices = palette.filter(c => c.hex !== previous?.hex);
+    if (choices.length === 0) choices = palette;
+    return choices[Math.floor(Math.random() * choices.length)];
 }
 
 // Same widths, new colors from the palette.
 function recolorStripes(stripes, palette) {
-    let previousCode = null;
+    let previous = null;
     return stripes.map(s => {
-        const color = pickColorAvoiding(palette, previousCode);
-        previousCode = color.code;
+        const color = pickColorAvoiding(palette, previous);
+        previous = color;
         return { code: color.code, hex: color.hex, count: s.count };
     });
 }
@@ -1521,13 +1522,13 @@ function createStripes(params, palette) {
     const fixedCheckWidth = isCheckMode ? randomEvenWidth() : 0;
 
     const stripes = [];
-    let previousCode = null;
+    let previous = null;
     let totalThreads = 0;
 
     // Generate until target sett is reached (or max number of stripes)
     for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
-        const color = pickColorAvoiding(palette, previousCode);
-        previousCode = color.code;
+        const color = pickColorAvoiding(palette, previous);
+        previous = color;
 
         let width = isCheckMode ? fixedCheckWidth : randomEvenWidth();
 
