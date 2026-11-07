@@ -55,7 +55,9 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      min-width: 0;
     }
+    .version-badge, .btn-about-header, .lang-switch { flex-shrink: 0; white-space: nowrap; }
 
     .header-title h1 {
       font-size: 16px;
@@ -223,6 +225,19 @@
       .btn-toggle-ui.collapsed {
         transform: rotate(-90deg);
       }
+
+      /* Header on phones: title on two short lines, compact buttons */
+      .app-header { padding: 0 10px; }
+      .header-title { gap: 6px; }
+      .header-title h1 { font-size: 12px; letter-spacing: 0.6px; line-height: 1.15; }
+      .version-badge { font-size: 10px; padding: 2px 6px; }
+      .btn-about-header { font-size: 12px; padding: 3px 8px; margin-right: 8px; }
+      .lang-btn { padding: 5px 8px; }
+
+      /* The mood board needs room: it takes most of the height while open */
+      .app-main:has(#patchwork-board:not([hidden])) #canvas-container { height: 75%; }
+      .app-main:has(#patchwork-board:not([hidden])) .sidebar { height: 25%; }
+      .app-main:has(#patchwork-board:not([hidden])) .btn-toggle-ui { display: none; }
     }
 
     h2 { font-size: 12px; margin-top: 20px; margin-bottom: 10px; color: #888; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 3px;}
@@ -401,6 +416,18 @@
 
     .export-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
     .export-buttons .btn-primary { grid-column: 1 / -1; }
+    .btn-open-board {
+        width: 100%;
+        margin-bottom: 20px;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 14px;
+        letter-spacing: 1px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    }
     .btn-export { background: #2c3e50; color: #ecf0f1; border: none; padding: 10px; cursor: pointer; font-size: 12px; border-radius: 3px; font-weight: bold;}
     .btn-export:hover { background: #34495e; }
     .btn-duo { background: #27ae60; }
@@ -774,15 +801,14 @@
   <summary data-i18n="sec_patchwork">Patchwork (planche d'inspiration)</summary>
   <div class="details-content">
 
-      <div class="controls-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 5px;">
-          <div>
-              <label for="patchwork-qty" data-i18n="lbl_patch_qty">Quantité (10-100)</label>
-              <input type="number" id="patchwork-qty" value="12" min="10" max="100" class="input-number">
-          </div>
-          <div>
-              <label for="patchwork-size" data-i18n="lbl_patch_size">Tuile à l'export (px)</label>
-              <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number">
-          </div>
+      <div class="control-group" style="margin-bottom: 12px;">
+      <div class="control-row">
+          <label for="patchwork-qty" data-i18n="lbl_patch_qty">Quantité (10-100)</label>
+          <input type="number" id="patchwork-qty" value="12" min="10" max="100" class="input-number">
+      </div>
+      <div class="control-row">
+          <label for="patchwork-size" data-i18n="lbl_patch_size">Tuile à l'export (px)</label>
+          <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number">
       </div>
       <div class="control-row" style="margin-bottom: 5px;">
           <label for="patchwork-scale" data-i18n="lbl_patch_scale">Échelle des tuiles</label>
@@ -791,10 +817,11 @@
               <option value="zoom" data-i18n="opt_scale_zoom">Zoom actuel</option>
           </select>
       </div>
-      <div style="font-size: 11px; color: #888; margin-bottom: 15px; text-align: center;" id="patchwork-info">
+      <div style="font-size: 11px; color: #888; text-align: center;" id="patchwork-info">
           <!-- Dynamic info here -->
       </div>
-      <button class="btn-primary" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork" style="width: 100%; margin-bottom: 20px;">OUVRIR LA PLANCHE</button>
+      </div>
+      <button class="btn-primary btn-open-board" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork">OUVRIR LA PLANCHE</button>
 
         </div>
 </details>
