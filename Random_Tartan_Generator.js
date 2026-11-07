@@ -132,10 +132,11 @@ let appMessage = null;       // Message shown in the sidebar: { key, isError }
 
 // Thread relief shading (declared early: the render functions use them)
 const RELIEF_LEVELS = 64;
-const RELIEF_MIN = 0.45;
-const RELIEF_MAX = 1.15;
+const RELIEF_MIN = 0.3;
+const RELIEF_MAX = 1.3;
 const RELIEF_MIN_PIXELS = 3; // Below this many device pixels per thread, relief is invisible
-let reliefMasks = { k: 0, masks: null };
+let reliefMasks = { k: 0, strength: 1, masks: null };
+const YARN_VARIATION = 0.07; // Brightness spread of the yarn irregularity (+/- 7%)
 
 // DOM Element Caching for Performance
 let domElements = {
@@ -206,6 +207,9 @@ const TRANSLATIONS = {
         lbl_effect: "Effet Textile",
         opt_eff_none: "Aucun",
         opt_eff_relief: "Relief des fils",
+        lbl_relief_strength: "Intensité du relief",
+        lbl_yarn: "Irrégularité de la laine",
+        title_yarn: "Légères variations de teinte d'un fil à l'autre, comme sur une vraie laine",
         opt_wool: "Laine",
         opt_merino: "Mérinos",
         opt_cotton: "Coton",
@@ -283,6 +287,9 @@ const TRANSLATIONS = {
         lbl_effect: "Textile Effect",
         opt_eff_none: "None",
         opt_eff_relief: "Thread relief",
+        lbl_relief_strength: "Relief strength",
+        lbl_yarn: "Yarn irregularity",
+        title_yarn: "Slight shade variations from thread to thread, as in real wool",
         opt_wool: "Wool",
         opt_merino: "Merino",
         opt_cotton: "Cotton",
@@ -355,6 +362,8 @@ function saveState() {
         zoom: domElements.zoom?.value || 2.0,
         weaveZ: domElements.weaveZ?.checked ?? true,
         effectType: domElements.effectType?.value || 'none',
+        reliefStrength: readReliefStrength(),
+        yarnIrregular: domElements.yarnIrregular?.checked || false,
         threadType: domElements.threadType?.value || 'custom',
         history: historyStack
     };
@@ -408,6 +417,11 @@ function loadState() {
             domElements.effectType.value = effect;
             if (!domElements.effectType.value) domElements.effectType.value = 'none';
         }
+        if (domElements.reliefStrength && Number.isFinite(state.reliefStrength)) {
+            domElements.reliefStrength.value = Math.round(state.reliefStrength * 100);
+        }
+        if (domElements.yarnIrregular) domElements.yarnIrregular.checked = state.yarnIrregular === true;
+        updateReliefStrengthUI();
 
         if (domElements.threadType && state.threadType) {
             domElements.threadType.value = state.threadType;
@@ -447,6 +461,9 @@ function cacheDomElements() {
     domElements.srtDisplay = document.getElementById('srt-display');
     domElements.undoBtn = document.getElementById('btn-undo');
     domElements.effectType = document.getElementById('effect-type');
+    domElements.reliefStrength = document.getElementById('relief-strength');
+    domElements.reliefStrengthValue = document.getElementById('relief-strength-value');
+    domElements.yarnIrregular = document.getElementById('yarn-irregular');
     domElements.btnToggleUI = document.getElementById('btn-toggle-ui');
     domElements.sidebar = document.getElementById('sidebar');
     domElements.canvasContainer = document.getElementById('canvas-container');
@@ -590,10 +607,28 @@ function bindEvents() {
 
     if (domElements.effectType) {
         domElements.effectType.addEventListener('change', () => {
-            redrawTartan();
+            updateReliefStrengthUI();
+            refreshRendering();
             saveState();
         });
     }
+    if (domElements.reliefStrength) {
+        domElements.reliefStrength.addEventListener('input', () => {
+            updateReliefStrengthUI();
+            redrawTartan();
+        });
+        domElements.reliefStrength.addEventListener('change', () => {
+            refreshRendering();
+            saveState();
+        });
+    }
+    if (domElements.yarnIrregular) {
+        domElements.yarnIrregular.addEventListener('change', () => {
+            refreshRendering();
+            saveState();
+        });
+    }
+    updateReliefStrengthUI();
 
     if (domElements.btnToggleUI) {
         domElements.btnToggleUI.addEventListener('click', toggleSidebar);
@@ -1648,8 +1683,31 @@ function reliefFactor(across, along) {
 }
 
 // Four k x k masks of shading levels: weft float start/end, warp float start/end.
+// 0 = flat, 1 = default, 2 = twice as marked
+function readReliefStrength() {
+    const value = parseFloat(domElements.reliefStrength?.value);
+    return Number.isFinite(value) ? Math.max(0, Math.min(2, value / 100)) : 1;
+}
+
+function updateReliefStrengthUI() {
+    const input = domElements.reliefStrength;
+    if (!input) return;
+    const active = domElements.effectType?.value === 'relief';
+    input.disabled = !active;
+    const row = input.closest('.control-row');
+    if (row) row.style.opacity = active ? '1' : '0.5';
+    if (domElements.reliefStrengthValue) domElements.reliefStrengthValue.textContent = Math.round(readReliefStrength() * 100) + ' %';
+}
+
+// Main canvas and, when open, the mood board
+function refreshRendering() {
+    redrawTartan();
+    if (typeof isPatchworkOpen === 'function' && isPatchworkOpen()) renderPatchworkBoard();
+}
+
 function getReliefMasks(k) {
-    if (reliefMasks.k === k) return reliefMasks.masks;
+    const strength = readReliefStrength();
+    if (reliefMasks.k === k && reliefMasks.strength === strength) return reliefMasks.masks;
     const masks = [0, 1, 2, 3].map(() => new Uint8Array(k * k));
     for (let py = 0; py < k; py++) {
         for (let px = 0; px < k; px++) {
@@ -1660,13 +1718,33 @@ function getReliefMasks(k) {
                 const half = type & 1; // Floats span two threads: first or second half
                 const across = isWeft ? b : a;
                 const along = (half + (isWeft ? a : b)) / 2;
-                const f = Math.min(RELIEF_MAX, Math.max(RELIEF_MIN, reliefFactor(across, along)));
+                const shaded = 1 + (reliefFactor(across, along) - 1) * strength;
+                const f = Math.min(RELIEF_MAX, Math.max(RELIEF_MIN, shaded));
                 masks[type][py * k + px] = Math.round((f - RELIEF_MIN) / (RELIEF_MAX - RELIEF_MIN) * (RELIEF_LEVELS - 1));
             }
         }
     }
-    reliefMasks = { k, masks };
+    reliefMasks = { k, strength, masks };
     return masks;
+}
+
+// Deterministic noise in [-1, 1] for a thread index
+function threadNoise(i) {
+    let x = Math.imul(i + 1, 2654435761) >>> 0;
+    x = Math.imul(x ^ (x >>> 15), 2246822519) >>> 0;
+    x = Math.imul(x ^ (x >>> 13), 3266489917) >>> 0;
+    return ((x ^ (x >>> 16)) >>> 0) / 4294967295 * 2 - 1;
+}
+
+// Each thread a little lighter or darker, with slow streaks over a few threads like real yarn.
+// Indexed by thread, so the same thread keeps its shade and a repeat still tiles.
+function varyYarnColors(colors, amount = YARN_VARIATION) {
+    const out = new Uint32Array(colors.length);
+    for (let i = 0; i < colors.length; i++) {
+        const noise = 0.65 * threadNoise(i) + 0.35 * threadNoise(Math.floor(i / 4) + 7919);
+        out[i] = shadePixel(colors[i], 1 + amount * noise);
+    }
+    return out;
 }
 
 function shadePixel(pixel, factor) {
@@ -1760,6 +1838,7 @@ function redrawTartan() {
     let tileCtx = weaveTileCanvas.getContext('2d');
     let tile = tileCtx.createImageData(tileW * k, tileH * k);
     let threadColors = buildThreadColors(tartanStripes, isSymmetric, Math.max(tileW, tileH));
+    if (domElements.yarnIrregular?.checked) threadColors = varyYarnColors(threadColors);
     let tilePixels = new Uint32Array(tile.data.buffer);
     if (k > 1) fillTwillRelief(tilePixels, tileW, tileH, threadColors, isZTwist, k);
     else fillTwillPixels(tilePixels, tileW, tileH, threadColors, isZTwist);
@@ -2269,6 +2348,7 @@ function renderPatternCanvas(canvas, entry, scaleMode) {
         for (let i = 0; i < drawn; i++) sampled[i] = threadColors[Math.floor(i * threadColors.length / drawn)];
         threadColors = sampled;
     }
+    if (domElements.yarnIrregular?.checked) threadColors = varyYarnColors(threadColors);
 
     const relief = domElements.effectType?.value === 'relief' && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
     const k = relief ? Math.min(16, Math.round(threadPx)) : 1;
