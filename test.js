@@ -307,6 +307,28 @@ function runTests() {
             const merged = replaceColorInStripes(['R', 'X', 'G'].map(stripe), '#X', [c('R'), c('G')]);
             assertEqual(merged.length, 2, 'replaceColorInStripes merges when there is no choice');
             assertEqual(merged.reduce((sum, s) => sum + s.count, 0), 12, 'replaceColorInStripes keeps the thread count');
+        },
+        () => {
+            // Criteria board: one tile per combination, only the criterion changes
+            const a = seededRandom(42), b = seededRandom(42);
+            assertEqual(a(), b(), 'seededRandom repeats');
+            const pal = ['R', 'G', 'B', 'K', 'W', 'Y'].map(code => ({ code, hex: '#' + code + '00000', name: code }));
+            const params = { minW: 4, maxW: 64, targetStripes: 6, targetSett: 260, isCheckMode: false };
+            const base = { palette: pal, defaultColors: 4, params, symmetric: false, seed: 7 };
+            const grid = createCriteriaBatch({ ...base, xAxis: 'colors', yAxis: 'stripes' });
+            assertEqual(grid.cols, 5, 'criteria grid columns');
+            assertEqual(grid.batch.length, 25, 'criteria grid has every combination');
+            assertSilent(grid.batch.every(e => e.palette.length <= e.criteria[0][1]), 'criteria tiles respect the color count');
+            assertSilent(grid.batch.filter(e => e.criteria[1][1] === 4).every(e => e.stripes.length <= 4), 'criteria tiles respect the stripe count');
+            assertEqual(createCriteriaBatch({ ...base, xAxis: 'sett', yAxis: 'none' }).batch.length, 5, 'one row without a second criterion');
+            assertEqual(createCriteriaBatch({ ...base, xAxis: 'sett', yAxis: 'sett' }).batch.length, 5, 'same criterion twice gives one row');
+            const setts = createCriteriaBatch({ ...base, xAxis: 'sett', yAxis: 'none' }).batch.map(e => sumStripeThreads(e.stripes));
+            assertSilent(setts.every((s, i) => Math.abs(s - PATCHWORK_AXES.sett[i]) <= 12), 'criteria tiles reach the sett');
+            const small = createCriteriaBatch({ ...base, params: { ...params, minW: 124, maxW: 124 }, xAxis: 'sett', yAxis: 'none' });
+            assertSilent(small.batch.every(e => e.stripes.length > 0), 'a wide minimum still gives tiles');
+            const two = createCriteriaBatch({ ...base, palette: pal.slice(0, 3), defaultColors: 3, xAxis: 'colors', yAxis: 'none' });
+            assertEqual(two.cols, 2, 'color criterion is limited by the palette');
+            console.info('✅ criteria board');
         }
     ];
 
