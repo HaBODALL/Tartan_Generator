@@ -234,8 +234,12 @@ const TRANSLATIONS = {
         btn_patch_new: "Nouveau lot",
         btn_patch_png: "Exporter PNG",
         btn_patch_close: "Fermer",
-        title_patch_board: "Planche patchwork : cliquez un motif pour le reprendre",
+        title_patch_board: "Planche patchwork : cliquez un motif pour le reprendre, 📌 pour le garder, ≈ pour des variantes",
         patch_pick: "Reprendre ce motif",
+        patch_pin: "Garder ce motif au prochain lot",
+        patch_unpin: "Ne plus garder ce motif",
+        patch_vary: "Variantes de ce motif",
+        patch_variants: "Variantes autour du motif choisi.",
         patch_exporting: "Export en cours…",
         patch_done: "Export terminé.",
         msg_patch_too_big: "Export trop grand : réduisez la quantité ou la taille des tuiles (50 mégapixels au maximum).",
@@ -311,8 +315,12 @@ const TRANSLATIONS = {
         btn_patch_new: "New batch",
         btn_patch_png: "Export PNG",
         btn_patch_close: "Close",
-        title_patch_board: "Mood board: click a pattern to use it",
+        title_patch_board: "Mood board: click a pattern to use it, 📌 to keep it, ≈ for variants",
         patch_pick: "Use this pattern",
+        patch_pin: "Keep this pattern in the next batch",
+        patch_unpin: "Stop keeping this pattern",
+        patch_vary: "Variants of this pattern",
+        patch_variants: "Variants around the chosen pattern.",
         patch_exporting: "Exporting…",
         patch_done: "Export finished.",
         msg_patch_too_big: "Export too large: lower the quantity or the tile size (50 megapixels at most).",
@@ -2242,11 +2250,56 @@ function createPatchworkBatch(qty) {
         const palette = keepColors ? userPalette : pickRandomPalette();
         const stripes = keepStructure ? recolorStripes(tartanStripes, palette) : createStripes(params, palette);
         if (stripes.length === 0) continue;
-        // Keep only the colors the pattern uses, in palette order
-        const used = palette.filter(c => stripes.some(s => s.hex === c.hex));
-        batch.push({ stripes, palette: used, symmetric, generationID: Math.floor(Math.random() * 1000000) });
+        batch.push(makePatchworkEntry(stripes, palette, symmetric));
     }
     return batch;
+}
+
+function makePatchworkEntry(stripes, palette, symmetric) {
+    // Keep only the colors the pattern uses, in palette order
+    const used = palette.filter(c => stripes.some(s => s.hex === c.hex));
+    return { stripes, palette: used, symmetric, pinned: false, generationID: Math.floor(Math.random() * 1000000) };
+}
+
+// A pattern close to the source. Three kinds, used in turn:
+// 0: same colors, widths changed by up to 40% (kept even); 1: same widths and palette,
+// colors in another order; 2: same widths, a new random palette of the same size.
+function createPatchworkVariant(source, kind) {
+    let stripes, palette = source.palette;
+    if (kind === 0) {
+        stripes = source.stripes.map(s => {
+            const factor = 0.6 + Math.random() * 0.8;
+            return { ...s, count: Math.max(2, Math.round(s.count * factor / 2) * 2) };
+        });
+    } else if (kind === 1 && palette.length > 1) {
+        stripes = recolorStripes(source.stripes, palette);
+    } else {
+        palette = pickRandomPalette();
+        while (palette.length < Math.min(source.palette.length, 5)) {
+            const extra = pickRandomPalette().find(c => !palette.some(p => p.code === c.code));
+            if (!extra) break;
+            palette.push(extra);
+        }
+        if (palette.length < 2) palette = source.palette;
+        stripes = recolorStripes(source.stripes, palette);
+    }
+    return makePatchworkEntry(stripes, palette, source.symmetric);
+}
+
+// Pinned tiles stay in place, even beyond the quantity; new tiles fill the other places
+// until the board holds the quantity.
+function mergePinnedTiles(previous, fresh, qty) {
+    const merged = [];
+    let next = 0;
+    let free = Math.max(0, qty - previous.filter(e => e.pinned).length);
+    for (let i = 0; i < Math.max(previous.length, qty); i++) {
+        if (previous[i]?.pinned) merged.push(previous[i]);
+        else if (free > 0 && next < fresh.length) {
+            merged.push(fresh[next++]);
+            free--;
+        }
+    }
+    return merged;
 }
 
 // Draws a pattern into a square canvas. "fit" shows one full repeat; "zoom" uses the main zoom.
@@ -2322,6 +2375,9 @@ function renderPatchworkBoard() {
     const fragment = document.createDocumentFragment();
     patchworkBatch.forEach((entry, index) => {
         const srt = buildSRTCode(entry.stripes, entry.symmetric);
+        const cellEl = document.createElement('div');
+        cellEl.className = 'patchwork-cell' + (entry.pinned ? ' pinned' : '');
+
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'patchwork-tile';
@@ -2333,11 +2389,59 @@ function renderPatchworkBoard() {
         canvas.width = Math.round(cell * density);
         canvas.height = canvas.width;
         renderPatternCanvas(canvas, entry, scaleMode);
-
         button.appendChild(canvas);
-        fragment.appendChild(button);
+
+        // Small actions over the tile: pin it, or explore variants around it
+        const actions = document.createElement('div');
+        actions.className = 'patchwork-actions';
+        const pin = document.createElement('button');
+        pin.type = 'button';
+        pin.className = 'patchwork-action patchwork-pin';
+        pin.textContent = '📌';
+        pin.setAttribute('aria-pressed', String(entry.pinned));
+        pin.title = entry.pinned ? t.patch_unpin : t.patch_pin;
+        pin.setAttribute('aria-label', `${pin.title} : ${srt}`);
+        pin.addEventListener('click', () => togglePatchworkPin(index));
+        const vary = document.createElement('button');
+        vary.type = 'button';
+        vary.className = 'patchwork-action patchwork-vary';
+        vary.textContent = '≈';
+        vary.title = t.patch_vary;
+        vary.setAttribute('aria-label', `${t.patch_vary} : ${srt}`);
+        vary.addEventListener('click', () => showPatchworkVariants(index));
+        actions.append(pin, vary);
+
+        cellEl.append(button, actions);
+        fragment.appendChild(cellEl);
     });
     grid.appendChild(fragment);
+}
+
+function togglePatchworkPin(index) {
+    const entry = patchworkBatch[index];
+    if (!entry) return;
+    entry.pinned = !entry.pinned;
+    renderPatchworkBoard();
+    // Keep the keyboard on the same pin after the redraw
+    domElements.patchworkGrid.querySelectorAll('.patchwork-pin')[index]?.focus();
+}
+
+// Fills the board with variants of one tile; the tile and the pinned ones stay.
+function showPatchworkVariants(index) {
+    const source = patchworkBatch[index];
+    if (!source) return;
+    source.pinned = true;
+    const qty = readPatchworkQty();
+    const keptCount = patchworkBatch.filter(e => e.pinned).length;
+    const variants = [];
+    for (let i = 0; variants.length < Math.max(0, qty - keptCount) && i < qty * 3; i++) {
+        const variant = createPatchworkVariant(source, i % 3);
+        if (variant.stripes.length > 0) variants.push(variant);
+    }
+    patchworkBatch = mergePinnedTiles(patchworkBatch, variants, qty);
+    setPatchworkStatus('patch_variants');
+    renderPatchworkBoard();
+    domElements.patchworkGrid.querySelectorAll('.patchwork-vary')[patchworkBatch.indexOf(source)]?.focus();
 }
 
 // Makes a tile the current pattern. The previous pattern goes to the history.
@@ -2393,8 +2497,9 @@ window.generatePatchwork = function() {
         closePatchworkBoard();
         return;
     }
-    patchworkBatch = batch;
+    // "Nouveau lot" keeps the pinned tiles
     const wasOpen = isPatchworkOpen();
+    patchworkBatch = wasOpen ? mergePinnedTiles(patchworkBatch, batch, readPatchworkQty()) : batch;
     if (!wasOpen) patchworkOpener = document.activeElement;
     board.hidden = false;
     setPatchworkStatus(null);

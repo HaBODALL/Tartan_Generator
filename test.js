@@ -211,6 +211,31 @@ function runTests() {
             console.info('✅ buildTartanSVG draws one repeat');
         },
         () => {
+            // Test mergePinnedTiles: pinned tiles keep their place, the rest is replaced
+            const old = ['a', 'b', 'c', 'd'].map((id, i) => ({ id, pinned: i === 1 || i === 3 }));
+            const fresh = ['x', 'y', 'z'].map(id => ({ id, pinned: false }));
+            assertEqual(mergePinnedTiles(old, fresh, 4).map(e => e.id).join(''), 'xbyd', 'pinned tiles stay in place');
+            assertEqual(mergePinnedTiles(old, fresh, 2).map(e => e.id).join(''), 'bd', 'pinned tiles survive a smaller quantity');
+            assertEqual(mergePinnedTiles(old, fresh, 5).map(e => e.id).join(''), 'xbydz', 'a larger quantity adds tiles at the end');
+            assertEqual(mergePinnedTiles([], fresh, 3).map(e => e.id).join(''), 'xyz', 'no pins: all new');
+
+            // Test createPatchworkVariant: each kind keeps what it promises
+            const source = { symmetric: true, palette: [{ code: 'R', hex: '#C80000' }, { code: 'K', hex: '#101010' }, { code: 'W', hex: '#FFFFFF' }],
+                stripes: [{ code: 'R', hex: '#C80000', count: 24 }, { code: 'K', hex: '#101010', count: 8 }, { code: 'W', hex: '#FFFFFF', count: 4 }] };
+            for (let run = 0; run < 30; run++) {
+                const widths = createPatchworkVariant(source, 0);
+                assertSilent(widths.stripes.map(s => s.hex).join() === source.stripes.map(s => s.hex).join(), 'width variant keeps the colors');
+                assertSilent(widths.stripes.every(s => s.count >= 2 && s.count % 2 === 0), 'width variant keeps even widths');
+                for (const kind of [1, 2]) {
+                    const v = createPatchworkVariant(source, kind);
+                    assertSilent(v.stripes.map(s => s.count).join() === '24,8,4', 'color variant keeps the widths');
+                    assertSilent(v.stripes.every((s, i) => i === 0 || s.code !== v.stripes[i - 1].code), 'color variant has no identical neighbors');
+                    assertSilent(v.symmetric === true && v.pinned === false, 'variant keeps the symmetry and is not pinned');
+                }
+            }
+            console.info('✅ patchwork pins and variants');
+        },
+        () => {
             // Test addColorToOneStripe: exactly one stripe changes, no duplicate neighbor, no color lost
             const make = () => ['R', 'G', 'R', 'B', 'G'].map(code => ({ code, hex: '#' + code, count: 4 }));
             const color = { code: 'K', hex: '#K' };
