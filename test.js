@@ -445,6 +445,23 @@ function runTests() {
             const yarn = varyYarnColors(colors, 0.07), late = varyYarnColors(colors.slice(5, 15), 0.07, 5, 1000);
             assertSilent(late.every((c, i) => c === yarn[5 + i]), 'a thread keeps its yarn shade in a moved view');
             console.info('✅ moving the view');
+        },
+        () => {
+            // Color readability
+            assertEqual(Math.round(hexToLab('#FFFFFF')[0]), 100, 'white is L 100');
+            assertEqual(Math.round(hexToLab('#000000')[0]), 0, 'black is L 0');
+            assertSilent(colorDifference('#101010', '#FFFFFF') > 80, 'black and white are far apart');
+            assertSilent(colorDifference('#101010', '#141414') < COLOR_CLOSE_DELTA, 'two near blacks are close');
+            const red = '#C80000', green = '#2E7D00';
+            assertSilent(colorDifference(red, green) > 50, 'red and green are far apart in normal vision');
+            assertSilent(colorDifference(red, green, VISION_MATRICES.deuter) < colorDifference(red, green) / 2, 'red and green get close with deuteranopia');
+            const st = hex => ({ code: 'X', hex, count: 4 });
+            assertEqual(findCloseNeighbors([st('#101010'), st('#FFFFFF')], true).length, 0, 'clear neighbors raise nothing');
+            assertEqual(findCloseNeighbors([st('#101010'), st('#141414'), st('#FFFFFF')], true).length, 1, 'close neighbors are found');
+            assertEqual(findCloseNeighbors([st('#101010'), st('#FFFFFF'), st('#141414')], false).length, 1, 'an asymmetric sett wraps around');
+            assertEqual(findCloseNeighbors([st('#101010'), st('#FFFFFF'), st('#141414')], true).length, 0, 'a symmetric sett does not wrap');
+            assertEqual(findCloseNeighbors([st('#101010'), st('#141414'), st('#101010'), st('#141414')], true).length, 1, 'a pair is listed once');
+            console.info('✅ color readability');
         }
     ];
 
