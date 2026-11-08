@@ -12,24 +12,60 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 
 ---
 
-## 📁 Repository Structure
+## ✨ Features
 
-The project repository includes the following files:
+**Create**
+* Generate random tartans from constraints: number of stripes, stripe width, sett, symmetric or asymmetric, check mode.
+* Keep the colors or the structure while generating.
+* Choose up to 8 colors from the 137 SRT shades.
+* History of the last 10 patterns, and undo.
+
+**Bring a pattern in**
+* Paste an SRT threadcount (`R/72 B8 K12 ...`) or load one of the examples.
+* Reopen a text file written by the *Details* export, with its exact shades and rendering settings.
+* Open a shared link.
+* **Estimate a tartan from a photo.** Frame the cloth, compare up to 10 readings, give a *gold* star to the right one or *silver* stars to those that are close, and generate an intermediate from them. The image stays on your device. Thread counts are proportions, since a photo does not tell the real number of threads. This feature has only been validated on simulated photos so far.
+
+**Explore**
+* Mood board of 10 to 100 patterns, with pins and variants around a tile.
+* Criteria mode: a grid whose columns and rows each vary one setting (colors, stripes, maximum width, sett, symmetry).
+* Preview on a scarf, a cushion and a kilt, to scale from the thread size.
+* Color readability: warning on neighboring stripes that are hard to tell apart, and color blindness simulation (on screen only).
+
+**Render**
+* 2/2 twill, Z or S, with thread relief and yarn irregularity.
+* Zoom with the buttons, the slider, the mouse wheel (around the pointer), the `+` and `-` keys or a pinch.
+* Move the pattern by dragging or with the arrow keys; a double click goes back to the start.
+
+**Export and share**
+* PNG of the current view, SVG of one seamless repeat at real size, text details (SRT and Ink/Stitch codes), ZIP or PNG of the mood board.
+* Printable weaving sheet: thread order and yarn per color per square meter.
+* Link that reopens exactly the pattern, with no server involved.
+
+**Keyboard**: `Space` or `G` generate, `S` export all, `P` export PNG, `Ctrl+Z` undo, `+` and `-` zoom, arrows move, `Esc` closes the board or window.
+
+---
+
+## 📁 Repository Structure
 
 ```
 .
-├── index.html                             # Main HTML entry point loading p5.js and sketch scripts
-├── p5.min.js                              # p5.js core library (standalone minified build)
-├── Random_Tartan_Generator.js   # Main p5.js sketch logic for generating Tartan patterns
-├── sketch.properties                      # Sketch metadata and processing/p5 config properties
-└── libraries/                             # Directory containing additional p5.js or helper libraries
+├── index.html                   # Page, inline CSS and Content-Security-Policy
+├── Random_Tartan_Generator.js   # All the application logic
+├── test.js                      # Unit tests (node test.js)
+├── p5.min.js                    # p5.js core library
+├── libraries/                   # JSZip, served locally
+├── Colour_shades.pdf            # SRT color shade table
+├── DEVELOPER_GUIDE.md           # Architecture and how to contribute
+├── sketch.properties            # Processing sketch metadata
+└── .github/workflows/           # Tests on pull requests, deployment to GitHub Pages
 ```
 
 ---
 
-## 🎨 Overview & Scottish Register of Tartans (SRT) Integration
+## 🎨 Scottish Register of Tartans (SRT)
 
-Tartans are created through specific weaving patterns (sett) using alternating warp and weft thread counts. The **Scottish Register of Tartans (SRT)** defines official standard shade categories and color codes used in traditional Scottish clan and regional tartans:
+Tartans are defined by a thread sequence, the sett, woven identically in warp and weft. The **Scottish Register of Tartans (SRT)** defines standard shade categories and color codes:
 
 * **Red (R)**
 * **Light Blue (LB)** / **Dark Blue (DB)** / **Blue (B)**
@@ -40,72 +76,24 @@ Tartans are created through specific weaving patterns (sett) using alternating w
 * **Grey (N)**
 * **Orange (O)** / **Purple (P)** / **Brown (T)**
 
-This tool translates traditional threadcount notation (e.g., `R/24 DB/8 Y/4 G/16...`) into visual twill weave patterns rendered directly on a web canvas.
+In a threadcount, `/` marks the two pivots of a symmetric sett (`R/72 B8 K/12`), and `...` marks a repeating asymmetric sett (`...R20 G20...`).
 
 ---
 
-## 🚀 Optimization & Feature Roadmap
+## 🚀 Roadmap
 
-Below are key recommendations and optimization avenues to improve performance, rendering accuracy, user experience, and deployment.
-
-### 1. ⚡ Rendering & Performance Optimizations
-
-* **Offscreen Buffer Caching (`p5.Graphics`)**:
-  Instead of redrawing individual weave threads every frame in the main `draw()` loop, render the basic tartan unit cell (sett) into an offscreen `p5.Graphics` buffer. Then tile it across the main canvas or use it as a pattern fill.
-* **Direct Pixel Manipulation (`pixels[]`)**:
-  When generating high-resolution tartan patterns or applying a 2/2 twill weave texture, manipulate the `pixels` array directly (`loadPixels()` / `updatePixels()`) or use WebGL shaders (`p5.Shader`) for near-instant GPU-accelerated rendering.
-* **Canvas Resizing & DPR Management**:
-  Optimize canvas rendering for high-DPI (Retina) displays by scaling via `devicePixelRatio` or setting explicit pixel dimensions, preventing blurry exports.
-
-### 2. 🧵 Tartan Generation & SRT Standards
-
-* **Authentic 2/2 Twill Weave Pattern**:
-  Implement true 2/2 twill weave simulation where warp (vertical) and weft (horizontal) threads cross over two and under two threads at a 45-degree diagonal shift, producing authentic woven texture.
-* **Sett Syntax Parser**:
-  Add a parser for standard SRT threadcount strings (e.g., `K/24 R/8 W/4 B/32`). This allows users to paste official tartan formulas from the Scottish Register of Tartans database and instantly visualize them.
-* **Symmetrical & Asymmetrical Sett Logic**:
-  Support both **symmetrical** tartans (where the pattern reflects at pivot threads, e.g. `...A-B-C-B-A...`) and **asymmetrical /'moving'** tartans (repeating sequentially `...A-B-C-A-B-C...`).
-* **Color Count Preservation**:
-  Enhance the "Keep Structure" feature so it preserves the exact number of unique colors from the previous structure, or introduce a new explicit constraint/control for the desired number of colors.
-
-### 3. 🎛️ User Interface & Experience (UI/UX)
-
-* **Interactive Controls**:
-  Add HTML/p5 controls (sliders, color pickers, toggle switches) to easily adjust:
-  * Thread width & density
-  * Custom color palettes matching exact SRT Hex/RGB values
-  * Symmetry toggles
-  * Randomization seed control
-* **Live Preset Selector**:
-  Include pre-loaded historical tartans (e.g., Royal Stewart, Black Watch, Dress Gordon) as quick-start templates.
-* **Absolute Constraints System**:
-  Implement a system to enforce strict pattern rules (e.g., maximum thread count or specific color order) and display a clear error message when the constraints cannot be met, blocking the invalid action.
-* **Live Import Preview**:
-  Enhance the text input field for SRT codes to preview the pattern in real-time as the user types, and potentially enforce the correct format automatically without showing alert popups continuously.
-
-### 4. 💾 Export & Sharing Capabilities
-
-* **Seamless Tile PNG Export**:
-  Provide a one-click button to export a perfectly seamless repeating tile image for use in 3D texturing, graphic design, or fabric printing.
-* **SVG Vector Export**:
-  Integrate `p5.svg` or standalone SVG generation to export scalable vector files for professional textile design.
-* **JSON Preset Import/Export**:
-  Allow users to save their tartan designs and custom palettes to JSON files and reload them later.
-
-### 5. 🎮 Itch.io Deployment & Web Integration
-
-* **Responsive iFrame Scaling**:
-  Ensure `index.html` uses CSS flexbox/grid and `windowResized()` handling to auto-fit any aspect ratio when embedded inside Itch.io's HTML5 iFrame player.
-* **Touch & Mobile Support**:
-  Add touch gesture controls (pinch-to-zoom, drag-to-pan) for mobile web visitors on Itch.io.
+* Try the photo estimate on real photos and adjust it.
+* A simplified presentation tool for people who want to produce their own tartan.
+* Animations and patchwork backgrounds (on hold).
+* Seamless PNG tile export and a control for the random seed.
 
 ---
 
 ## 🛠️ Local Development & Running
 
 1. Clone or download the repository files.
-2. Open `index.html` in any modern web browser, or serve it using a local HTTP server (e.g. `npx serve`, VS Code Live Server, or `python -m http.server`).
-3. View and interact with the Tartan generator.
+2. Open `index.html` in a modern web browser, or serve the folder with a local HTTP server (for example `python -m http.server 3000` or `npx serve`).
+3. Run the tests with `node test.js`. There is no build step and nothing to install.
 
 ---
 

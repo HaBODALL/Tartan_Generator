@@ -12,100 +12,88 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 
 ---
 
-## 📁 Structure du Dépôt
+## ✨ Fonctionnalités
 
-Le dépôt contient les fichiers suivants :
+**Créer**
+* Génération aléatoire sous contraintes : nombre de bandes, largeur des bandes, sett, symétrique ou asymétrique, mode damier.
+* Conservation des couleurs ou de la structure pendant la génération.
+* Choix de 8 couleurs au plus parmi les 137 nuances SRT.
+* Historique des 10 derniers motifs, et annulation.
+
+**Reprendre un motif**
+* Coller un code SRT (`R/72 B8 K12 ...`) ou charger un exemple.
+* Rouvrir un fichier texte produit par l'export *Détails*, avec ses teintes exactes et ses réglages de rendu.
+* Ouvrir un lien partagé.
+* **Estimer un tartan depuis une photo.** Cadrez le tissu, comparez jusqu'à 10 lectures, donnez une étoile d'*or* à la bonne ou des étoiles d'*argent* à celles qui sont proches, et générez un intermédiaire à partir d'elles. L'image reste sur votre appareil. Les nombres de fils sont des proportions : une photo ne donne pas le nombre réel de fils. Cette fonction n'a pour l'instant été validée que sur des photos simulées.
+
+**Explorer**
+* Mood board de 10 à 100 motifs, avec épingles et variantes autour d'une tuile.
+* Mode par critères : une grille dont les colonnes et les lignes font varier chacune un réglage (couleurs, bandes, largeur max, sett, symétrie).
+* Aperçu sur une écharpe, un coussin et un kilt, à l'échelle d'après la taille du fil.
+* Lisibilité des couleurs : alerte sur les bandes voisines difficiles à distinguer, et simulation du daltonisme (à l'écran seulement).
+
+**Rendu**
+* Sergé 2/2, Z ou S, avec relief des fils et irrégularité de la laine.
+* Zoom aux boutons, au curseur, à la molette (autour du pointeur), aux touches `+` et `-` ou au pincement.
+* Déplacement du motif en le faisant glisser ou aux flèches ; un double-clic revient au début.
+
+**Exporter et partager**
+* PNG de la vue, SVG d'un motif complet raccordable à la taille réelle, détails en texte (codes SRT et Ink/Stitch), ZIP ou PNG du mood board.
+* Fiche de tissage imprimable : ordre des fils et fil par couleur au m².
+* Lien qui rouvre exactement le motif, sans aucun serveur.
+
+**Clavier** : `Espace` ou `G` génèrent, `S` exporte tout, `P` exporte le PNG, `Ctrl+Z` annule, `+` et `-` zooment, les flèches déplacent, `Échap` ferme la planche ou la fenêtre.
+
+---
+
+## 📁 Structure du Dépôt
 
 ```
 .
-├── index.html                             # Point d'entrée HTML chargeant p5.js et le sketch
-├── p5.min.js                              # Bibliothèque p5.js principale (build minifié autonome)
-├── Random_Tartan_Generator.js   # Logique p5.js principale pour la génération de Tartans
-├── sketch.properties                      # Métadonnées du sketch et configuration Processing/p5
-└── libraries/                             # Dossier contenant des bibliothèques p5.js ou utilitaires
+├── index.html                   # Page, CSS intégré et Content-Security-Policy
+├── Random_Tartan_Generator.js   # Toute la logique de l'application
+├── test.js                      # Tests unitaires (node test.js)
+├── p5.min.js                    # Bibliothèque p5.js
+├── libraries/                   # JSZip, servi localement
+├── Colour_shades.pdf            # Table des nuances SRT
+├── DEVELOPER_GUIDE.md           # Architecture et contribution
+├── sketch.properties            # Métadonnées du sketch Processing
+└── .github/workflows/           # Tests sur les pull requests, déploiement GitHub Pages
 ```
 
 ---
 
-## 🎨 Présentation & Intégration du Scottish Register of Tartans (SRT)
+## 🎨 Scottish Register of Tartans (SRT)
 
-Les tartans sont créés grâce à un motif de tissage spécifique (*sett*) combinant des fils de chaîne (verticaux) et de trame (horizontaux). Le **Scottish Register of Tartans (SRT)** définit les catégories de couleurs et codes officiels utilisés dans les tartans traditionnels écossais :
+Un tartan est défini par une séquence de fils, le sett, tissée à l'identique en chaîne et en trame. Le **Scottish Register of Tartans (SRT)** définit des catégories de nuances et des codes couleur standards :
 
-* **Rouge (R - Red)**
-* **Bleu Clair (LB)** / **Bleu Foncé (DB)** / **Bleu (B)**
-* **Vert (G - Green)** / **Vert Clair (LG)** / **Vert Foncé (DG)**
-* **Jaune (Y - Yellow)**
-* **Noir (K - Black)**
-* **Blanc (W - White)**
-* **Gris (N - Grey)**
-* **Orange (O)** / **Violet (P - Purple)** / **Brun (T - Brown)**
+* **Rouge (R)**
+* **Bleu clair (LB)** / **Bleu foncé (DB)** / **Bleu (B)**
+* **Vert (G)** / **Vert clair (LG)** / **Vert foncé (DG)**
+* **Jaune (Y)**
+* **Noir (K)**
+* **Blanc (W)**
+* **Gris (N)**
+* **Orange (O)** / **Violet (P)** / **Marron (T)**
 
-Cet outil traduit la notation traditionnelle du compte de fils (ex: `R/24 DB/8 Y/4 G/16...`) en un motif de tissage sergé rendu directement sur un canvas web interactif.
+Dans un code, `/` marque les deux pivots d'un sett symétrique (`R/72 B8 K/12`), et `...` un sett asymétrique qui se répète (`...R20 G20...`).
 
 ---
 
-## 🚀 Feuille de Route d'Optimisation & Améliorations
+## 🚀 Feuille de Route
 
-Voici une analyse détaillée des pistes d'optimisation et des fonctionnalités recommandées pour améliorer les performances, l'ergonomie, la fidélité visuelle et la distribution.
-
-### 1. ⚡ Optimisations de Rendu & Performances
-
-* **Mise en Cache par Tampon Hors-Écran (`p5.Graphics`)** :
-  Au lieu de redessiner chaque fil du motif à chaque image dans la boucle `draw()`, générez la cellule élémentaire du tartan (*sett*) dans un tampon `p5.Graphics` hors-écran, puis répétez-la en mosaïque sur le canvas principal.
-* **Manipulation Directe des Pixels (`pixels[]`)** :
-  Pour générer des tartans haute résolution ou simuler la texture du tressage sergé 2/2, manipulez directement le tableau `pixels` (`loadPixels()` / `updatePixels()`) ou utilisez un shader WebGL (`p5.Shader`) pour un rendu ultra-rapide accéléré par GPU.
-* **Gestion du Redimensionnement & Écran Retina (DPR)** :
-  Ajustez la résolution du canvas selon `devicePixelRatio` pour éviter les rendus flous sur écrans haute densité tout en préservant le débit d'images (*FPS*).
-
-### 2. 🧵 Génération du Tartan & Normes SRT
-
-* **Simulation Authentique du Tissage Sergé 2/2 (Twill Weave)** :
-  Implémentez le motif de tissage sergé 2/2 où les fils de chaîne et de trame se croisent selon un décalage diagonal à 45° (passant au-dessus de 2 fils puis en-dessous de 2 fils).
-* **Analyseur de Syntaxe de Compte de Fils (*Sett Parser*)** :
-  Ajoutez un outil d'analyse (*parser*) pour interpréter la notation textuelle SRT standard (ex: `K/24 R/8 W/4 B/32`). Cela permettra de copier-coller des formules officielles du registre écossais pour les visualiser instantanément.
-* **Gestion des Motifs Symétriques et Asymétriques** :
-  Prenez en charge les motifs **symétriques** (où le motif s'inverse aux fils pivots, ex: `...A-B-C-B-A...`) et **asymétriques** (répétition séquentielle `...A-B-C-A-B-C...`).
-* **Préservation du Nombre de Couleurs** :
-  Améliorez l'option "Conserver Structure" afin de conserver le même nombre de couleurs différentes (appartenant à la structure), ou ajoutez une contrainte explicite pour le nombre de couleurs.
-
-### 3. 🎛️ Interface Utilisateur & Ergonomie (UI/UX)
-
-* **Contrôles Interactifs** :
-  Ajoutez des éléments de contrôle HTML/p5 (curseurs, sélecteurs de couleurs, interrupteurs) pour ajuster :
-  * La largeur et la densité des fils
-  * Les palettes de couleurs personnalisées conformes aux codes Hex/RGB du SRT
-  * La bascule symétrie / asymétrie
-  * La graine de génération aléatoire (*seed*)
-* **Bibliothèque de Modèles Pré-chargés** :
-  Proposez une sélection de tartans historiques célèbres (ex: Royal Stewart, Black Watch, Dress Gordon) comme modèles de démarrage rapide.
-* **Système de Contraintes Absolues** :
-  Mettre en place un concept de contrainte absolue (qui doit être respectée avant tout) avec un ordre précis, affichant un message explicite bloquant l'action lorsque celle-ci est impossible.
-* **Aperçu d'Importation en Direct** :
-  Améliorer la zone de texte d'importation pour voir le résultat du code SRT se générer en direct à mesure de la frappe, en forçant éventuellement le formatage pour éviter les alertes d'erreur intempestives.
-
-### 4. 💾 Fonctions d'Exportation & Partage
-
-* **Exportation PNG Répétable Sans Couture (Seamless Tile)** :
-  Ajoutez un bouton pour exporter une image PNG parfaitement répétable (texture sans couture) exploitable en modélisation 3D, graphisme ou impression textile.
-* **Exportation Vectorielle SVG** :
-  Intégrez `p5.svg` pour permettre l'exportation au format SVG vectoriel haute précision.
-* **Sauvegarde & Chargement JSON** :
-  Permettez aux utilisateurs de sauvegarder leurs créations et palettes sous forme de fichiers JSON pour les recharger ultérieurement.
-
-### 5. 🎮 Intégration & Déploiement sur Itch.io
-
-* **Adaptation Responsive aux iFrames** :
-  Assurez-vous que `index.html` utilise un centrage CSS et gère l'événement `windowResized()` pour s'adapter automatiquement à la taille du lecteur iFrame HTML5 d'Itch.io.
-* **Support Tactile pour Mobiles** :
-  Ajoutez le support des gestes tactiles (pinch-to-zoom, pan) pour les utilisateurs consultant la page Itch.io sur mobile ou tablette.
+* Essayer l'estimation sur de vraies photos et l'ajuster.
+* Un outil de présentation simplifié pour les personnes qui veulent produire leur tartan.
+* Animations et fonds en patchwork (en suspens).
+* Export d'une tuile PNG raccordable et réglage de la graine aléatoire.
 
 ---
 
 ## 🛠️ Installation & Exécution Locale
 
 1. Clonez ou téléchargez les fichiers du dépôt.
-2. Ouvrez `index.html` dans un navigateur web moderne, ou lancez un serveur HTTP local (ex: `npx serve`, VS Code Live Server ou `python -m http.server`).
-3. Visualisez et interagissez avec le générateur de Tartan.
+2. Ouvrez `index.html` dans un navigateur récent, ou servez le dossier avec un serveur HTTP local (par exemple `python -m http.server 3000` ou `npx serve`).
+3. Lancez les tests avec `node test.js`. Il n'y a ni compilation ni installation.
 
 ---
 

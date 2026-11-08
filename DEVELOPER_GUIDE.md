@@ -27,10 +27,12 @@ The repository is straightforward. All critical files are located at the root:
     *   p5.js setup and rendering loops.
     *   Tartan mathematics and drawing algorithms.
     *   Event listeners for the UI.
-    *   The `SRT_COLORS` object containing official Scottish Register of Tartans colors.
-    *   The bilingual dictionary (`translations` object) for the UI.
+    *   The `SRT_PALETTE` array holding the 137 official Scottish Register of Tartans shades.
+    *   The bilingual dictionary (`TRANSLATIONS` object) for the UI.
 *   **`p5.min.js`**: The minified p5.js library. **Do not modify this file.**
 *   **`README.md` & `README.fr.md`**: Public user-facing documentation.
+*   **`test.js`**: Unit tests of the pure functions, run with `node test.js` and on every pull request.
+*   **`libraries/jszip.min.js`**: JSZip, loaded only when a ZIP is exported. Dependencies are served locally, never from a CDN.
 
 ## 3. Key Concepts to Understand
 
@@ -44,16 +46,16 @@ To effectively modify this codebase, you need to understand three main concepts:
 Since there is no frontend framework, UI interactions are handled via standard JavaScript: `document.getElementById()`, `addEventListener()`, and reading/writing `value` or `textContent`.
 
 ### C. Bilingual System
-The UI text is handled dynamically via `data-i18n` attributes in the HTML. The JavaScript parses these attributes and replaces the text based on the selected language (`fr` or `en`) using the internal `translations` dictionary.
+The UI text is handled dynamically via `data-i18n` attributes in the HTML. The JavaScript parses these attributes and replaces the text based on the selected language (`fr` or `en`) using the internal `TRANSLATIONS` dictionary.
 
 ## 4. Anatomy of an Action: Data Flow
 
 **Scenario: The user clicks the "GENERATE" button.**
-1.  **Event Trigger:** `document.getElementById('btn-generate').addEventListener('click', generateNewTartan)` catches the click.
-2.  **Processing (`generateNewTartan`):** The function reads current UI settings (target stripe count, thickness, symmetry, etc.). It calculates a new Tartan string (SRT format).
-3.  **State Update:** The new configuration is pushed to the internal history array and saved to `localStorage`.
-4.  **Rendering Trigger:** The function calls `redrawTartan()`.
-5.  **Drawing (`draw`):** p5.js clears the canvas and iterates through the calculated warp (vertical) and weft (horizontal) threads, drawing the corresponding overlapping rectangles based on the weaving logic (e.g., Twill Z or S).
+1.  **Event Trigger:** the click listener on `btn-generate`, set in `bindEvents()`, calls `handleGenerateClick()`.
+2.  **Processing (`generateNewTartan`):** `readGenerationParams()` normalizes the settings and `createStripes()` builds the list of stripes (`{ code, hex, count }`).
+3.  **State Update:** the previous pattern goes to `historyStack` (`pushToHistory()`) and `saveState()` writes to `localStorage`.
+4.  **Rendering Trigger:** the function calls `redrawTartan()`.
+5.  **Drawing (`redrawTartan`):** one repeat of the weave is written into `ImageData` at one pixel per thread (`fillTwillPixels`, or `fillTwillRelief` for the relief), then tiled with a canvas pattern. The cost depends on the sett, not on the screen size or the zoom. Do not go back to drawing thread by thread.
 
 ## 5. Local Development & Debugging
 
@@ -69,11 +71,42 @@ To run the project properly and avoid CORS (Cross-Origin Resource Sharing) issue
     *(Alternatively, use `npx serve` or the VS Code Live Server extension).*
 3.  Open your browser and navigate to `http://localhost:3000`.
 
+### Running the tests
+```bash
+node test.js
+```
+
 ### Debugging
 If the application shows a blank screen or a button does not work:
 1.  Open your browser's Developer Tools (Right-click > **Inspect** or press `F12`).
 2.  Go to the **Console** tab.
 3.  Look for red error messages. Since this is Vanilla JS, most issues will be standard `SyntaxError` or `TypeError` (e.g., trying to read a property of an undefined DOM element). The console will point you directly to the exact file and line number.
+
+## 6. Where to Find What
+
+| Feature | Main functions |
+|---|---|
+| Generation | `readGenerationParams`, `createStripes`, `recolorStripes` |
+| Rendering | `redrawTartan`, `buildThreadColors`, `fillTwillPixels`, `fillTwillRelief` |
+| View | `setZoom`, `zoomViewAt`, `panView`, `viewX` / `viewY` |
+| Saving and history | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |
+| Loading a whole pattern | `applyLoadedPattern` (shared link, text file, photo) |
+| Shared link | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |
+| Text import | `exportTXT`, `parseExportedText` |
+| Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
+| Weaving sheet | `buildWeavingSheetData`, `openWeavingSheet` |
+| Object preview | `averageSettColors`, `renderObjectPreview` |
+| Readability | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
+| Photo estimate | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
+| Proposals and stars | `estimateProposals`, `blendProposals`, `setProposalStar`, `refineProposals` |
+
+## 7. Conventions
+
+*   **Content-Security-Policy:** `index.html` allows scripts from the same origin only. No inline script, no `on...` attribute in the HTML, no CDN.
+*   **Untrusted text:** imported codes, links and files never go through `innerHTML`. Build nodes with `createElement` and `textContent`, and validate the whole input before parsing it.
+*   **Text in the interface:** every string exists in both `fr` and `en` in `TRANSLATIONS`.
+*   **Unit tests:** `test.js` evaluates the script, and the evaluation stops at the first top-level call that needs a real page. A `const` or `let` used by a tested function must be declared near the top of the file, with the `RELIEF_*` constants.
+*   **Saved data:** states in `localStorage` and exported files come from older versions too. New fields must be optional when they are read back.
 
 Happy coding and thank you for your interest in improving the Random Tartan Generator!
 
@@ -102,10 +135,12 @@ Le dépôt est minimaliste. Tous les fichiers critiques sont à la racine :
     *   L'initialisation et les boucles de rendu de p5.js.
     *   Les algorithmes mathématiques de génération du Tartan.
     *   Les écouteurs d'événements (event listeners) pour l'interface.
-    *   L'objet `SRT_COLORS` contenant les références couleurs officielles du Scottish Register of Tartans.
-    *   Le dictionnaire bilingue (objet `translations`) pour l'interface.
+    *   Le tableau `SRT_PALETTE` contenant les 137 nuances officielles du Scottish Register of Tartans.
+    *   Le dictionnaire bilingue (objet `TRANSLATIONS`) pour l'interface.
 *   **`p5.min.js`** : La bibliothèque p5.js compressée. **Ne modifiez pas ce fichier.**
 *   **`README.md` & `README.fr.md`** : La documentation publique destinée aux utilisateurs finaux.
+*   **`test.js`** : Tests unitaires des fonctions pures, lancés avec `node test.js` et sur chaque pull request.
+*   **`libraries/jszip.min.js`** : JSZip, chargé seulement à l'export ZIP. Les dépendances sont servies localement, jamais depuis un CDN.
 
 ## 3. Les Concepts Clés à Comprendre
 
@@ -119,16 +154,16 @@ Pour modifier ce code efficacement, trois concepts principaux sont à maîtriser
 En l'absence de framework, les interactions avec l'interface sont gérées en JavaScript standard : `document.getElementById()`, `addEventListener()`, et la lecture/écriture des propriétés `value` ou `textContent`.
 
 ### C. Système Bilingue
-Le texte de l'interface est géré dynamiquement via des attributs `data-i18n` dans le HTML. Le JavaScript lit ces attributs et remplace le texte en fonction de la langue sélectionnée (`fr` ou `en`) en utilisant le dictionnaire interne `translations`.
+Le texte de l'interface est géré dynamiquement via des attributs `data-i18n` dans le HTML. Le JavaScript lit ces attributs et remplace le texte en fonction de la langue sélectionnée (`fr` ou `en`) en utilisant le dictionnaire interne `TRANSLATIONS`.
 
 ## 4. Flux de la Donnée : Anatomie d'une Action
 
 **Scénario : L'utilisateur clique sur le bouton "GÉNÉRER".**
-1.  **Déclencheur d'événement :** L'écouteur `document.getElementById('btn-generate').addEventListener('click', generateNewTartan)` capte le clic.
-2.  **Traitement (`generateNewTartan`) :** La fonction lit les paramètres actuels de l'interface (nombre de bandes cible, épaisseur, symétrie, etc.). Elle calcule une nouvelle chaîne de caractères Tartan (au format SRT).
-3.  **Mise à jour de l'état :** La nouvelle configuration est ajoutée à l'historique interne et sauvegardée dans le `localStorage`.
-4.  **Déclenchement du rendu :** La fonction appelle `redrawTartan()`.
-5.  **Dessin (`draw`) :** p5.js efface le canevas et boucle sur les fils de chaîne (verticaux) et de trame (horizontaux) calculés, en dessinant les rectangles superposés correspondants selon la logique de tissage (ex: Twill Z ou S).
+1.  **Déclencheur d'événement :** l'écouteur de `btn-generate`, posé dans `bindEvents()`, appelle `handleGenerateClick()`.
+2.  **Traitement (`generateNewTartan`) :** `readGenerationParams()` normalise les réglages et `createStripes()` construit la liste des bandes (`{ code, hex, count }`).
+3.  **Mise à jour de l'état :** le motif précédent passe dans `historyStack` (`pushToHistory()`) et `saveState()` écrit dans le `localStorage`.
+4.  **Déclenchement du rendu :** la fonction appelle `redrawTartan()`.
+5.  **Dessin (`redrawTartan`) :** un motif du tissage est écrit dans un `ImageData` à un pixel par fil (`fillTwillPixels`, ou `fillTwillRelief` pour le relief), puis répété avec un motif de canevas. Le coût dépend du sett, pas de la taille de l'écran ni du zoom. Ne pas revenir à un dessin fil par fil.
 
 ## 5. Développement Local et Débogage
 
@@ -144,10 +179,41 @@ Pour exécuter le projet correctement et éviter les erreurs CORS (Cross-Origin 
     *(Vous pouvez aussi utiliser `npx serve` ou l'extension Live Server de VS Code).*
 3.  Ouvrez votre navigateur à l'adresse `http://localhost:3000`.
 
+### Lancer les tests
+```bash
+node test.js
+```
+
 ### Débogage
 Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 1.  Ouvrez les Outils de Développement du navigateur (Clic droit > **Inspecter** ou touche `F12`).
 2.  Allez dans l'onglet **Console**.
 3.  Cherchez les messages d'erreur en rouge. S'agissant de JS Vanilla, il s'agira souvent d'erreurs standards de type `SyntaxError` ou `TypeError` (ex: tenter de lire une propriété d'un élément DOM inexistant). La console vous indiquera le fichier et le numéro de ligne exacts.
+
+## 6. Où Trouver Quoi
+
+| Fonction | Principales fonctions du code |
+|---|---|
+| Génération | `readGenerationParams`, `createStripes`, `recolorStripes` |
+| Rendu | `redrawTartan`, `buildThreadColors`, `fillTwillPixels`, `fillTwillRelief` |
+| Vue | `setZoom`, `zoomViewAt`, `panView`, `viewX` / `viewY` |
+| Sauvegarde et historique | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |
+| Charger un motif complet | `applyLoadedPattern` (lien, fichier texte, photo) |
+| Lien partagé | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |
+| Import texte | `exportTXT`, `parseExportedText` |
+| Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
+| Fiche de tissage | `buildWeavingSheetData`, `openWeavingSheet` |
+| Aperçu sur objets | `averageSettColors`, `renderObjectPreview` |
+| Lisibilité | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
+| Estimation depuis une photo | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
+| Propositions et étoiles | `estimateProposals`, `blendProposals`, `setProposalStar`, `refineProposals` |
+
+## 7. Conventions
+
+*   **Content-Security-Policy :** `index.html` n'autorise que les scripts de la même origine. Pas de script en ligne, pas d'attribut `on...` dans le HTML, pas de CDN.
+*   **Texte non fiable :** les codes, liens et fichiers importés ne passent jamais par `innerHTML`. Construisez les nœuds avec `createElement` et `textContent`, et validez l'entrée complète avant de l'analyser.
+*   **Textes de l'interface :** chaque texte existe en `fr` et en `en` dans `TRANSLATIONS`.
+*   **Tests unitaires :** `test.js` évalue le script, et l'évaluation s'arrête au premier appel de haut niveau qui demande une vraie page. Un `const` ou `let` utilisé par une fonction testée doit être déclaré en haut du fichier, avec les constantes `RELIEF_*`.
+*   **Données enregistrées :** les états du `localStorage` et les fichiers exportés viennent aussi d'anciennes versions. Les nouveaux champs doivent rester optionnels à la relecture.
 
 Bon code et merci pour votre intérêt à l'amélioration du Random Tartan Generator !
