@@ -329,6 +329,27 @@ function runTests() {
             const two = createCriteriaBatch({ ...base, palette: pal.slice(0, 3), defaultColors: 3, xAxis: 'colors', yAxis: 'none' });
             assertEqual(two.cols, 2, 'color criterion is limited by the palette');
             console.info('✅ criteria board');
+        },
+        () => {
+            // Shared link: round trip and refusal of anything malformed
+            const p = {
+                stripes: [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'DB', hex: '#000064', count: 8 }],
+                symmetric: true, zTwist: false, threadMm: 0.3, id: 1234, relief: 1.5, yarn: true
+            };
+            const back = decodeSharedPattern('#' + encodeSharedPattern(p));
+            assertEqual(JSON.stringify(back), JSON.stringify(p), 'shared link round trip');
+            const plain = decodeSharedPattern('#' + encodeSharedPattern({ ...p, relief: null, yarn: false }));
+            assertEqual(plain.relief, null, 'shared link without relief');
+            assertEqual(plain.yarn, false, 'shared link without yarn irregularity');
+            const good = 'tartan=1&sym=1&z=1&mm=0.3&id=1&s=R.C80000.48_B.000064.8';
+            assertSilent(decodeSharedPattern(good) !== null, 'valid link accepted');
+            for (const bad of ['', '#other', 'tartan=2&s=R.C80000.48_B.000064.8', 'tartan=1&sym=1', 'tartan=1&s=R.C80000.48',
+                'tartan=1&s=R.C80000.0_B.000064.8', 'tartan=1&s=R.C8.48_B.000064.8', 'tartan=1&s=<b>.C80000.48_B.000064.8',
+                'tartan=1&s=R.C80000.48_B.000064.9999999', 'tartan=1&s=' + 'R.C80000.2_'.repeat(3000) + 'R.C80000.2']) {
+                assertEqual(decodeSharedPattern(bad), null, 'bad link refused: ' + bad.slice(0, 40));
+            }
+            assertEqual(decodeSharedPattern(good.replace('mm=0.3', 'mm=999')).threadMm, null, 'absurd thread size ignored');
+            console.info('✅ shared link');
         }
     ];
 
