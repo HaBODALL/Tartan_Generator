@@ -521,6 +521,24 @@
         background: #050505;
     }
     .patchwork-board[hidden] { display: none; }
+    .control-row[hidden] { display: none; }
+    .patchwork-select { background: #222; color: #ccc; border: 1px solid #444; padding: 4px; border-radius: 3px; font-size: 12px; max-width: 150px; }
+    .patchwork-caption {
+        position: absolute;
+        left: 2px;
+        bottom: 2px;
+        max-width: calc(100% - 4px);
+        padding: 1px 4px;
+        border-radius: 2px;
+        background: rgba(0, 0, 0, 0.75);
+        color: #eee;
+        font-size: 10px;
+        line-height: 1.3;
+        pointer-events: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     .patchwork-bar {
         display: flex;
         flex-wrap: wrap;
@@ -857,6 +875,34 @@
 
       <div class="control-group" style="margin-bottom: 12px;">
       <div class="control-row">
+          <label for="patchwork-mode" data-i18n="lbl_patch_mode">Mode</label>
+          <select id="patchwork-mode" class="patchwork-select">
+              <option value="random" data-i18n="opt_mode_random">Aléatoire</option>
+              <option value="criteria" data-i18n="opt_mode_criteria">Par critères</option>
+          </select>
+      </div>
+      <div class="control-row patchwork-criteria-row" hidden>
+          <label for="patchwork-axis-x" data-i18n="lbl_axis_x">Critère en colonnes</label>
+          <select id="patchwork-axis-x" class="patchwork-select">
+              <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
+              <option value="stripes" data-i18n="axis_stripes">Nombre de bandes</option>
+              <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
+              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
+              <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
+          </select>
+      </div>
+      <div class="control-row patchwork-criteria-row" hidden>
+          <label for="patchwork-axis-y" data-i18n="lbl_axis_y">Critère en lignes</label>
+          <select id="patchwork-axis-y" class="patchwork-select">
+              <option value="none" data-i18n="axis_none">Aucun</option>
+              <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
+              <option value="stripes" selected data-i18n="axis_stripes">Nombre de bandes</option>
+              <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
+              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
+              <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
+          </select>
+      </div>
+      <div class="control-row" id="patchwork-qty-row">
           <label for="patchwork-qty" data-i18n="lbl_patch_qty">Quantité (10-100)</label>
           <input type="number" id="patchwork-qty" value="12" min="10" max="100" class="input-number">
       </div>

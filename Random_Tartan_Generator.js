@@ -138,6 +138,14 @@ const RELIEF_MIN_PIXELS = 3; // Below this many device pixels per thread, relief
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 12;
 const ZOOM_STEP = 1.25;
+// Values each mood board criterion takes along an axis
+const PATCHWORK_AXES = {
+    colors: [2, 3, 4, 5, 6],
+    stripes: [4, 6, 8, 12, 16],
+    maxWidth: [8, 16, 32, 64, 124],
+    sett: [120, 180, 240, 320, 400],
+    symmetric: [false, true]
+};
 let reliefMasks = { k: 0, strength: 1, masks: null };
 const YARN_VARIATION = 0.07; // Brightness spread of the yarn irregularity (+/- 7%)
 
@@ -255,6 +263,24 @@ const TRANSLATIONS = {
         msg_patch_error: "L'export a échoué. Réessayez avec moins de tuiles ou des tuiles plus petites.",
         msg_zip_missing: "La bibliothèque JSZip n'a pas pu être chargée : l'export ZIP est impossible.",
         msg_err_sett_too_low: "Génération impossible : Le Sett cible est trop petit pour le nombre de bandes et la largeur minimale. (Ex: 10 bandes x 50 fils Min = 500 fils > Sett cible).",
+        lbl_patch_mode: "Mode",
+        opt_mode_random: "Aléatoire",
+        opt_mode_criteria: "Par critères",
+        lbl_axis_x: "Critère en colonnes",
+        lbl_axis_y: "Critère en lignes",
+        axis_none: "Aucun",
+        axis_colors: "Nombre de couleurs",
+        axis_stripes: "Nombre de bandes",
+        axis_maxWidth: "Largeur max des bandes",
+        axis_sett: "Fils par motif",
+        axis_symmetric: "Symétrie",
+        crit_colors: "% couleurs",
+        crit_stripes: "% bandes",
+        crit_maxWidth: "max % fils",
+        crit_sett: "% fils",
+        crit_sym: "Symétrique",
+        crit_asym: "Asymétrique",
+        patch_pins_dropped: "Nouvelle grille : les épingles n'ont pas été gardées.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -341,6 +367,24 @@ const TRANSLATIONS = {
         msg_patch_error: "The export failed. Try fewer or smaller tiles.",
         msg_zip_missing: "The JSZip library could not be loaded, so the ZIP export is unavailable.",
         msg_err_sett_too_low: "Generation impossible: Target Sett is too small for the number of stripes and minimum width. (E.g., 10 stripes x 50 threads Min = 500 threads > Target Sett).",
+        lbl_patch_mode: "Mode",
+        opt_mode_random: "Random",
+        opt_mode_criteria: "By criteria",
+        lbl_axis_x: "Criterion across",
+        lbl_axis_y: "Criterion down",
+        axis_none: "None",
+        axis_colors: "Number of colors",
+        axis_stripes: "Number of stripes",
+        axis_maxWidth: "Maximum stripe width",
+        axis_sett: "Threads per sett",
+        axis_symmetric: "Symmetry",
+        crit_colors: "% colors",
+        crit_stripes: "% stripes",
+        crit_maxWidth: "max % threads",
+        crit_sett: "% threads",
+        crit_sym: "Symmetric",
+        crit_asym: "Asymmetric",
+        patch_pins_dropped: "New grid: the pins were not kept.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -510,6 +554,10 @@ function cacheDomElements() {
     domElements.patchworkSize = document.getElementById('patchwork-size');
     domElements.patchworkInfo = document.getElementById('patchwork-info');
     domElements.patchworkScale = document.getElementById('patchwork-scale');
+    domElements.patchworkMode = document.getElementById('patchwork-mode');
+    domElements.patchworkAxisX = document.getElementById('patchwork-axis-x');
+    domElements.patchworkAxisY = document.getElementById('patchwork-axis-y');
+    domElements.patchworkQtyRow = document.getElementById('patchwork-qty-row');
     domElements.patchworkBoard = document.getElementById('patchwork-board');
     domElements.patchworkGrid = document.getElementById('patchwork-grid');
     domElements.patchworkStatus = document.getElementById('patchwork-status');
@@ -600,6 +648,9 @@ function bindEvents() {
     if (domElements.btnPatchworkPng) domElements.btnPatchworkPng.addEventListener('click', () => exportPatchworkPNG());
     if (domElements.btnPatchworkClose) domElements.btnPatchworkClose.addEventListener('click', closePatchworkBoard);
     if (domElements.patchworkScale) domElements.patchworkScale.addEventListener('change', renderPatchworkBoard);
+    [domElements.patchworkMode, domElements.patchworkAxisX, domElements.patchworkAxisY].forEach(el => {
+        if (el) el.addEventListener('change', updatePatchworkModeUI);
+    });
     watchPatchworkGrid();
 
     const btnUndo = domElements.undoBtn;
@@ -861,7 +912,10 @@ function formatColorLabel(p) {
 }
 
 function pickRandomPalette() {
-    let numColors = Math.floor(random(2, 6));
+    return pickDistinctColors(Math.floor(random(2, 6)));
+}
+
+function pickDistinctColors(numColors) {
     let palette = [];
     let tempPalette = [...SRT_PALETTE];
 
@@ -1581,11 +1635,11 @@ function readGenerationParams() {
 // Picks a color from the palette, different from the previous stripe when possible.
 // Prefers another SRT code; if every color shares the previous code (shades of one color
 // chosen by hand), at least another shade. Same color only with a one-color palette.
-function pickColorAvoiding(palette, previous) {
+function pickColorAvoiding(palette, previous, rand = Math.random) {
     let choices = palette.filter(c => c.code !== previous?.code);
     if (choices.length === 0) choices = palette.filter(c => c.hex !== previous?.hex);
     if (choices.length === 0) choices = palette;
-    return choices[Math.floor(Math.random() * choices.length)];
+    return choices[Math.floor(rand() * choices.length)];
 }
 
 // Same widths, new colors from the palette.
@@ -1599,12 +1653,12 @@ function recolorStripes(stripes, palette) {
 }
 
 // New stripes from normalized settings (see readGenerationParams).
-function createStripes(params, palette) {
+function createStripes(params, palette, rand = Math.random) {
     const { minW, maxW, targetStripes, targetSett, isCheckMode } = params;
     const randomEvenWidth = () => {
         const minPair = minW / 2;
         const maxPair = maxW / 2;
-        return (Math.floor(Math.random() * (maxPair - minPair + 1)) + minPair) * 2;
+        return (Math.floor(rand() * (maxPair - minPair + 1)) + minPair) * 2;
     };
     const fixedCheckWidth = isCheckMode ? randomEvenWidth() : 0;
 
@@ -1614,7 +1668,7 @@ function createStripes(params, palette) {
 
     // Generate until target sett is reached (or max number of stripes)
     for (let i = 0; i < targetStripes && totalThreads < targetSett; i++) {
-        const color = pickColorAvoiding(palette, previous);
+        const color = pickColorAvoiding(palette, previous, rand);
         previous = color;
 
         let width = isCheckMode ? fixedCheckWidth : randomEvenWidth();
@@ -2346,6 +2400,11 @@ window.updatePatchworkInfo = function() {
 
     let cols = Math.ceil(Math.sqrt(qty));
     let rows = Math.ceil(qty / cols);
+    if (isPatchworkCriteria()) {
+        const { xAxis, yAxis } = readPatchworkAxes();
+        cols = criteriaValues(xAxis, 6).length;
+        rows = yAxis === 'none' || yAxis === xAxis ? 1 : criteriaValues(yAxis, 6).length;
+    }
 
     let totalW = cols * tileSize;
     let totalH = rows * tileSize;
@@ -2375,6 +2434,7 @@ let patchworkBatch = [];
 let patchworkOpener = null;
 let patchworkGridSize = '';
 let patchworkLayoutTimer = 0;
+let patchworkLayout = null; // Criteria board: { cols, key }; null when the tiles flow freely
 
 function isPatchworkOpen() {
     return !!domElements.patchworkBoard && !domElements.patchworkBoard.hidden;
@@ -2418,6 +2478,110 @@ function createPatchworkBatch(qty) {
         batch.push(makePatchworkEntry(stripes, palette, symmetric));
     }
     return batch;
+}
+
+// Repeatable random numbers: every tile of a criteria board starts from the same draws,
+// so two neighbors differ by the criterion and not by chance.
+function seededRandom(seed) {
+    let a = seed >>> 0;
+    return () => {
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+function criteriaValues(axis, paletteSize) {
+    if (axis !== 'colors') return PATCHWORK_AXES[axis];
+    const values = PATCHWORK_AXES.colors.filter(v => v <= paletteSize);
+    return values.length > 0 ? values : [paletteSize];
+}
+
+function applyCriterion(tile, axis, value) {
+    if (axis === 'colors') tile.colorCount = value;
+    else if (axis === 'stripes') tile.params.targetStripes = value;
+    else if (axis === 'symmetric') tile.symmetric = value;
+    else if (axis === 'sett') tile.params.targetSett = value;
+    else if (axis === 'maxWidth') {
+        tile.params.maxW = value;
+        if (tile.params.isCheckMode) tile.params.minW = value;
+    }
+}
+
+// Stripes usually stop short of the sett: resize them so the sett criterion is visible.
+function fitStripesToSett(stripes, targetSett) {
+    const factor = targetSett / sumStripeThreads(stripes);
+    return stripes.map(s => ({ ...s, count: Math.max(2, Math.round(s.count * factor / 2) * 2) }));
+}
+
+// One tile per combination, row by row. yAxis 'none' gives a single row.
+function createCriteriaBatch({ xAxis, yAxis, palette, defaultColors, params, symmetric, seed }) {
+    const useY = yAxis !== 'none' && yAxis !== xAxis;
+    const xValues = criteriaValues(xAxis, palette.length);
+    const yValues = useY ? criteriaValues(yAxis, palette.length) : [null];
+    const usesSett = xAxis === 'sett' || (useY && yAxis === 'sett');
+    const batch = [];
+    for (const y of yValues) {
+        for (const x of xValues) {
+            const tile = { params: { ...params }, colorCount: defaultColors, symmetric };
+            applyCriterion(tile, xAxis, x);
+            if (useY) applyCriterion(tile, yAxis, y);
+            tile.params.minW = Math.min(tile.params.minW, tile.params.maxW, tile.params.targetSett);
+            const colors = palette.slice(0, tile.colorCount);
+            let stripes = createStripes(tile.params, colors, seededRandom(seed));
+            if (usesSett) stripes = fitStripesToSett(stripes, tile.params.targetSett);
+            const entry = makePatchworkEntry(stripes, colors, tile.symmetric);
+            entry.criteria = useY ? [[xAxis, x], [yAxis, y]] : [[xAxis, x]];
+            batch.push(entry);
+        }
+    }
+    return { batch, cols: xValues.length };
+}
+
+function isPatchworkCriteria() {
+    return domElements.patchworkMode?.value === 'criteria';
+}
+
+function readPatchworkAxes() {
+    const xAxis = domElements.patchworkAxisX?.value || 'colors';
+    const yAxis = domElements.patchworkAxisY?.value || 'none';
+    return { xAxis, yAxis };
+}
+
+// Returns null and shows why when there are not enough colors.
+function createPatchworkCriteriaBatch() {
+    const keepColors = domElements.lockColors?.checked || false;
+    if (keepColors && userPalette.length <= 1) {
+        showAppMessage('msg_palette_min', true);
+        return null;
+    }
+    // The axes replace the settings they vary, so the "sett too low" check does not apply
+    const params = readGenerationParams();
+    showAppMessage(params.noticeKey || null);
+    const { xAxis, yAxis } = readPatchworkAxes();
+    return createCriteriaBatch({
+        xAxis,
+        yAxis,
+        palette: keepColors ? [...userPalette] : pickDistinctColors(6),
+        defaultColors: keepColors ? userPalette.length : 4,
+        params,
+        symmetric: domElements.sym?.checked || false,
+        seed: Math.floor(Math.random() * 4294967296)
+    });
+}
+
+function updatePatchworkModeUI() {
+    const criteria = isPatchworkCriteria();
+    document.querySelectorAll('.patchwork-criteria-row').forEach(row => { row.hidden = !criteria; });
+    if (domElements.patchworkQtyRow) domElements.patchworkQtyRow.hidden = criteria;
+    updatePatchworkInfo();
+}
+
+function criterionLabel([axis, value], t) {
+    if (axis === 'symmetric') return value ? t.crit_sym : t.crit_asym;
+    return t['crit_' + axis].replace('%', value);
 }
 
 function makePatchworkEntry(stripes, palette, symmetric) {
@@ -2530,7 +2694,7 @@ function renderPatchworkBoard() {
     const gap = 6;
     const w = Math.max(1, grid.clientWidth);
     const h = Math.max(1, grid.clientHeight);
-    const cols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * w / h))));
+    const cols = patchworkLayout ? patchworkLayout.cols : Math.max(1, Math.min(n, Math.round(Math.sqrt(n * w / h))));
     const rows = Math.ceil(n / cols);
     const cell = Math.max(24, Math.floor(Math.min((w - gap * (cols - 1)) / cols, (h - gap * (rows - 1)) / rows)));
     grid.style.gridTemplateColumns = `repeat(${cols}, ${cell}px)`;
@@ -2541,14 +2705,15 @@ function renderPatchworkBoard() {
     const fragment = document.createDocumentFragment();
     patchworkBatch.forEach((entry, index) => {
         const srt = buildSRTCode(entry.stripes, entry.symmetric);
+        const caption = entry.criteria ? entry.criteria.map(c => criterionLabel(c, t)).join(' · ') : '';
         const cellEl = document.createElement('div');
         cellEl.className = 'patchwork-cell' + (entry.pinned ? ' pinned' : '');
 
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'patchwork-tile';
-        button.title = `${t.patch_pick}\n${srt}`;
-        button.setAttribute('aria-label', `${t.patch_pick} : ${srt}`);
+        button.title = [t.patch_pick, caption, srt].filter(Boolean).join('\n');
+        button.setAttribute('aria-label', `${t.patch_pick} : ${caption ? caption + ', ' : ''}${srt}`);
         button.addEventListener('click', () => usePatchworkTile(index));
 
         const canvas = document.createElement('canvas');
@@ -2578,6 +2743,12 @@ function renderPatchworkBoard() {
         actions.append(pin, vary);
 
         cellEl.append(button, actions);
+        if (caption) {
+            const label = document.createElement('span');
+            label.className = 'patchwork-caption';
+            label.textContent = caption;
+            cellEl.appendChild(label);
+        }
         fragment.appendChild(cellEl);
     });
     grid.appendChild(fragment);
@@ -2605,6 +2776,7 @@ function showPatchworkVariants(index) {
         if (variant.stripes.length > 0) variants.push(variant);
     }
     patchworkBatch = mergePinnedTiles(patchworkBatch, variants, qty);
+    patchworkLayout = null;
     setPatchworkStatus('patch_variants');
     renderPatchworkBoard();
     domElements.patchworkGrid.querySelectorAll('.patchwork-vary')[patchworkBatch.indexOf(source)]?.focus();
@@ -2658,17 +2830,30 @@ function watchPatchworkGrid() {
 window.generatePatchwork = function() {
     const board = domElements.patchworkBoard;
     if (!board) return;
-    const batch = createPatchworkBatch(readPatchworkQty());
-    if (!batch) {
+    const criteria = isPatchworkCriteria();
+    const created = criteria ? createPatchworkCriteriaBatch() : createPatchworkBatch(readPatchworkQty());
+    if (!created) {
         closePatchworkBoard();
         return;
     }
-    // "Nouveau lot" keeps the pinned tiles
     const wasOpen = isPatchworkOpen();
-    patchworkBatch = wasOpen ? mergePinnedTiles(patchworkBatch, batch, readPatchworkQty()) : batch;
+    let status = null;
+    if (criteria) {
+        // "Nouveau lot" keeps the pinned tiles in their cell, as long as the grid is the same
+        const { xAxis, yAxis } = readPatchworkAxes();
+        const key = `${xAxis}|${yAxis}|${created.batch.length}`;
+        const sameGrid = wasOpen && patchworkLayout?.key === key;
+        if (wasOpen && !sameGrid && patchworkBatch.some(e => e.pinned)) status = 'patch_pins_dropped';
+        patchworkBatch = sameGrid ? created.batch.map((e, i) => patchworkBatch[i].pinned ? patchworkBatch[i] : e) : created.batch;
+        patchworkLayout = { cols: created.cols, key };
+    } else {
+        // "Nouveau lot" keeps the pinned tiles
+        patchworkBatch = wasOpen ? mergePinnedTiles(patchworkBatch, created, readPatchworkQty()) : created;
+        patchworkLayout = null;
+    }
     if (!wasOpen) patchworkOpener = document.activeElement;
     board.hidden = false;
-    setPatchworkStatus(null);
+    setPatchworkStatus(status);
     renderPatchworkBoard();
     if (!wasOpen) domElements.patchworkGrid.querySelector('button')?.focus();
 };
@@ -2714,7 +2899,7 @@ window.exportPatchworkPNG = async function() {
     const batch = patchworkBatch;
     const tileSize = readPatchworkTileSize();
     const n = batch.length;
-    const cols = Math.ceil(Math.sqrt(n));
+    const cols = patchworkLayout ? patchworkLayout.cols : Math.ceil(Math.sqrt(n));
     const rows = Math.ceil(n / cols);
     if (cols * rows * tileSize * tileSize > PATCHWORK_MAX_PIXELS) {
         showPatchworkError('msg_patch_too_big');
