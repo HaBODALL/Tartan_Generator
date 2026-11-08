@@ -147,6 +147,9 @@ const PATCHWORK_AXES = {
     symmetric: [false, true]
 };
 let reliefMasks = { k: 0, strength: 1, masks: null };
+// Thread shown at the top left corner of the canvas (not whole while moving)
+let viewX = 0;
+let viewY = 0;
 const YARN_VARIATION = 0.07; // Brightness spread of the yarn irregularity (+/- 7%)
 
 // DOM Element Caching for Performance
@@ -218,7 +221,7 @@ const TRANSLATIONS = {
         btn_zoom_out: "Dézoomer",
         btn_zoom_in: "Zoomer",
         lbl_zoom_slider: "Zoom (curseur)",
-        title_zoom: "Molette sur le motif ou touches + et − pour zoomer",
+        title_zoom: "Molette sur le motif ou touches + et − pour zoomer. Glisser ou flèches pour déplacer, double-clic pour revenir au début",
         opt_eff_relief: "Relief des fils",
         lbl_relief_strength: "Intensité du relief",
         lbl_yarn: "Irrégularité de la laine",
@@ -353,7 +356,7 @@ const TRANSLATIONS = {
         btn_zoom_out: "Zoom out",
         btn_zoom_in: "Zoom in",
         lbl_zoom_slider: "Zoom (slider)",
-        title_zoom: "Mouse wheel over the pattern or + and − keys to zoom",
+        title_zoom: "Mouse wheel over the pattern or + and − keys to zoom. Drag or arrow keys to move, double click to go back to the start",
         opt_eff_relief: "Thread relief",
         lbl_relief_strength: "Relief strength",
         lbl_yarn: "Yarn irregularity",
@@ -771,8 +774,35 @@ function bindEvents() {
         domElements.canvasContainer.addEventListener('wheel', (e) => {
             if (isPatchworkOpen() || isPreviewOpen() || e.ctrlKey) return;
             e.preventDefault();
-            stepZoom(e.deltaY < 0 ? 1 : -1);
+            const box = domElements.canvasContainer.querySelector(':scope > canvas')?.getBoundingClientRect();
+            if (box) stepZoom(e.deltaY < 0 ? 1 : -1, e.clientX - box.left, e.clientY - box.top);
+            else stepZoom(e.deltaY < 0 ? 1 : -1);
         }, { passive: false });
+
+        // Drag the cloth with the mouse or one finger; double click goes back to the start
+        const container = domElements.canvasContainer;
+        const isPatternCanvas = (el) => el.tagName === 'CANVAS' && el.parentElement === container;
+        container.addEventListener('pointerdown', (e) => {
+            if (!isPatternCanvas(e.target) || e.button !== 0) return;
+            panPointer = { id: e.pointerId, x: e.clientX, y: e.clientY };
+            e.target.setPointerCapture(e.pointerId);
+            e.target.classList.add('panning');
+        });
+        container.addEventListener('pointermove', (e) => {
+            if (!panPointer || e.pointerId !== panPointer.id) return;
+            const dx = e.clientX - panPointer.x, dy = e.clientY - panPointer.y;
+            panPointer.x = e.clientX;
+            panPointer.y = e.clientY;
+            if (dx !== 0 || dy !== 0) panView(dx, dy);
+        });
+        const endPan = (e) => {
+            if (!panPointer || e.pointerId !== panPointer.id) return;
+            panPointer = null;
+            e.target.classList?.remove('panning');
+        };
+        container.addEventListener('pointerup', endPan);
+        container.addEventListener('pointercancel', endPan);
+        container.addEventListener('dblclick', (e) => { if (isPatternCanvas(e.target)) resetView(); });
     }
     syncZoomSlider();
 
@@ -851,6 +881,7 @@ function bindEvents() {
             if (e.touches.length === 2) {
                 // Prevent default to stop page zooming
                 e.preventDefault();
+                panPointer = null; // Two fingers zoom, they do not drag
                 initialPinchDistance = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
@@ -876,8 +907,11 @@ function bindEvents() {
 
                 // Update input field and redraw
                 if (domElements.zoom) {
-                    // Round to nearest 0.5 step to match input step if desired, or just to 1 decimal
-                    setZoom(newZoom);
+                    // Zoom around the point between the two fingers
+                    const box = canvasContainer.querySelector(':scope > canvas')?.getBoundingClientRect();
+                    const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - (box?.left || 0);
+                    const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - (box?.top || 0);
+                    setZoom(newZoom, midX, midY);
                 }
             }
         }, { passive: false });
@@ -936,6 +970,14 @@ document.addEventListener('keydown', (e) => {
         case '_':
             e.preventDefault();
             stepZoom(-1);
+            break;
+        case 'arrowleft':
+        case 'arrowright':
+        case 'arrowup':
+        case 'arrowdown': // Arrows = Move the pattern, when no control has the focus
+            if (e.target.closest('button, summary, a, [role="button"]')) break;
+            e.preventDefault();
+            panView(key === 'arrowleft' ? 40 : key === 'arrowright' ? -40 : 0, key === 'arrowup' ? 40 : key === 'arrowdown' ? -40 : 0);
             break;
         case ' ':       // Space = Generate
         case 'g':
@@ -1857,12 +1899,18 @@ function hexToPixel(hex) {
 
 // Colors of the first `length` threads, wrapping around the sett.
 // Only what is needed is expanded, so huge imported counts (K999999) stay cheap.
-function buildThreadColors(stripes, isSymmetric, length) {
+function buildThreadColors(stripes, isSymmetric, length, start = 0) {
     const colors = new Uint32Array(length);
     const last = stripes.length - 1;
     let filled = 0;
+    let skip = start > 0 ? start % countSettThreads(stripes, isSymmetric) : 0;
     const fill = (stripe) => {
-        const end = Math.min(filled + stripe.count, length);
+        if (skip >= stripe.count) {
+            skip -= stripe.count;
+            return;
+        }
+        const end = Math.min(filled + stripe.count - skip, length);
+        skip = 0;
         if (end > filled) colors.fill(hexToPixel(stripe.hex), filled, end);
         filled = end;
     };
@@ -1876,14 +1924,15 @@ function buildThreadColors(stripes, isSymmetric, length) {
 }
 
 // 2/2 twill at one pixel per thread: the weft passes over two threads, under two.
-function fillTwillPixels(pixels, tileW, tileH, threadColors, isZTwist) {
+// originX and originY: position of the tile in the cloth, which sets the twill phase.
+function fillTwillPixels(pixels, tileW, tileH, threadColors, isZTwist, weftColors = threadColors, originX = 0, originY = 0) {
     const shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
     let offset = 0;
     for (let y = 0; y < tileH; y++) {
-        const weft = threadColors[y];
-        const shift = shifts[y & 3];
+        const weft = weftColors[y];
+        const shift = shifts[(y + originY) & 3];
         for (let x = 0; x < tileW; x++) {
-            pixels[offset++] = ((x - shift) & 3) < 2 ? weft : threadColors[x];
+            pixels[offset++] = ((x + originX - shift) & 3) < 2 ? weft : threadColors[x];
         }
     }
 }
@@ -1961,10 +2010,11 @@ function threadNoise(i) {
 
 // Each thread a little lighter or darker, with slow streaks over a few threads like real yarn.
 // Indexed by thread, so the same thread keeps its shade and a repeat still tiles.
-function varyYarnColors(colors, amount = YARN_VARIATION) {
+function varyYarnColors(colors, amount = YARN_VARIATION, start = 0, period = Infinity) {
     const out = new Uint32Array(colors.length);
     for (let i = 0; i < colors.length; i++) {
-        const noise = 0.65 * threadNoise(i) + 0.35 * threadNoise(Math.floor(i / 4) + 7919);
+        const thread = (start + i) % period;
+        const noise = 0.65 * threadNoise(thread) + 0.35 * threadNoise(Math.floor(thread / 4) + 7919);
         out[i] = shadePixel(colors[i], 1 + amount * noise);
     }
     return out;
@@ -1978,7 +2028,7 @@ function shadePixel(pixel, factor) {
 }
 
 // Same twill as fillTwillPixels, at k pixels per thread, with yarn shading.
-function fillTwillRelief(pixels, tileW, tileH, threadColors, isZTwist, k) {
+function fillTwillRelief(pixels, tileW, tileH, threadColors, isZTwist, k, weftColors = threadColors, originX = 0, originY = 0) {
     const shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
     const masks = getReliefMasks(k);
     const shades = [];
@@ -1994,15 +2044,16 @@ function fillTwillRelief(pixels, tileW, tileH, threadColors, isZTwist, k) {
         }
         return base;
     };
-    const weftOver = (x, y) => ((x - shifts[y & 3]) & 3) < 2;
+    const phase = (x, y) => (x + originX - shifts[(y + originY) & 3]) & 3;
+    const weftOver = (x, y) => phase(x, y) < 2;
     const rowPixels = tileW * k;
 
     for (let y = 0; y < tileH; y++) {
         for (let x = 0; x < tileW; x++) {
             let color, type;
             if (weftOver(x, y)) {
-                color = threadColors[y];
-                type = ((x - shifts[y & 3]) & 3) === 0 ? 0 : 1;
+                color = weftColors[y];
+                type = phase(x, y) === 0 ? 0 : 1;
             } else {
                 color = threadColors[x];
                 type = weftOver(x, y - 1) ? 2 : 3;
@@ -2028,6 +2079,7 @@ function getTileScale(effectType, zoom) {
 }
 
 let weaveTileCanvas = null;
+let panPointer = null; // Pointer dragging the pattern
 let previewOpener = null;
 let previewStageSize = '';
 let previewLayoutTimer = 0;
@@ -2044,8 +2096,9 @@ function redrawTartan() {
     let seqLen = countSettThreads(tartanStripes, isSymmetric);
     if (seqLen <= 0) return;
 
-    let cols = Math.ceil(width / zoom);
-    let rows = Math.ceil(height / zoom);
+    // One more thread each way: the view can start part way through a thread
+    let cols = Math.ceil(width / zoom) + 1;
+    let rows = Math.ceil(height / zoom) + 1;
     let effectType = getEffectType();
 
     // Weave one repeat at one pixel per thread, then let the browser tile and scale it.
@@ -2063,11 +2116,19 @@ function redrawTartan() {
 
     let tileCtx = weaveTileCanvas.getContext('2d');
     let tile = tileCtx.createImageData(tileW * k, tileH * k);
-    let threadColors = buildThreadColors(tartanStripes, isSymmetric, Math.max(tileW, tileH));
-    if (domElements.yarnIrregular?.checked) threadColors = varyYarnColors(threadColors);
+    let startX = Math.floor(viewX);
+    let startY = Math.floor(viewY);
+    let originX = positiveModulo(startX, period);
+    let originY = positiveModulo(startY, period);
+    let warpColors = buildThreadColors(tartanStripes, isSymmetric, tileW, originX);
+    let weftColors = buildThreadColors(tartanStripes, isSymmetric, tileH, originY);
+    if (domElements.yarnIrregular?.checked) {
+        warpColors = varyYarnColors(warpColors, YARN_VARIATION, originX, period);
+        weftColors = varyYarnColors(weftColors, YARN_VARIATION, originY, period);
+    }
     let tilePixels = new Uint32Array(tile.data.buffer);
-    if (k > 1) fillTwillRelief(tilePixels, tileW, tileH, threadColors, isZTwist, k);
-    else fillTwillPixels(tilePixels, tileW, tileH, threadColors, isZTwist);
+    if (k > 1) fillTwillRelief(tilePixels, tileW, tileH, warpColors, isZTwist, k, weftColors, originX, originY);
+    else fillTwillPixels(tilePixels, tileW, tileH, warpColors, isZTwist, weftColors, originX, originY);
     tileCtx.putImageData(tile, 0, 0);
 
     drawingContext.save();
@@ -2075,6 +2136,11 @@ function redrawTartan() {
     // Relief: the tile is close to device resolution, so smooth any small rescaling.
     let devicePixels = zoom * pixelDensity();
     drawingContext.imageSmoothingEnabled = k > 1 ? devicePixels !== k : devicePixels < 1;
+    // Part of a thread, snapped to device pixels so that threads stay crisp
+    drawingContext.translate(
+        -Math.round((viewX - startX) * devicePixels) / pixelDensity(),
+        -Math.round((viewY - startY) * devicePixels) / pixelDensity()
+    );
     drawingContext.scale(zoom / k, zoom / k);
     drawingContext.fillStyle = drawingContext.createPattern(weaveTileCanvas, 'repeat');
     drawingContext.fillRect(0, 0, cols * k, rows * k);
@@ -2152,20 +2218,46 @@ function syncZoomSlider() {
     if (domElements.zoomSlider) domElements.zoomSlider.value = zoomToSlider(clampZoom(readZoom()));
 }
 
-function setZoom(value) {
+function positiveModulo(value, divisor) {
+    return ((value % divisor) + divisor) % divisor;
+}
+
+// New view start, so that the thread under an anchor (in canvas pixels) does not move
+function zoomViewAt(view, anchor, oldZoom, newZoom) {
+    return view + anchor / oldZoom - anchor / newZoom;
+}
+
+// The anchor is the point that stays still; the middle of the canvas by default.
+function setZoom(value, anchorX = width / 2, anchorY = height / 2) {
     const zoom = clampZoom(value);
-    if (!domElements.zoom || zoom === readZoom()) return;
+    const current = readZoom();
+    if (!domElements.zoom || zoom === current) return;
+    viewX = zoomViewAt(viewX, anchorX, current, zoom);
+    viewY = zoomViewAt(viewY, anchorY, current, zoom);
     domElements.zoom.value = zoom.toFixed(1);
     syncZoomSlider();
     updateZoom();
 }
 
 // One step in or out (buttons, wheel, keys); always moves by at least 0.1
-function stepZoom(direction) {
+function stepZoom(direction, anchorX, anchorY) {
     const current = readZoom();
     let next = clampZoom(direction > 0 ? current * ZOOM_STEP : current / ZOOM_STEP);
     if (next === current) next = clampZoom(current + direction * 0.1);
-    setZoom(next);
+    setZoom(next, anchorX, anchorY);
+}
+
+function panView(dxPixels, dyPixels) {
+    const zoom = readZoom();
+    viewX -= dxPixels / zoom;
+    viewY -= dyPixels / zoom;
+    redrawTartan();
+}
+
+function resetView() {
+    viewX = 0;
+    viewY = 0;
+    redrawTartan();
 }
 window.updateSymmetry = function() {
     commitStructureSettings();
