@@ -389,6 +389,25 @@ function runTests() {
             assertSilent(Math.abs(sym.colors.reduce((a, c) => a + c.meters, 0) - 4000) < 1e-6, 'sheet yarn adds up');
             assertEqual(buildWeavingSheetData(stripes, false, 0.5).sequence.length, 3, 'sheet keeps an asymmetric sett');
             console.info('✅ weaving sheet');
+        },
+        () => {
+            // Preview: averaging threads finer than a pixel
+            const seq = [{ hex: '#FF0000', count: 10 }, { hex: '#0000FF', count: 10 }];
+            const close = (a, b) => Math.abs(a - b) < 1e-9;
+            const sharp = averageSettColors(seq, 1, 21);
+            assertSilent(close(sharp[0], 1) && close(sharp[2], 0), 'one thread per pixel keeps the first color');
+            assertSilent(close(sharp[10 * 3], 0) && close(sharp[10 * 3 + 2], 1), 'one thread per pixel reaches the second color');
+            assertSilent(close(sharp[20 * 3], 1), 'the sequence wraps around');
+            const blended = averageSettColors(seq, 20, 3);
+            assertSilent([0, 3, 6].every(i => close(blended[i], 0.5) && close(blended[i + 2], 0.5)), 'a whole repeat in a pixel gives the mean');
+            const split = averageSettColors(seq, 5, 3);
+            assertSilent(close(split[0], 1) && close(split[3], 1) && close(split[6], 0), 'pixel boundaries on thread boundaries');
+            const fraction = averageSettColors(seq, 4, 3);
+            assertSilent(close(fraction[6], 0.5), 'a pixel across two stripes is weighted');
+            const huge = averageSettColors([{ hex: '#FF0000', count: 999999 }, { hex: '#000000', count: 999999 }], 1000, 2000);
+            assertSilent(close(huge[0], 1), 'huge counts stay cheap');
+            assertEqual(linearToSrgb(srgbToLinear(128)), 128, 'gamma round trip');
+            console.info('✅ object preview');
         }
     ];
 

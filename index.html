@@ -238,6 +238,9 @@
       .app-main:has(#patchwork-board:not([hidden])) #canvas-container { height: 75%; }
       .app-main:has(#patchwork-board:not([hidden])) .sidebar { height: 25%; }
       .app-main:has(#patchwork-board:not([hidden])) .btn-toggle-ui { display: none; }
+      .app-main:has(#preview-board:not([hidden])) #canvas-container { height: 75%; }
+      .app-main:has(#preview-board:not([hidden])) .sidebar { height: 25%; }
+      .app-main:has(#preview-board:not([hidden])) .btn-toggle-ui { display: none; }
     }
 
     h2 { font-size: 12px; margin-top: 20px; margin-bottom: 10px; color: #888; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 3px;}
@@ -522,6 +525,9 @@
     }
     .patchwork-board[hidden] { display: none; }
     .modal-overlay[hidden] { display: none; }
+    .btn-preview-objects { display: block; width: 100%; margin-top: 8px; font-size: 12px; }
+    .preview-stage { flex: 1; min-height: 0; overflow: hidden; }
+    .preview-stage canvas { display: block; }
     .sheet-paper { background: #fff; color: #111; width: 680px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: 24px; border-radius: 6px; font-size: 13px; }
     .sheet-paper h2 { font-size: 20px; margin-bottom: 2px; color: #111; }
     .sheet-paper h3 { font-size: 13px; margin: 14px 0 4px; }
@@ -672,6 +678,13 @@
     </div>
     <div id="canvas-container">
         <button id="btn-toggle-ui" class="btn-toggle-ui" aria-label="Afficher/Masquer le panneau" title="Afficher/Masquer le panneau" data-i18n-title="title_toggle_ui" data-i18n-label="title_toggle_ui">▶</button>
+        <div id="preview-board" class="patchwork-board" role="dialog" aria-labelledby="preview-title" hidden>
+            <div class="patchwork-bar">
+                <span id="preview-title" class="patchwork-title" data-i18n="preview_title">Le motif à l'échelle, d'après la taille du fil</span>
+                <button type="button" class="btn-secondary" id="btn-preview-close" data-i18n="btn_patch_close">Fermer</button>
+            </div>
+            <div class="preview-stage"><canvas id="preview-canvas" role="img"></canvas></div>
+        </div>
         <div id="patchwork-board" class="patchwork-board" role="dialog" aria-labelledby="patchwork-title" hidden>
             <div class="patchwork-bar">
                 <span id="patchwork-title" class="patchwork-title" data-i18n="title_patch_board">Planche patchwork : cliquez un motif pour le reprendre, 📌 pour le garder, ≈ pour des variantes</span>
@@ -852,6 +865,7 @@
         <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
             <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
         </div>
+        <button type="button" class="btn-secondary btn-preview-objects" id="btn-preview-objects" data-i18n="btn_preview_objects">Aperçu sur objets</button>
 
       </div>
 
