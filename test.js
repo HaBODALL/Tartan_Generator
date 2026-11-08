@@ -350,6 +350,31 @@ function runTests() {
             }
             assertEqual(decodeSharedPattern(good.replace('mm=0.3', 'mm=999')).threadMm, null, 'absurd thread size ignored');
             console.info('✅ shared link');
+        },
+        () => {
+            // Text export read back
+            const file = [
+                'TARTAN GENERATOR - EXPORT', '==========================', '', 'ID: 777', 'Date: 2026_11_08', '',
+                'CODE SRT:', 'R/48 B8 K/12', '', '', 'CODE INK/STITCH:', '(#C80000)/48 (#000064)8 (#101010)/12', '', '',
+                'STATISTIQUES:', '- Largeur estimée: 3.0 cm (fil 0.3mm)', '',
+                'RENDU:', '- Sergé: S', '- Relief: 150 %', '- Irrégularité du fil: oui', ''
+            ].join('\r\n');
+            const p = parseExportedText(file);
+            assertEqual(p.stripes.map(s => s.code + s.hex + s.count).join(), 'R#C8000048,B#0000648,K#10101012', 'text import reads the stripes');
+            assertEqual(p.symmetric, true, 'text import reads the symmetry');
+            assertEqual(p.id, 777, 'text import reads the id');
+            assertEqual(p.threadMm, 0.3, 'text import reads the thread size');
+            assertEqual(p.zTwist, false, 'text import reads the twill');
+            assertEqual(p.relief, 1.5, 'text import reads the relief');
+            assertEqual(p.yarn, true, 'text import reads the yarn');
+            const asym = parseExportedText(file.replace('(#C80000)/48 (#000064)8 (#101010)/12', '...(#C80000)48 (#000064)8 (#101010)12...'));
+            assertEqual(asym.symmetric, false, 'text import reads an asymmetric sett');
+            const old = parseExportedText(file.split('RENDU:')[0]);
+            assertEqual(old.relief, undefined, 'older files leave the relief alone');
+            assertEqual(old.zTwist, undefined, 'older files leave the twill alone');
+            assertEqual(parseExportedText('hello'), null, 'other text refused');
+            assertEqual(parseExportedText('TARTAN GENERATOR - EXPORT\nCODE INK/STITCH:\nnothing'), null, 'file without stripes refused');
+            console.info('✅ text import');
         }
     ];
 

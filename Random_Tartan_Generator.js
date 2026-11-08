@@ -286,6 +286,9 @@ const TRANSLATIONS = {
         msg_link_copied: "Lien du motif copié.",
         msg_link_manual: "Copiez ce lien :",
         msg_link_invalid: "Ce lien de motif est incomplet ou invalide.",
+        btn_import_file: "Fichier",
+        title_import_file: "Rouvrir un fichier texte exporté avec « Détails »",
+        msg_import_file_err: "Ce fichier n'est pas un export de détails valide.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -395,6 +398,9 @@ const TRANSLATIONS = {
         msg_link_copied: "Pattern link copied.",
         msg_link_manual: "Copy this link:",
         msg_link_invalid: "This pattern link is incomplete or invalid.",
+        btn_import_file: "File",
+        title_import_file: "Reopen a text file exported with \"Details\"",
+        msg_import_file_err: "This file is not a valid details export.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -638,6 +644,16 @@ function bindEvents() {
 
     const btnImportSrt = domElements.btnImportSrt;
     if (btnImportSrt) btnImportSrt.addEventListener('click', importSRT);
+
+    const importFile = document.getElementById('import-file');
+    const btnImportFile = document.getElementById('btn-import-file');
+    if (importFile && btnImportFile) {
+        btnImportFile.addEventListener('click', () => importFile.click());
+        importFile.addEventListener('change', () => {
+            importExportedFile(importFile.files[0]);
+            importFile.value = ''; // The same file can be chosen again
+        });
+    }
 
     const btnSrtHelp = domElements.btnSrtHelp;
     if (btnSrtHelp) {
@@ -2122,6 +2138,12 @@ function exportTXT() {
     content += `- Largeur estimée: ${sizeCM} cm (fil ${threadMM}mm)\n`;
     content += `- Nombre de bandes: ${tartanStripes.length}\n\n`;
 
+    // Rendering settings, read back when the file is imported
+    content += `RENDU:\n`;
+    content += `- Sergé: ${domElements.weaveZ?.checked ?? true ? 'Z' : 'S'}\n`;
+    content += `- Relief: ${getEffectType() === 'relief' ? Math.round(readReliefStrength() * 100) + ' %' : 'non'}\n`;
+    content += `- Irrégularité du fil: ${domElements.yarnIrregular?.checked ? 'oui' : 'non'}\n\n`;
+
     // Palette used
     content += `PALETTE:\n`;
     userPalette.forEach(c => {
@@ -2246,6 +2268,59 @@ function applyLoadedPattern(p) {
     redrawTartan();
     updateUndoButton();
     saveState();
+}
+
+// Reads back a file written by exportTXT. Colors come from the Ink/Stitch code, which holds
+// the exact shades; the SRT code gives their names. Files from before the "RENDU" section
+// leave the rendering settings as they are. Returns null when the file is not usable.
+function parseExportedText(text) {
+    const t = String(text).replace(/\r\n?/g, '\n');
+    if (!t.includes('TARTAN GENERATOR - EXPORT')) return null;
+    const ink = /^CODE INK\/STITCH:\n(.+)$/m.exec(t)?.[1]?.trim();
+    if (!ink) return null;
+
+    const srt = /^CODE SRT:\n(.+)$/m.exec(t)?.[1] || '';
+    const codes = [...srt.matchAll(/([A-Z]+)\/?\d+/g)].map(m => m[1]);
+    const tokens = [...ink.matchAll(/\(#([0-9A-Fa-f]{6})\)\/?([1-9][0-9]{0,5})/g)];
+    if (tokens.length < 2 || tokens.length > 256) return null;
+
+    const stripes = [];
+    for (let i = 0; i < tokens.length; i++) {
+        const hex = '#' + tokens[i][1].toUpperCase();
+        const code = codes.length === tokens.length ? codes[i] : SRT_PALETTE.find(c => c.hex.toUpperCase() === hex)?.code;
+        if (!code) return null;
+        stripes.push({ code, hex, count: parseInt(tokens[i][2], 10) });
+    }
+
+    const pattern = { stripes, symmetric: !ink.startsWith('...') };
+    const id = /^ID: ([0-9]{1,9})$/m.exec(t);
+    if (id) pattern.id = parseInt(id[1], 10);
+    const mm = parseFloat(/\(fil ([0-9.]+) ?mm\)/.exec(t)?.[1]);
+    if (mm > 0 && mm <= 20) pattern.threadMm = mm;
+    const twill = /^- Sergé: ([ZS])$/m.exec(t);
+    if (twill) pattern.zTwist = twill[1] === 'Z';
+    const relief = /^- Relief: (non|[0-9]{1,3} %)$/m.exec(t);
+    if (relief) pattern.relief = relief[1] === 'non' ? null : Math.min(2, parseInt(relief[1], 10) / 100);
+    const yarn = /^- Irrégularité du fil: (oui|non)$/m.exec(t);
+    if (yarn) pattern.yarn = yarn[1] === 'oui';
+    return pattern;
+}
+
+async function importExportedFile(file) {
+    if (!file) return;
+    let pattern = null;
+    if (file.size <= 1000000) {
+        try {
+            pattern = parseExportedText(await file.text());
+        } catch (error) {
+            console.warn('Could not read the file', error);
+        }
+    }
+    if (!pattern) {
+        showAppMessage('msg_import_file_err', true);
+        return;
+    }
+    applyLoadedPattern(pattern);
 }
 
 // Opens the pattern of the current URL, then cleans the URL: a reload must not bring it back
