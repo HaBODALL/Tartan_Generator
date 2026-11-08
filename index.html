@@ -525,6 +525,8 @@
     }
     .patchwork-board[hidden] { display: none; }
     .modal-overlay[hidden] { display: none; }
+    #canvas-container > canvas { touch-action: none; cursor: grab; }
+    #canvas-container > canvas.panning { cursor: grabbing; }
     .btn-preview-objects { display: block; width: 100%; margin-top: 8px; font-size: 12px; }
     .preview-stage { flex: 1; min-height: 0; overflow: hidden; }
     .preview-stage canvas { display: block; }
@@ -834,7 +836,7 @@
         </div>
 
         <div class="control-row">
-            <label for="in-zoom" data-i18n="lbl_zoom" data-i18n-title="title_zoom" title="Molette sur le motif ou touches + et − pour zoomer">Zoom Visuel</label>
+            <label for="in-zoom" data-i18n="lbl_zoom" data-i18n-title="title_zoom" title="Molette sur le motif ou touches + et − pour zoomer. Glisser ou flèches pour déplacer, double-clic pour revenir au début">Zoom Visuel</label>
             <div class="zoom-controls">
                 <button type="button" class="zoom-btn" id="btn-zoom-out" data-i18n-title="btn_zoom_out" data-i18n-label="btn_zoom_out" title="Dézoomer" aria-label="Dézoomer">−</button>
                 <label for="zoom-slider" class="sr-only" data-i18n="lbl_zoom_slider">Zoom (curseur)</label>

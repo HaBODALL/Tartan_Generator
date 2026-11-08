@@ -408,6 +408,43 @@ function runTests() {
             assertSilent(close(huge[0], 1), 'huge counts stay cheap');
             assertEqual(linearToSrgb(srgbToLinear(128)), 128, 'gamma round trip');
             console.info('✅ object preview');
+        },
+        () => {
+            // Moving the view: a window into the cloth matches the same part of the whole cloth
+            const stripes = [{ hex: '#000001', count: 7 }, { hex: '#000002', count: 5 }, { hex: '#000003', count: 11 }];
+            const whole = buildThreadColors(stripes, true, 60);
+            const part = buildThreadColors(stripes, true, 20, 13);
+            assertSilent(part.every((c, i) => c === whole[13 + i]), 'buildThreadColors starts anywhere');
+            const wrapped = buildThreadColors(stripes, false, 10, 23 + 4);
+            assertSilent(wrapped.every((c, i) => c === buildThreadColors(stripes, false, 40)[4 + i]), 'buildThreadColors wraps the start');
+            const W = 30, H = 24;
+            const full = new Uint32Array(W * H), win = new Uint32Array(11 * 9);
+            const colors = buildThreadColors(stripes, false, 40);
+            for (const z of [true, false]) {
+                fillTwillPixels(full, W, H, colors, z);
+                const ox = 13, oy = 6;
+                const warp = buildThreadColors(stripes, false, 11, ox), weft = buildThreadColors(stripes, false, 9, oy);
+                fillTwillPixels(win, 11, 9, warp, z, weft, ox, oy);
+                for (let y = 0; y < 9; y++) for (let x = 0; x < 11; x++) {
+                    if (win[y * 11 + x] !== full[(y + oy) * W + x + ox]) throw new Error('TEST FAILED: twill window wrong at ' + x + ',' + y);
+                }
+            }
+            // The relief window has the same owners and shades
+            const k = 4, fullR = new Uint32Array(W * k * H * k), winR = new Uint32Array(11 * k * 9 * k);
+            const greys = buildThreadColors(stripes.map((s, i) => ({ ...s, hex: ['#404040', '#808080', '#C0C0C0'][i] })), false, 40);
+            fillTwillRelief(fullR, W, H, greys, true, k);
+            const shift = (n, l) => greys.slice(n, n + l);
+            fillTwillRelief(winR, 11, 9, shift(13, 11), true, k, shift(6, 9), 13, 6);
+            for (let y = 0; y < 9 * k; y++) for (let x = 0; x < 11 * k; x++) {
+                if (winR[y * 11 * k + x] !== fullR[(y + 6 * k) * W * k + x + 13 * k]) throw new Error('TEST FAILED: relief window wrong at ' + x + ',' + y);
+            }
+            // Zoom anchor: the thread under the pointer stays there
+            const next = zoomViewAt(10, 300, 2, 5);
+            assertSilent(Math.abs((10 + 300 / 2) - (next + 300 / 5)) < 1e-9, 'zoom keeps the thread under the anchor');
+            assertEqual(positiveModulo(-3, 8), 5, 'positiveModulo');
+            const yarn = varyYarnColors(colors, 0.07), late = varyYarnColors(colors.slice(5, 15), 0.07, 5, 1000);
+            assertSilent(late.every((c, i) => c === yarn[5 + i]), 'a thread keeps its yarn shade in a moved view');
+            console.info('✅ moving the view');
         }
     ];
 
