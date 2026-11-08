@@ -135,6 +135,9 @@ const RELIEF_LEVELS = 64;
 const RELIEF_MIN = 0.3;
 const RELIEF_MAX = 1.3;
 const RELIEF_MIN_PIXELS = 3; // Below this many device pixels per thread, relief is invisible
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 12;
+const ZOOM_STEP = 1.25;
 let reliefMasks = { k: 0, strength: 1, masks: null };
 const YARN_VARIATION = 0.07; // Brightness spread of the yarn irregularity (+/- 7%)
 
@@ -158,7 +161,7 @@ let domElements = {
     genId: null,
     srtDisplay: null,
     undoBtn: null,
-    effectType: null,
+    effectRelief: null,
     btnToggleUI: null,
     sidebar: null,
     btnCopySrt: null,
@@ -204,8 +207,10 @@ const TRANSLATIONS = {
         btn_cancel: "ANNULER",
         loading: "TISSAGE EN COURS...",
         lbl_thread_type: "Type de fil",
-        lbl_effect: "Effet Textile",
-        opt_eff_none: "Aucun",
+        btn_zoom_out: "Dézoomer",
+        btn_zoom_in: "Zoomer",
+        lbl_zoom_slider: "Zoom (curseur)",
+        title_zoom: "Molette sur le motif ou touches + et − pour zoomer",
         opt_eff_relief: "Relief des fils",
         lbl_relief_strength: "Intensité du relief",
         lbl_yarn: "Irrégularité de la laine",
@@ -288,8 +293,10 @@ const TRANSLATIONS = {
         btn_cancel: "CANCEL",
         loading: "WEAVING IN PROGRESS...",
         lbl_thread_type: "Thread type",
-        lbl_effect: "Textile Effect",
-        opt_eff_none: "None",
+        btn_zoom_out: "Zoom out",
+        btn_zoom_in: "Zoom in",
+        lbl_zoom_slider: "Zoom (slider)",
+        title_zoom: "Mouse wheel over the pattern or + and − keys to zoom",
         opt_eff_relief: "Thread relief",
         lbl_relief_strength: "Relief strength",
         lbl_yarn: "Yarn irregularity",
@@ -369,7 +376,7 @@ function saveState() {
         threadMm: domElements.threadMm?.value || 0.30,
         zoom: domElements.zoom?.value || 2.0,
         weaveZ: domElements.weaveZ?.checked ?? true,
-        effectType: domElements.effectType?.value || 'none',
+        effectType: getEffectType(),
         reliefStrength: readReliefStrength(),
         yarnIrregular: domElements.yarnIrregular?.checked || false,
         threadType: domElements.threadType?.value || 'custom',
@@ -412,6 +419,7 @@ function loadState() {
         if (domElements.sett) domElements.sett.value = state.sett;
         if (domElements.threadMm) domElements.threadMm.value = state.threadMm;
         if (domElements.zoom) domElements.zoom.value = state.zoom;
+        syncZoomSlider();
 
         if (domElements.weaveZ) {
             domElements.weaveZ.checked = state.weaveZ;
@@ -419,11 +427,9 @@ function loadState() {
             if (domWeaveS) domWeaveS.checked = !state.weaveZ;
         }
 
-        if (domElements.effectType && state.effectType) {
-            // "Tous" (experimental) kept the relief; the removed overlay and grain fall back to none
-            const effect = state.effectType === 'experimental' ? 'relief' : state.effectType;
-            domElements.effectType.value = effect;
-            if (!domElements.effectType.value) domElements.effectType.value = 'none';
+        if (domElements.effectRelief && state.effectType) {
+            // "Tous" (experimental) kept the relief; the removed overlay and grain mean no effect
+            domElements.effectRelief.checked = state.effectType === 'relief' || state.effectType === 'experimental';
         }
         if (domElements.reliefStrength && Number.isFinite(state.reliefStrength)) {
             domElements.reliefStrength.value = Math.round(state.reliefStrength * 100);
@@ -468,7 +474,10 @@ function cacheDomElements() {
     domElements.genId = document.getElementById('gen-id');
     domElements.srtDisplay = document.getElementById('srt-display');
     domElements.undoBtn = document.getElementById('btn-undo');
-    domElements.effectType = document.getElementById('effect-type');
+    domElements.effectRelief = document.getElementById('effect-relief');
+    domElements.zoomSlider = document.getElementById('zoom-slider');
+    domElements.btnZoomIn = document.getElementById('btn-zoom-in');
+    domElements.btnZoomOut = document.getElementById('btn-zoom-out');
     domElements.reliefStrength = document.getElementById('relief-strength');
     domElements.reliefStrengthValue = document.getElementById('relief-strength-value');
     domElements.yarnIrregular = document.getElementById('yarn-irregular');
@@ -521,6 +530,11 @@ function initCanvas() {
 
     let canvas = createCanvas(w, h);
     canvas.parent('canvas-container');
+
+    // p5's temporary <main> took up room during the first measure: measure again now it is empty
+    if (container.offsetWidth !== w || container.offsetHeight !== h) {
+        resizeCanvas(container.offsetWidth, container.offsetHeight, true);
+    }
 
     noLoop();
     noSmooth();
@@ -611,10 +625,24 @@ function bindEvents() {
     });
 
     const inZoom = domElements.zoom;
-    if (inZoom) inZoom.addEventListener('input', updateZoom);
+    if (inZoom) inZoom.addEventListener('input', () => { syncZoomSlider(); updateZoom(); });
+    if (domElements.zoomSlider) {
+        domElements.zoomSlider.addEventListener('input', () => setZoom(sliderToZoom(domElements.zoomSlider.value)));
+    }
+    if (domElements.btnZoomIn) domElements.btnZoomIn.addEventListener('click', () => stepZoom(1));
+    if (domElements.btnZoomOut) domElements.btnZoomOut.addEventListener('click', () => stepZoom(-1));
+    // Mouse wheel over the pattern (not over the mood board, which has its own content)
+    if (domElements.canvasContainer) {
+        domElements.canvasContainer.addEventListener('wheel', (e) => {
+            if (isPatchworkOpen() || e.ctrlKey) return;
+            e.preventDefault();
+            stepZoom(e.deltaY < 0 ? 1 : -1);
+        }, { passive: false });
+    }
+    syncZoomSlider();
 
-    if (domElements.effectType) {
-        domElements.effectType.addEventListener('change', () => {
+    if (domElements.effectRelief) {
+        domElements.effectRelief.addEventListener('change', () => {
             updateReliefStrengthUI();
             refreshRendering();
             saveState();
@@ -702,8 +730,7 @@ function bindEvents() {
                 // Update input field and redraw
                 if (domElements.zoom) {
                     // Round to nearest 0.5 step to match input step if desired, or just to 1 decimal
-                    domElements.zoom.value = newZoom.toFixed(1);
-                    domElements.zoom.dispatchEvent(new Event('input'));
+                    setZoom(newZoom);
                 }
             }
         }, { passive: false });
@@ -737,6 +764,16 @@ document.addEventListener('keydown', (e) => {
     if (e.altKey || ((e.ctrlKey || e.metaKey) && key !== 'z')) return;
 
     switch(key) {
+        case '+':       // + / - = Zoom
+        case '=':
+            e.preventDefault();
+            stepZoom(1);
+            break;
+        case '-':
+        case '_':
+            e.preventDefault();
+            stepZoom(-1);
+            break;
         case ' ':       // Space = Generate
         case 'g':
             e.preventDefault();
@@ -781,6 +818,12 @@ function setLanguage(lang) {
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         let key = el.getAttribute('data-i18n-title');
         if(t[key]) el.title = t[key];
+    });
+
+    // Accessible names of icon-only buttons
+    document.querySelectorAll('[data-i18n-label]').forEach(el => {
+        let key = el.getAttribute('data-i18n-label');
+        if(t[key]) el.setAttribute('aria-label', t[key]);
     });
 
     // Update language buttons active state
@@ -1697,13 +1740,18 @@ function readReliefStrength() {
     return Number.isFinite(value) ? Math.max(0, Math.min(2, value / 100)) : 1;
 }
 
+function getEffectType() {
+    return domElements.effectRelief?.checked ? 'relief' : 'none';
+}
+
+// The strength slider only shows while the relief is on
 function updateReliefStrengthUI() {
     const input = domElements.reliefStrength;
     if (!input) return;
-    const active = domElements.effectType?.value === 'relief';
+    const active = getEffectType() === 'relief';
     input.disabled = !active;
     const row = input.closest('.control-row');
-    if (row) row.style.opacity = active ? '1' : '0.5';
+    if (row) row.hidden = !active;
     if (domElements.reliefStrengthValue) domElements.reliefStrengthValue.textContent = Math.round(readReliefStrength() * 100) + ' %';
 }
 
@@ -1828,7 +1876,7 @@ function redrawTartan() {
 
     let cols = Math.ceil(width / zoom);
     let rows = Math.ceil(height / zoom);
-    let effectType = domElements.effectType ? domElements.effectType.value : 'none';
+    let effectType = getEffectType();
 
     // Weave one repeat at one pixel per thread, then let the browser tile and scale it.
     // The cost depends on the sett, not on the screen size or the zoom.
@@ -1910,6 +1958,44 @@ window.closeAboutModal = function(e) {
     if (aboutModalElement) aboutModalElement.style.display = 'none';
 }
 window.updateZoom = function() { redrawTartan(); scheduleSaveState(); }
+
+// The zoom slider is logarithmic: as much travel from 0.5 to 2 as from 3 to 12.
+
+function clampZoom(value) {
+    return Math.round(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value)) * 10) / 10;
+}
+
+function zoomToSlider(zoom) {
+    return Math.round(Math.log(zoom / ZOOM_MIN) / Math.log(ZOOM_MAX / ZOOM_MIN) * 1000);
+}
+
+function sliderToZoom(position) {
+    return ZOOM_MIN * Math.pow(ZOOM_MAX / ZOOM_MIN, position / 1000);
+}
+
+function readZoom() {
+    return parseFloat(domElements.zoom?.value) || 2.0;
+}
+
+function syncZoomSlider() {
+    if (domElements.zoomSlider) domElements.zoomSlider.value = zoomToSlider(clampZoom(readZoom()));
+}
+
+function setZoom(value) {
+    const zoom = clampZoom(value);
+    if (!domElements.zoom || zoom === readZoom()) return;
+    domElements.zoom.value = zoom.toFixed(1);
+    syncZoomSlider();
+    updateZoom();
+}
+
+// One step in or out (buttons, wheel, keys); always moves by at least 0.1
+function stepZoom(direction) {
+    const current = readZoom();
+    let next = clampZoom(direction > 0 ? current * ZOOM_STEP : current / ZOOM_STEP);
+    if (next === current) next = clampZoom(current + direction * 0.1);
+    setZoom(next);
+}
 window.updateSymmetry = function() {
     commitStructureSettings();
     updateGeneratedListUI(); // The SRT notation depends on symmetry
@@ -2403,7 +2489,7 @@ function renderPatternCanvas(canvas, entry, scaleMode) {
     }
     if (domElements.yarnIrregular?.checked) threadColors = varyYarnColors(threadColors);
 
-    const relief = domElements.effectType?.value === 'relief' && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
+    const relief = getEffectType() === 'relief' && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
     const k = relief ? Math.min(16, Math.round(threadPx)) : 1;
 
     const tile = document.createElement('canvas');

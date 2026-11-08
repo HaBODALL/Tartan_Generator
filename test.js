@@ -159,6 +159,19 @@ function runTests() {
             console.info('✅ relief masks shade like a round yarn');
         },
         () => {
+            // Test zoom helpers: limits, rounding, logarithmic slider
+            assertEqual(clampZoom(0.1), 0.5, 'zoom minimum');
+            assertEqual(clampZoom(99), 12, 'zoom maximum');
+            assertEqual(clampZoom(2.34), 2.3, 'zoom rounds to one decimal');
+            assertEqual(zoomToSlider(0.5), 0, 'slider start');
+            assertEqual(zoomToSlider(12), 1000, 'slider end');
+            assertSilent(sliderToZoom(500) > 2 && sliderToZoom(500) < 3, 'slider middle is a low zoom');
+            for (const z of [0.5, 1, 2, 4.5, 8, 12]) {
+                assertEqual(clampZoom(sliderToZoom(zoomToSlider(z))), z, `slider round trip for ${z}`);
+            }
+            console.info('✅ zoom helpers');
+        },
+        () => {
             // Test relief strength: 0% is flat, 200% has more contrast than 100%
             const spread = () => { const m = getReliefMasks(8)[0]; return Math.max(...m) - Math.min(...m); };
             const saved = domElements.reliefStrength;
