@@ -147,6 +147,14 @@ const PATCHWORK_AXES = {
     symmetric: [false, true]
 };
 let reliefMasks = { k: 0, strength: 1, masks: null };
+// Below this color difference (CIE76), two neighboring stripes are hard to tell apart
+const COLOR_CLOSE_DELTA = 15;
+// Color vision deficiencies at full severity, in linear RGB (Machado, Oliveira, Fernandes 2009)
+const VISION_MATRICES = {
+    protan: [0.152286, 1.052583, -0.204868, 0.114503, 0.786281, 0.099216, -0.003882, -0.048116, 1.051998],
+    deuter: [0.367322, 0.860646, -0.227968, 0.280085, 0.672501, 0.047413, -0.011820, 0.042940, 0.968881],
+    tritan: [1.255528, -0.076749, -0.178779, -0.078411, 0.930809, 0.147602, 0.004733, 0.691367, 0.303900]
+};
 // Thread shown at the top left corner of the canvas (not whole while moving)
 let viewX = 0;
 let viewY = 0;
@@ -315,6 +323,16 @@ const TRANSLATIONS = {
         preview_cushion: "Coussin",
         preview_kilt: "Kilt",
         preview_repeat: "Un motif : % cm",
+        sec_readability: "Lisibilité des couleurs",
+        read_ok: "Toutes les bandes voisines se distinguent bien.",
+        read_close: "Bandes voisines très proches :",
+        read_deficient: "Peu distinctes en cas de daltonisme :",
+        lbl_vision: "Simuler la vision",
+        vision_normal: "Normale",
+        vision_protan: "Protanopie (rouge)",
+        vision_deuter: "Deutéranopie (vert)",
+        vision_tritan: "Tritanopie (bleu)",
+        note_vision: "À l'écran seulement : les exports gardent les vraies couleurs.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -450,6 +468,16 @@ const TRANSLATIONS = {
         preview_cushion: "Cushion",
         preview_kilt: "Kilt",
         preview_repeat: "One repeat: % cm",
+        sec_readability: "Color readability",
+        read_ok: "All neighboring stripes are easy to tell apart.",
+        read_close: "Neighboring stripes very close:",
+        read_deficient: "Hard to tell apart with color blindness:",
+        lbl_vision: "Simulate vision",
+        vision_normal: "Normal",
+        vision_protan: "Protanopia (red)",
+        vision_deuter: "Deuteranopia (green)",
+        vision_tritan: "Tritanopia (blue)",
+        note_vision: "On screen only: exports keep the true colors.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -622,6 +650,9 @@ function cacheDomElements() {
     domElements.patchworkInfo = document.getElementById('patchwork-info');
     domElements.patchworkScale = document.getElementById('patchwork-scale');
     domElements.btnShareLink = document.getElementById('btn-share-link');
+    domElements.readabilityList = document.getElementById('readability-list');
+    domElements.readabilityBadge = document.getElementById('readability-badge');
+    domElements.visionSelect = document.getElementById('vision-select');
     domElements.btnPreviewObjects = document.getElementById('btn-preview-objects');
     domElements.previewBoard = document.getElementById('preview-board');
     domElements.previewCanvas = document.getElementById('preview-canvas');
@@ -839,6 +870,12 @@ function bindEvents() {
     if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
     if (domElements.btnExportSvg) domElements.btnExportSvg.addEventListener('click', exportSVG);
     if (domElements.btnShareLink) domElements.btnShareLink.addEventListener('click', copySharedLink);
+    installVisionFilters();
+    if (domElements.visionSelect && domElements.canvasContainer) {
+        domElements.visionSelect.addEventListener('change', () => {
+            domElements.canvasContainer.dataset.vision = domElements.visionSelect.value;
+        });
+    }
     if (domElements.btnPreviewObjects) domElements.btnPreviewObjects.addEventListener('click', openObjectPreview);
     if (domElements.btnPreviewClose) domElements.btnPreviewClose.addEventListener('click', closeObjectPreview);
     watchPreviewStage();
@@ -1048,6 +1085,7 @@ function setLanguage(lang) {
     updateUserPaletteUI();
     updateUndoButton();
     renderAppMessage();
+    updateReadabilityUI();
     if (isPatchworkOpen()) renderPatchworkBoard();
     if (isPreviewOpen()) renderObjectPreview();
 }
@@ -2149,6 +2187,7 @@ function redrawTartan() {
     // Update textual info (Actual dimensions)
     updateScaleInfo(seqLen);
     updateActualValues();
+    updateReadabilityUI();
     if (isPreviewOpen()) renderObjectPreview();
 }
 
@@ -2537,6 +2576,113 @@ function copySharedLink() {
         return;
     }
     navigator.clipboard.writeText(link).then(() => showAppMessage('msg_link_copied')).catch(manualCopy);
+}
+
+// --- COLOR READABILITY ---
+function hexToLab(hex, matrix = null) {
+    const v = parseInt(hex.slice(1), 16);
+    let r = srgbToLinear(v >>> 16), g = srgbToLinear((v >>> 8) & 0xFF), b = srgbToLinear(v & 0xFF);
+    if (matrix) {
+        const clamp = c => Math.max(0, Math.min(1, c));
+        [r, g, b] = [
+            clamp(matrix[0] * r + matrix[1] * g + matrix[2] * b),
+            clamp(matrix[3] * r + matrix[4] * g + matrix[5] * b),
+            clamp(matrix[6] * r + matrix[7] * g + matrix[8] * b)
+        ];
+    }
+    // D65 white point
+    const f = t => t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116;
+    const fx = f((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047);
+    const fy = f(0.2126 * r + 0.7152 * g + 0.0722 * b);
+    const fz = f((0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883);
+    return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+
+function colorDifference(hexA, hexB, matrix = null) {
+    const a = hexToLab(hexA, matrix), b = hexToLab(hexB, matrix);
+    return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
+// Pairs of colors that touch in the sett and are hard to tell apart, once each.
+function findCloseNeighbors(stripes, isSymmetric, matrix = null) {
+    const pairs = new Map();
+    const compare = (a, b) => {
+        const key = [a.hex, b.hex].sort().join();
+        if (pairs.has(key)) return;
+        const delta = colorDifference(a.hex, b.hex, matrix);
+        if (delta < COLOR_CLOSE_DELTA) pairs.set(key, { a, b, delta });
+    };
+    for (let i = 0; i + 1 < stripes.length; i++) compare(stripes[i], stripes[i + 1]);
+    if (!isSymmetric && stripes.length > 2) compare(stripes[stripes.length - 1], stripes[0]);
+    return [...pairs.values()];
+}
+
+let readabilityKey = '';
+
+function readabilityRow(pair, note) {
+    const row = sheetElement('div', undefined, 'read-row');
+    for (const color of [pair.a, pair.b]) {
+        const chip = sheetElement('span', undefined, 'sheet-chip');
+        chip.style.background = color.hex;
+        row.append(chip, document.createTextNode(color.code + ' '));
+    }
+    if (note) row.appendChild(sheetElement('span', note, 'read-note'));
+    return row;
+}
+
+function updateReadabilityUI() {
+    const list = domElements.readabilityList;
+    if (!list || tartanStripes.length === 0) return;
+    const isSymmetric = domElements.sym?.checked || false;
+    const key = [tartanStripes.map(s => s.hex).join(), isSymmetric, currentLang].join('|');
+    if (key === readabilityKey) return;
+    readabilityKey = key;
+
+    const t = TRANSLATIONS[currentLang];
+    const close = findCloseNeighbors(tartanStripes, isSymmetric);
+    const known = new Set(close.map(p => [p.a.hex, p.b.hex].sort().join()));
+    const deficient = [];
+    for (const type of Object.keys(VISION_MATRICES)) {
+        for (const pair of findCloseNeighbors(tartanStripes, isSymmetric, VISION_MATRICES[type])) {
+            const id = [pair.a.hex, pair.b.hex].sort().join();
+            if (known.has(id)) continue;
+            known.add(id);
+            deficient.push({ pair, type });
+        }
+    }
+
+    list.textContent = '';
+    if (close.length === 0 && deficient.length === 0) list.appendChild(sheetElement('p', t.read_ok, 'read-ok'));
+    if (close.length > 0) {
+        list.appendChild(sheetElement('p', t.read_close));
+        close.forEach(p => list.appendChild(readabilityRow(p)));
+    }
+    if (deficient.length > 0) {
+        list.appendChild(sheetElement('p', t.read_deficient));
+        deficient.forEach(d => list.appendChild(readabilityRow(d.pair, t['vision_' + d.type])));
+    }
+    if (domElements.readabilityBadge) domElements.readabilityBadge.textContent = close.length > 0 ? '⚠' : '';
+}
+
+// The filters act on what is displayed, so the exports keep the true colors.
+function installVisionFilters() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('width', '0');
+    svg.setAttribute('height', '0');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.style.position = 'absolute';
+    for (const [type, m] of Object.entries(VISION_MATRICES)) {
+        const filter = document.createElementNS(NS, 'filter');
+        filter.id = 'vision-' + type;
+        filter.setAttribute('color-interpolation-filters', 'linearRGB');
+        const matrix = document.createElementNS(NS, 'feColorMatrix');
+        matrix.setAttribute('type', 'matrix');
+        matrix.setAttribute('values', `${m.slice(0, 3).join(' ')} 0 0 ${m.slice(3, 6).join(' ')} 0 0 ${m.slice(6, 9).join(' ')} 0 0 0 0 0 1 0`);
+        filter.appendChild(matrix);
+        svg.appendChild(filter);
+    }
+    document.body.appendChild(svg);
 }
 
 // --- PREVIEW ON OBJECTS ---

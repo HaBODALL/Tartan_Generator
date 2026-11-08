@@ -525,6 +525,15 @@
     }
     .patchwork-board[hidden] { display: none; }
     .modal-overlay[hidden] { display: none; }
+    .readability-list { font-size: 12px; margin-bottom: 8px; }
+    .readability-list p { margin: 4px 0; color: #bbb; }
+    .read-ok { color: #8fd18f !important; }
+    .read-row { padding: 2px 0; font-family: monospace; }
+    .read-note { color: #888; font-size: 11px; margin-left: 6px; }
+    p.read-note { margin: 6px 0 0; }
+    #canvas-container[data-vision="protan"] canvas { filter: url(#vision-protan); }
+    #canvas-container[data-vision="deuter"] canvas { filter: url(#vision-deuter); }
+    #canvas-container[data-vision="tritan"] canvas { filter: url(#vision-tritan); }
     #canvas-container > canvas { touch-action: none; cursor: grab; }
     #canvas-container > canvas.panning { cursor: grabbing; }
     .btn-preview-objects { display: block; width: 100%; margin-top: 8px; font-size: 12px; }
@@ -882,6 +891,23 @@
       <div id="color-list"></div>
 
         </div>
+</details>
+
+<details>
+  <summary><span data-i18n="sec_readability">Lisibilité des couleurs</span> <span id="readability-badge"></span></summary>
+  <div class="details-content">
+      <div id="readability-list" class="readability-list" aria-live="polite"></div>
+      <div class="control-row">
+          <label for="vision-select" data-i18n="lbl_vision">Simuler la vision</label>
+          <select id="vision-select" class="patchwork-select">
+              <option value="normal" data-i18n="vision_normal">Normale</option>
+              <option value="protan" data-i18n="vision_protan">Protanopie (rouge)</option>
+              <option value="deuter" data-i18n="vision_deuter">Deutéranopie (vert)</option>
+              <option value="tritan" data-i18n="vision_tritan">Tritanopie (bleu)</option>
+          </select>
+      </div>
+      <p class="read-note" data-i18n="note_vision">À l'écran seulement : les exports gardent les vraies couleurs.</p>
+  </div>
 </details>
 
 <!-- SECTION: EXPORT -->
