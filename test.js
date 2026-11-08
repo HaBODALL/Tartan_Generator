@@ -492,6 +492,43 @@ function runTests() {
             const thin = absorbTransitions([{ width: 40, lab: [30, 0, 0] }, { width: 2, lab: [90, 0, 80] }, { width: 40, lab: [30, 0, 0] }]);
             assertEqual(thin.length, 3, 'a thin colored line stays');
             console.info('✅ estimate from a photo');
+        },
+        () => {
+            // Estimate: proposals and the intermediate of silver stars
+            const named = list => list.map(([code, count]) => ({ code, hex: SRT_PALETTE.find(c => c.code === code).hex, count }));
+            const cloth = (stripes, sym, w, h, px) => {
+                const threads = countSettThreads(stripes, sym), colors = buildThreadColors(stripes, sym, threads);
+                const pixels = new Uint32Array(w * h);
+                for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+                    const tx = Math.floor(x / px), ty = Math.floor(y / px);
+                    pixels[y * w + x] = ((tx - [2, 1, 0, 3][ty & 3]) & 3) < 2 ? colors[ty % threads] : colors[tx % threads];
+                }
+                return { data: new Uint8ClampedArray(pixels.buffer), width: w, height: h };
+            };
+            const sett = named([['R', 72], ['B', 8], ['K', 12], ['Y', 2], ['K', 12], ['W', 2], ['G', 24], ['K', 4]]);
+            const list = estimateProposals(cloth(sett, true, 800, 600, 2), { targetThreads: countSettThreads(sett, true) });
+            assertEqual(list.length, ESTIMATE_MAX_PROPOSALS, 'proposals fill a series of 10');
+            assertEqual(list[0].caption[0], 'base', 'the base reading comes first');
+            assertEqual(new Set(list.map(p => p.symmetric + p.stripes.map(s => s.hex + s.count).join())).size, list.length, 'proposals are all different');
+            assertEqual(estimateProposals({ data: new Uint8ClampedArray(200 * 200 * 4).fill(128), width: 200, height: 200 }).length, 0, 'a plain image has no proposal');
+
+            const silver = (stripes, symmetric = true) => ({ stripes: named(stripes), symmetric, caption: ['base'], star: 'silver' });
+            const widths = [['R', 40], ['K', 20], ['W', 40]];
+            const same = blendProposals([silver(widths), silver(widths)], { targetThreads: 120 });
+            assertEqual(same[0].caption[0], 'intermediate', 'the intermediate comes first');
+            assertEqual(same[0].stripes.map(s => s.code + s.count).join(' '), 'R40 K20 W40', 'the intermediate of a sett is that sett');
+            const reversed = blendProposals([silver(widths), silver([...widths].reverse())], { targetThreads: 120 });
+            assertEqual(reversed[0].stripes.map(s => s.code + s.count).join(' '), 'R40 K20 W40', 'a sett read backwards is aligned');
+            const middle = blendProposals([silver([['R', 40], ['K', 20], ['W', 40]]), silver([['R', 40], ['K', 40], ['W', 40]])], { targetThreads: 140 });
+            const black = middle[0].stripes.find(s => s.code === 'K');
+            assertSilent(middle[0].stripes.length >= 3 && black.count > 20 && black.count < 40, 'the intermediate sits between its sources: ' + middle[0].stripes.map(s => s.code + s.count).join(' '));
+            assertSilent(middle.length <= ESTIMATE_MAX_PROPOSALS, 'an intermediate series stays within 10');
+            assertSilent(middle.some(p => p.caption[0] === 'kept'), 'silver choices stay in the next series');
+            assertSilent(middle.every(p => p.star === null), 'stars start afresh in the next series');
+            assertEqual(countSettThreads(rescaleStripes(named(widths), true, 240), true), 240, 'rescale reaches the total');
+            const alt = alternativeColor(sett[0].hex, sett);
+            assertSilent(!sett.some(s => s.hex === alt.hex), 'an alternative color is a new color');
+            console.info('✅ estimate proposals');
         }
     ];
 

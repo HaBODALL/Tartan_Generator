@@ -161,6 +161,8 @@ const ESTIMATE_PERIOD_MAX = 14;     // Mean color difference allowed between two
 const ESTIMATE_MIRROR_MAX = 11;     // Mean color difference allowed between the two sides of a pivot
 const ESTIMATE_EDGE_WIDTH = 3;      // Narrower segments may be only the blur between two stripes
 const ESTIMATE_MAX_COLORS = 8;
+const ESTIMATE_MAX_PROPOSALS = 10;  // As many as the history keeps
+const ESTIMATE_BLEND_LENGTH = 480;  // Positions of a repeat when several proposals are averaged
 const ESTIMATE_DARK_FLOOR = 0.015;  // Under this linear level, differences are only noise
 let srtLabTable = null;
 // Thread shown at the top left corner of the canvas (not whole while moving)
@@ -355,6 +357,27 @@ const TRANSLATIONS = {
         estimate_none: "Aucune bande reconnue. Essayez de cadrer le tissu seul, ou changez la tolérance.",
         msg_photo_err: "Cette image n'a pas pu être lue.",
         msg_estimate_done: "Motif estimé depuis la photo : vérifiez les couleurs et les proportions.",
+        estimate_stars: "Comparez jusqu'à 10 lectures. Étoile d'or : c'est le bon motif. Étoile d'argent : c'est proche ; les motifs argent servent à générer un intermédiaire.",
+        estimate_refined: "Tour % : la première proposition est l'intermédiaire de vos étoiles d'argent.",
+        star_gold: "Étoile d'or : c'est le bon motif",
+        star_silver: "Étoile d'argent : c'est proche",
+        btn_estimate_refine: "Générer l'intermédiaire",
+        btn_estimate_back: "Tour précédent",
+        btn_estimate_apply_gold: "Utiliser le motif d'or",
+        proposal_base: "Lecture de base",
+        proposal_finer: "Plus de détails",
+        proposal_coarser: "Moins de détails",
+        proposal_lighter: "Couleurs plus claires",
+        proposal_darker: "Couleurs plus foncées",
+        proposal_asymmetric: "Lu sans symétrie",
+        proposal_symmetric: "Lu avec symétrie",
+        proposal_other_axis: "Lu dans l'autre sens",
+        proposal_thin_wider: "Filets plus larges",
+        proposal_thin_narrower: "Filets plus fins",
+        proposal_color: "Couleur %",
+        proposal_intermediate: "Intermédiaire",
+        proposal_kept: "Votre choix précédent",
+        msg_estimate_gold: "Motif confirmé d'après la photo. Les nombres de fils restent des proportions.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -514,6 +537,27 @@ const TRANSLATIONS = {
         estimate_none: "No stripes recognized. Try framing only the cloth, or change the tolerance.",
         msg_photo_err: "This image could not be read.",
         msg_estimate_done: "Pattern estimated from the photo: check its colors and proportions.",
+        estimate_stars: "Compare up to 10 readings. Gold star: this is the right pattern. Silver star: it is close; silver patterns are used to generate an intermediate.",
+        estimate_refined: "Round %: the first proposal is the intermediate of your silver stars.",
+        star_gold: "Gold star: this is the right pattern",
+        star_silver: "Silver star: it is close",
+        btn_estimate_refine: "Generate intermediate",
+        btn_estimate_back: "Previous round",
+        btn_estimate_apply_gold: "Use the gold pattern",
+        proposal_base: "Base reading",
+        proposal_finer: "More detail",
+        proposal_coarser: "Less detail",
+        proposal_lighter: "Lighter colors",
+        proposal_darker: "Darker colors",
+        proposal_asymmetric: "Read as asymmetric",
+        proposal_symmetric: "Read as symmetric",
+        proposal_other_axis: "Read the other way",
+        proposal_thin_wider: "Wider thin lines",
+        proposal_thin_narrower: "Narrower thin lines",
+        proposal_color: "Color %",
+        proposal_intermediate: "Intermediate",
+        proposal_kept: "Your previous choice",
+        msg_estimate_gold: "Pattern confirmed from the photo. Thread counts are still proportions.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -689,6 +733,9 @@ function cacheDomElements() {
     domElements.estimateModal = document.getElementById('estimate-modal');
     domElements.estimateSource = document.getElementById('estimate-source');
     domElements.estimateResult = document.getElementById('estimate-result');
+    domElements.estimateProposals = document.getElementById('estimate-proposals');
+    domElements.btnEstimateRefine = document.getElementById('btn-estimate-refine');
+    domElements.btnEstimateBack = document.getElementById('btn-estimate-back');
     domElements.estimateTolerance = document.getElementById('estimate-tolerance');
     domElements.estimateThreads = document.getElementById('estimate-threads');
     domElements.estimateCode = document.getElementById('estimate-code');
@@ -791,7 +838,9 @@ function bindEvents() {
     if (domElements.btnEstimateCancel) domElements.btnEstimateCancel.addEventListener('click', closeEstimate);
     if (domElements.btnEstimateApply) domElements.btnEstimateApply.addEventListener('click', applyEstimate);
     if (domElements.estimateTolerance) domElements.estimateTolerance.addEventListener('change', runEstimate);
-    if (domElements.estimateThreads) domElements.estimateThreads.addEventListener('change', runEstimate);
+    if (domElements.estimateThreads) domElements.estimateThreads.addEventListener('change', rescaleProposals);
+    if (domElements.btnEstimateRefine) domElements.btnEstimateRefine.addEventListener('click', refineProposals);
+    if (domElements.btnEstimateBack) domElements.btnEstimateBack.addEventListener('click', previousProposals);
     bindEstimateSelection();
 
     const importFile = document.getElementById('import-file');
@@ -1154,6 +1203,7 @@ function setLanguage(lang) {
     updateUndoButton();
     renderAppMessage();
     updateReadabilityUI();
+    if (isEstimateOpen()) selectProposal(estimateState.selected);
     if (isPatchworkOpen()) renderPatchworkBoard();
     if (isPreviewOpen()) renderObjectPreview();
 }
@@ -2938,11 +2988,11 @@ function nearestSrtColor(lab) {
 }
 
 // From measured segments to a sett: SRT colors, at most 8 of them, even thread counts.
-function segmentsToStripes(segments, symmetric, targetThreads) {
+function segmentsToStripes(segments, symmetric, targetThreads, lightShift = 0) {
     // The dark floor and the light of a photo lift black: it is rarely a true dark grey
     const blackColor = SRT_PALETTE.find(c => c.code === 'K');
     const nameColor = lab => lab[0] < 17 && Math.hypot(lab[1], lab[2]) < 8 ? blackColor : nearestSrtColor(lab);
-    let parts = segments.map(s => ({ color: nameColor(s.lab), width: s.width }));
+    let parts = segments.map(s => ({ color: nameColor([s.lab[0] + lightShift, s.lab[1], s.lab[2]]), width: s.width }));
     const totals = () => {
         const map = new Map();
         for (const p of parts) map.set(p.color, (map.get(p.color) || 0) + p.width);
@@ -2993,7 +3043,7 @@ function segmentsToStripes(segments, symmetric, targetThreads) {
     }));
 }
 
-function analyzeAxis(image, axis, tolerance) {
+function prepareAxis(image, axis) {
     const profile = axisProfile(image, axis, estimateShear(image, axis));
     const n = profile.n;
     let lab = unmixProfile(profile);
@@ -3007,22 +3057,22 @@ function analyzeAxis(image, axis, tolerance) {
     }
     const mirror = findMirror(lab, n, period?.lag);
     const symmetric = !!mirror && mirror.distance <= ESTIMATE_MIRROR_MAX;
+    const rank = period ? (symmetric ? 3 : 2) : (symmetric ? 1 : 0);
+    return { axis, n, lab, rank, symmetric, mirror, period: period?.lag ?? null };
+}
 
-    let folded, rank;
-    if (period && symmetric) {
-        folded = foldMirrored(lab, n, mirror.center, period.lag);
-        rank = 3;
-    } else if (period) {
-        folded = foldRepeat(lab, n, period.lag);
-        rank = 2;
-    } else if (symmetric) {
-        folded = foldMirrored(lab, n, mirror.center, null);
-        rank = 1;
-    } else {
-        folded = { length: n, lab };
-        rank = 0;
-    }
-    return { axis, n, rank, symmetric, period: period?.lag ?? null, segments: segmentProfile(folded.lab, folded.length, tolerance, !symmetric && !!period) };
+// Cuts a prepared axis into stripes, as a symmetric sett or not
+function readAxis(prepared, tolerance, symmetric = prepared.symmetric) {
+    const { axis, n, lab, rank, period, mirror } = prepared;
+    let folded;
+    if (symmetric) folded = foldMirrored(lab, n, mirror.center, period);
+    else if (period) folded = foldRepeat(lab, n, period);
+    else folded = { length: n, lab };
+    return { axis, n, rank, symmetric, period, segments: segmentProfile(folded.lab, folded.length, tolerance, !symmetric && !!period) };
+}
+
+function analyzeAxis(image, axis, tolerance) {
+    return readAxis(prepareAxis(image, axis), tolerance);
 }
 
 // image: { data, width, height } in RGBA. Returns null when no sett can be read.
@@ -3037,7 +3087,171 @@ function estimateTartan(image, { tolerance = 12, targetThreads = 240 } = {}) {
     return { stripes, symmetric: best.symmetric, confidence: ['low', 'low', 'fair', 'good'][best.rank], axis: best.axis, period: best.period };
 }
 
-let estimateState = null; // { photo: canvas, region, result, opener }
+// --- Proposals for a person to judge ---
+// A photo leaves doubts, so up to 10 readings are offered. Gold confirms one; silver marks
+// those that are close, and an intermediate is made from them for another round.
+
+function createProposalList(limit = ESTIMATE_MAX_PROPOSALS) {
+    const list = [];
+    const seen = new Set();
+    list.add = (stripes, symmetric, caption, confidence = null) => {
+        if (!stripes || list.length >= limit) return;
+        const key = symmetric + stripes.map(s => s.hex + s.count).join();
+        if (seen.has(key)) return;
+        seen.add(key);
+        list.push({ stripes, symmetric, caption, confidence, star: null });
+    };
+    return list;
+}
+
+// The closest SRT color that is not one of the colors of the sett
+function alternativeColor(hex, stripes) {
+    const used = new Set(stripes.map(s => s.hex));
+    const lab = hexToLab(hex);
+    if (!srtLabTable) srtLabTable = SRT_PALETTE.map(color => ({ color, lab: hexToLab(color.hex) }));
+    let best = null, bestDistance = Infinity;
+    for (const entry of srtLabTable) {
+        if (used.has(entry.color.hex)) continue;
+        const d = Math.hypot(entry.lab[0] - lab[0], entry.lab[1] - lab[1], entry.lab[2] - lab[2]);
+        if (d < bestDistance) {
+            bestDistance = d;
+            best = entry.color;
+        }
+    }
+    return best;
+}
+
+// Small changes around a sett, to complete a series
+function addVariants(list, base) {
+    const { stripes, symmetric } = base;
+    const coverage = new Map();
+    for (const s of stripes) coverage.set(s.hex, (coverage.get(s.hex) || 0) + s.count);
+    const widest = [...coverage].sort((a, b) => b[1] - a[1]).map(([hex]) => hex);
+
+    const counts = stripes.map(s => s.count).sort((a, b) => a - b);
+    const median = counts[Math.floor(counts.length / 2)];
+    const nudge = delta => stripes.map(s => s.count < median ? { ...s, count: Math.max(2, s.count + delta) } : { ...s });
+    list.add(nudge(4), symmetric, ['thin_wider']);
+    list.add(nudge(-2), symmetric, ['thin_narrower']);
+
+    for (const hex of widest) {
+        const replacement = alternativeColor(hex, stripes);
+        if (!replacement) continue;
+        const from = stripes.find(s => s.hex === hex).code;
+        list.add(stripes.map(s => s.hex === hex ? { ...s, code: replacement.code, hex: replacement.hex } : { ...s }), symmetric, ['color', `${from} → ${replacement.code}`]);
+    }
+}
+
+// First series, from the photo
+function estimateProposals(image, { tolerance = 12, targetThreads = 240 } = {}) {
+    const axes = [prepareAxis(image, 'x'), prepareAxis(image, 'y')]
+        .filter(p => readAxis(p, tolerance).segments.length >= 2)
+        .sort((a, b) => b.rank - a.rank || b.n - a.n);
+    const list = createProposalList();
+    if (axes.length === 0) return list;
+
+    const best = axes[0];
+    const confidence = ['low', 'low', 'fair', 'good'][best.rank];
+    const add = (prepared, factor, symmetric, caption, shift = 0) => {
+        const { segments } = readAxis(prepared, tolerance * factor, symmetric);
+        if (segments.length >= 2) list.add(segmentsToStripes(segments, symmetric, targetThreads, shift), symmetric, caption, confidence);
+    };
+    add(best, 1, best.symmetric, ['base']);
+    add(best, 0.6, best.symmetric, ['finer']);
+    add(best, 1.6, best.symmetric, ['coarser']);
+    add(best, 1, best.symmetric, ['lighter'], 10);
+    add(best, 1, best.symmetric, ['darker'], -10);
+    if (best.symmetric || best.mirror) add(best, 1, !best.symmetric, [best.symmetric ? 'asymmetric' : 'symmetric']);
+    if (axes[1]) add(axes[1], 1, axes[1].symmetric, ['other_axis']);
+    add(best, 0.35, best.symmetric, ['finer']);
+    add(best, 2.4, best.symmetric, ['coarser']);
+    if (list.length > 0) addVariants(list, list[0]);
+    return list;
+}
+
+// One full repeat as evenly spaced colors. A symmetric sett starts in the middle of its pivot.
+function settProfile(stripes, symmetric, length = ESTIMATE_BLEND_LENGTH) {
+    const { sequence, totalThreads } = buildWeavingSheetData(stripes, symmetric, 1);
+    const labs = sequence.map(s => hexToLab(s.hex));
+    const start = symmetric ? sequence[0].count / 2 : 0;
+    const profile = new Float64Array(length * 3);
+    for (let i = 0; i < length; i++) {
+        let position = positiveModulo((i + 0.5) / length * totalThreads + start, totalThreads);
+        let run = 0;
+        while (run < sequence.length - 1 && position >= sequence[run].count) position -= sequence[run++].count;
+        profile.set(labs[run], i * 3);
+    }
+    return profile;
+}
+
+// Turns a profile, or reads it backwards, to lay it best over the reference
+function alignProfile(reference, profile, length = ESTIMATE_BLEND_LENGTH) {
+    let best = null, bestCost = Infinity;
+    for (const reversed of [false, true]) {
+        for (let shift = 0; shift < length; shift++) {
+            let cost = 0;
+            for (let i = 0; i < length && cost < bestCost; i++) {
+                const j = (reversed ? length - 1 - i + shift : i + shift) % length;
+                cost += labDistance(reference, i, profile, j);
+            }
+            if (cost < bestCost) {
+                bestCost = cost;
+                best = { reversed, shift };
+            }
+        }
+    }
+    const aligned = new Float64Array(length * 3);
+    for (let i = 0; i < length; i++) {
+        const j = (best.reversed ? length - 1 - i + best.shift : i + best.shift) % length;
+        aligned.set(profile.subarray(j * 3, j * 3 + 3), i * 3);
+    }
+    return aligned;
+}
+
+// Next series: the intermediate of the silver proposals, then choices around it
+function blendProposals(silvers, { tolerance = 12, targetThreads = 240 } = {}) {
+    const length = ESTIMATE_BLEND_LENGTH;
+    const kept = silvers.slice(0, 3);
+    const list = createProposalList(ESTIMATE_MAX_PROPOSALS - kept.length);
+    const symmetricVotes = silvers.filter(s => s.symmetric).length;
+    const symmetric = symmetricVotes * 2 > silvers.length || (symmetricVotes * 2 === silvers.length && silvers[0].symmetric);
+
+    const first = silvers.find(s => s.symmetric === symmetric);
+    const reference = settProfile(first.stripes, first.symmetric, length);
+    const mean = new Float64Array(length * 3);
+    for (const silver of silvers) {
+        const profile = settProfile(silver.stripes, silver.symmetric, length);
+        const aligned = silver === first ? profile : alignProfile(reference, profile, length);
+        for (let i = 0; i < length * 3; i++) mean[i] += aligned[i] / silvers.length;
+    }
+
+    const folded = symmetric ? foldMirrored(mean, length, -0.5, length) : foldRepeat(mean, length, length);
+    const add = (factor, caption, shift = 0) => {
+        const segments = segmentProfile(folded.lab, folded.length, tolerance * factor, !symmetric);
+        if (segments.length >= 2) list.add(segmentsToStripes(segments, symmetric, targetThreads, shift), symmetric, caption);
+    };
+    add(1, ['intermediate']);
+    add(0.6, ['finer']);
+    add(1.6, ['coarser']);
+    add(1, ['lighter'], 10);
+    add(1, ['darker'], -10);
+    if (list.length > 0) addVariants(list, list[0]);
+
+    const result = [...list];
+    const seen = new Set(result.map(p => p.symmetric + p.stripes.map(s => s.hex + s.count).join()));
+    for (const silver of kept) {
+        const key = silver.symmetric + silver.stripes.map(s => s.hex + s.count).join();
+        if (!seen.has(key)) result.push({ ...silver, caption: ['kept'], star: null });
+    }
+    return result;
+}
+
+function rescaleStripes(stripes, symmetric, targetThreads) {
+    const factor = targetThreads / countSettThreads(stripes, symmetric);
+    return stripes.map(s => ({ ...s, count: Math.max(2, Math.round(s.count * factor / 2) * 2) }));
+}
+
+let estimateState = null; // { photo, region, proposals, selected, result, rounds, opener }
 
 function isEstimateOpen() {
     return !!domElements.estimateModal && !domElements.estimateModal.hidden;
@@ -3066,7 +3280,7 @@ async function openEstimateFromFile(file) {
     ctx.drawImage(bitmap, 0, 0, photo.width, photo.height);
     bitmap.close();
 
-    estimateState = { photo, region: null, result: null, opener: document.activeElement };
+    estimateState = { photo, region: null, proposals: [], selected: 0, result: null, rounds: [], opener: document.activeElement };
     if (domElements.estimateThreads) {
         domElements.estimateThreads.value = parseInt(domElements.sett?.value, 10) || 240;
     }
@@ -3116,26 +3330,128 @@ function runEstimate() {
     const { photo, region } = estimateState;
     const area = region || { x: 0, y: 0, w: photo.width, h: photo.height };
     const image = photo.getContext('2d', { willReadFrequently: true }).getImageData(area.x, area.y, area.w, area.h);
-    const result = estimateTartan(image, {
-        tolerance: parseInt(domElements.estimateTolerance?.value, 10) || 12,
-        targetThreads: readEstimateThreads()
-    });
+    estimateState.rounds = [];
+    showProposals(estimateProposals(image, { tolerance: readEstimateTolerance(), targetThreads: readEstimateThreads() }));
+}
+
+function readEstimateTolerance() {
+    return parseInt(domElements.estimateTolerance?.value, 10) || 12;
+}
+
+function showProposals(proposals, selected = 0) {
+    estimateState.proposals = proposals;
+    selectProposal(selected);
+}
+
+function goldProposal() {
+    return estimateState?.proposals.find(p => p.star === 'gold') || null;
+}
+
+function selectProposal(index) {
+    const t = TRANSLATIONS[currentLang];
+    const result = estimateState.proposals[index] || null;
+    estimateState.selected = index;
     estimateState.result = result;
 
     const canvas = domElements.estimateResult;
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     if (result) renderPatternCanvas(canvas, { stripes: result.stripes, symmetric: result.symmetric }, 'fit');
     domElements.estimateCode.value = result ? buildSRTCode(result.stripes, result.symmetric) : '';
-    domElements.estimateStatus.textContent = result ? t['estimate_' + result.confidence] : t.estimate_none;
-    domElements.btnEstimateApply.disabled = !result;
+    if (!result) domElements.estimateStatus.textContent = t.estimate_none;
+    else if (estimateState.rounds.length > 0) domElements.estimateStatus.textContent = t.estimate_refined.replace('%', estimateState.rounds.length + 1);
+    else domElements.estimateStatus.textContent = t['estimate_' + result.confidence];
+    renderProposalGrid();
+}
+
+function renderProposalGrid() {
+    const grid = domElements.estimateProposals;
+    if (!grid) return;
+    const t = TRANSLATIONS[currentLang];
+    const { proposals, selected, rounds } = estimateState;
+    const density = window.devicePixelRatio || 1;
+    const fragment = document.createDocumentFragment();
+    proposals.forEach((proposal, index) => {
+        const label = t['proposal_' + proposal.caption[0]].replace('%', proposal.caption[1] ?? '');
+        const srt = buildSRTCode(proposal.stripes, proposal.symmetric);
+        const cell = sheetElement('div', undefined, 'proposal-cell' + (proposal.star ? ' ' + proposal.star : '') + (index === selected ? ' selected' : ''));
+
+        const tile = sheetElement('button', undefined, 'proposal-tile');
+        tile.type = 'button';
+        tile.title = `${label}\n${srt}`;
+        tile.setAttribute('aria-label', `${label} : ${srt}`);
+        tile.setAttribute('aria-pressed', String(index === selected));
+        tile.addEventListener('click', () => selectProposal(index));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(120 * density);
+        canvas.height = canvas.width;
+        renderPatternCanvas(canvas, proposal, 'fit');
+        tile.append(canvas, sheetElement('span', label, 'proposal-caption'));
+
+        const stars = sheetElement('div', undefined, 'proposal-stars');
+        for (const star of ['gold', 'silver']) {
+            const button = sheetElement('button', '★', 'proposal-star star-' + star);
+            button.type = 'button';
+            button.title = t['star_' + star];
+            button.setAttribute('aria-label', `${t['star_' + star]} : ${label}`);
+            button.setAttribute('aria-pressed', String(proposal.star === star));
+            button.addEventListener('click', () => setProposalStar(index, star));
+            stars.appendChild(button);
+        }
+        cell.append(tile, stars);
+        fragment.appendChild(cell);
+    });
+    grid.textContent = '';
+    grid.appendChild(fragment);
+
+    const gold = goldProposal();
+    domElements.btnEstimateApply.disabled = !gold && !estimateState.result;
+    domElements.btnEstimateApply.textContent = gold ? t.btn_estimate_apply_gold : t.btn_estimate_apply;
+    domElements.btnEstimateRefine.disabled = !proposals.some(p => p.star === 'silver');
+    domElements.btnEstimateBack.hidden = rounds.length === 0;
+}
+
+// Gold confirms one proposal, so there is only one. A proposal has one star at most.
+function setProposalStar(index, star) {
+    const { proposals } = estimateState;
+    const proposal = proposals[index];
+    if (!proposal) return;
+    const next = proposal.star === star ? null : star;
+    if (next === 'gold') proposals.forEach(p => { if (p.star === 'gold') p.star = null; });
+    proposal.star = next;
+    selectProposal(index);
+    domElements.estimateProposals.querySelectorAll('.star-' + star)[index]?.focus();
+}
+
+function refineProposals() {
+    const silvers = estimateState?.proposals.filter(p => p.star === 'silver') || [];
+    if (silvers.length === 0) return;
+    estimateState.rounds.push({ proposals: estimateState.proposals, selected: estimateState.selected });
+    showProposals(blendProposals(silvers, { tolerance: readEstimateTolerance(), targetThreads: readEstimateThreads() }));
+    domElements.estimateProposals.querySelector('.proposal-tile')?.focus();
+}
+
+function previousProposals() {
+    const round = estimateState?.rounds.pop();
+    if (round) showProposals(round.proposals, round.selected);
+}
+
+// The total of threads changes the counts, not the choices already made
+function rescaleProposals() {
+    if (!estimateState) return;
+    const target = readEstimateThreads();
+    const rescale = p => { p.stripes = rescaleStripes(p.stripes, p.symmetric, target); };
+    estimateState.proposals.forEach(rescale);
+    estimateState.rounds.forEach(round => round.proposals.forEach(rescale));
+    selectProposal(estimateState.selected);
 }
 
 function applyEstimate() {
-    const result = estimateState?.result;
+    const gold = goldProposal();
+    const result = gold || estimateState?.result;
     if (!result) return;
     closeEstimate();
     applyLoadedPattern({ stripes: result.stripes, symmetric: result.symmetric });
-    showAppMessage('msg_estimate_done');
+    showAppMessage(gold ? 'msg_estimate_gold' : 'msg_estimate_done');
 }
 
 // Drag on the photo to keep only the cloth. Too small a drag goes back to the whole photo.
