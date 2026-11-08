@@ -531,6 +531,11 @@ function initCanvas() {
     let canvas = createCanvas(w, h);
     canvas.parent('canvas-container');
 
+    // p5's temporary <main> took up room during the first measure: measure again now it is empty
+    if (container.offsetWidth !== w || container.offsetHeight !== h) {
+        resizeCanvas(container.offsetWidth, container.offsetHeight, true);
+    }
+
     noLoop();
     noSmooth();
 }
