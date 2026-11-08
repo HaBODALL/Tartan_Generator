@@ -306,6 +306,12 @@ const TRANSLATIONS = {
         sheet_col_threads: "Fils",
         sheet_col_yarn: "Mètres par m² de tissu",
         sheet_note: "Quantités théoriques pour la chaîne et la trame réunies, sans l'embuvage ni les chutes : prévoyez une marge.",
+        btn_preview_objects: "Aperçu sur objets",
+        preview_title: "Le motif à l'échelle, d'après la taille du fil",
+        preview_scarf: "Écharpe",
+        preview_cushion: "Coussin",
+        preview_kilt: "Kilt",
+        preview_repeat: "Un motif : % cm",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -435,6 +441,12 @@ const TRANSLATIONS = {
         sheet_col_threads: "Threads",
         sheet_col_yarn: "Meters per m² of cloth",
         sheet_note: "Theoretical amounts for warp and weft together, without take-up or waste: allow a margin.",
+        btn_preview_objects: "Preview on objects",
+        preview_title: "The pattern to scale, from the thread size",
+        preview_scarf: "Scarf",
+        preview_cushion: "Cushion",
+        preview_kilt: "Kilt",
+        preview_repeat: "One repeat: % cm",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -607,6 +619,10 @@ function cacheDomElements() {
     domElements.patchworkInfo = document.getElementById('patchwork-info');
     domElements.patchworkScale = document.getElementById('patchwork-scale');
     domElements.btnShareLink = document.getElementById('btn-share-link');
+    domElements.btnPreviewObjects = document.getElementById('btn-preview-objects');
+    domElements.previewBoard = document.getElementById('preview-board');
+    domElements.previewCanvas = document.getElementById('preview-canvas');
+    domElements.btnPreviewClose = document.getElementById('btn-preview-close');
     domElements.btnWeavingSheet = document.getElementById('btn-weaving-sheet');
     domElements.sheetModal = document.getElementById('sheet-modal');
     domElements.sheetBody = document.getElementById('sheet-body');
@@ -753,7 +769,7 @@ function bindEvents() {
     // Mouse wheel over the pattern (not over the mood board, which has its own content)
     if (domElements.canvasContainer) {
         domElements.canvasContainer.addEventListener('wheel', (e) => {
-            if (isPatchworkOpen() || e.ctrlKey) return;
+            if (isPatchworkOpen() || isPreviewOpen() || e.ctrlKey) return;
             e.preventDefault();
             stepZoom(e.deltaY < 0 ? 1 : -1);
         }, { passive: false });
@@ -793,6 +809,9 @@ function bindEvents() {
     if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
     if (domElements.btnExportSvg) domElements.btnExportSvg.addEventListener('click', exportSVG);
     if (domElements.btnShareLink) domElements.btnShareLink.addEventListener('click', copySharedLink);
+    if (domElements.btnPreviewObjects) domElements.btnPreviewObjects.addEventListener('click', openObjectPreview);
+    if (domElements.btnPreviewClose) domElements.btnPreviewClose.addEventListener('click', closeObjectPreview);
+    watchPreviewStage();
     if (domElements.btnWeavingSheet) domElements.btnWeavingSheet.addEventListener('click', openWeavingSheet);
     if (domElements.btnSheetPrint) domElements.btnSheetPrint.addEventListener('click', () => window.print());
     if (domElements.btnSheetClose) domElements.btnSheetClose.addEventListener('click', closeWeavingSheet);
@@ -875,6 +894,14 @@ document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             e.preventDefault();
             closeWeavingSheet();
+        }
+        return;
+    }
+
+    if (isPreviewOpen()) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeObjectPreview();
         }
         return;
     }
@@ -980,6 +1007,7 @@ function setLanguage(lang) {
     updateUndoButton();
     renderAppMessage();
     if (isPatchworkOpen()) renderPatchworkBoard();
+    if (isPreviewOpen()) renderObjectPreview();
 }
 // ================= 4. Palette UI =================
 
@@ -2000,6 +2028,9 @@ function getTileScale(effectType, zoom) {
 }
 
 let weaveTileCanvas = null;
+let previewOpener = null;
+let previewStageSize = '';
+let previewLayoutTimer = 0;
 
 function redrawTartan() {
     // Security: If no data, draw nothing
@@ -2052,6 +2083,7 @@ function redrawTartan() {
     // Update textual info (Actual dimensions)
     updateScaleInfo(seqLen);
     updateActualValues();
+    if (isPreviewOpen()) renderObjectPreview();
 }
 
 // Utility function: Loading Screen
@@ -2413,6 +2445,229 @@ function copySharedLink() {
         return;
     }
     navigator.clipboard.writeText(link).then(() => showAppMessage('msg_link_copied')).catch(manualCopy);
+}
+
+// --- PREVIEW ON OBJECTS ---
+// Objects drawn at the same scale, from the real thread size. Threads are much finer than
+// a screen pixel here, so each pixel gets the average of the threads it covers, in linear
+// light as the eye blends them. A 2/2 twill shows as much warp as weft.
+function srgbToLinear(byte) {
+    const c = byte / 255;
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function linearToSrgb(value) {
+    const c = value <= 0.0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - 0.055;
+    return Math.round(Math.max(0, Math.min(1, c)) * 255);
+}
+
+// Linear RGB of each pixel along a run of `pixels` pixels, wrapping around the sequence.
+function averageSettColors(sequence, threadsPerPixel, pixels) {
+    const n = sequence.length;
+    const ends = new Float64Array(n);
+    const colors = new Float64Array(n * 3);
+    const sums = new Float64Array((n + 1) * 3);
+    let total = 0;
+    sequence.forEach((s, i) => {
+        const v = parseInt(s.hex.slice(1), 16);
+        colors[i * 3] = srgbToLinear(v >>> 16);
+        colors[i * 3 + 1] = srgbToLinear((v >>> 8) & 0xFF);
+        colors[i * 3 + 2] = srgbToLinear(v & 0xFF);
+        total += s.count;
+        ends[i] = total;
+        for (let c = 0; c < 3; c++) sums[(i + 1) * 3 + c] = sums[i * 3 + c] + colors[i * 3 + c] * s.count;
+    });
+
+    // Sum of the colors from thread 0 to a position, one channel at a time
+    const integral = (position, out) => {
+        const repeats = Math.floor(position / total);
+        const rest = position - repeats * total;
+        let lo = 0, hi = n - 1;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (ends[mid] > rest) hi = mid; else lo = mid + 1;
+        }
+        const start = lo > 0 ? ends[lo - 1] : 0;
+        for (let c = 0; c < 3; c++) out[c] = repeats * sums[n * 3 + c] + sums[lo * 3 + c] + (rest - start) * colors[lo * 3 + c];
+    };
+
+    const result = new Float64Array(pixels * 3);
+    let before = [0, 0, 0], after = [0, 0, 0];
+    integral(0, before);
+    for (let p = 0; p < pixels; p++) {
+        integral((p + 1) * threadsPerPixel, after);
+        for (let c = 0; c < 3; c++) result[p * 3 + c] = (after[c] - before[c]) / threadsPerPixel;
+        [before, after] = [after, before];
+    }
+    return result;
+}
+
+function isPreviewOpen() {
+    return !!domElements.previewBoard && !domElements.previewBoard.hidden;
+}
+
+// A rectangle of cloth at the given scale, ready to be clipped to a shape.
+function makeClothCanvas(sequence, threadsPerPixel, w, h) {
+    const cloth = document.createElement('canvas');
+    cloth.width = w;
+    cloth.height = h;
+    const ctx = cloth.getContext('2d');
+    const image = ctx.createImageData(w, h);
+    const warp = averageSettColors(sequence, threadsPerPixel, w);
+    const weft = averageSettColors(sequence, threadsPerPixel, h);
+    let offset = 0;
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            for (let c = 0; c < 3; c++) image.data[offset++] = linearToSrgb((warp[x * 3 + c] + weft[y * 3 + c]) / 2);
+            image.data[offset++] = 255;
+        }
+    }
+    ctx.putImageData(image, 0, 0);
+    return { cloth, warp };
+}
+
+function drawScarf(ctx, make, x, y, w, h, fringe) {
+    const { cloth, warp } = make(w, h);
+    ctx.drawImage(cloth, x, y);
+    // Fringes: the warp threads running out of the cloth
+    const step = Math.max(2, Math.round(w / 40));
+    ctx.lineWidth = Math.max(1, step / 2);
+    for (let px = Math.floor(step / 2); px < w; px += step) {
+        ctx.strokeStyle = `rgb(${linearToSrgb(warp[px * 3])},${linearToSrgb(warp[px * 3 + 1])},${linearToSrgb(warp[px * 3 + 2])})`;
+        ctx.beginPath();
+        ctx.moveTo(x + px, y - fringe);
+        ctx.lineTo(x + px, y);
+        ctx.moveTo(x + px, y + h);
+        ctx.lineTo(x + px, y + h + fringe);
+        ctx.stroke();
+    }
+}
+
+function drawCushion(ctx, make, x, y, size) {
+    const pinch = size * 0.05;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x + size / 2, y + pinch, x + size, y);
+    ctx.quadraticCurveTo(x + size - pinch, y + size / 2, x + size, y + size);
+    ctx.quadraticCurveTo(x + size / 2, y + size - pinch, x, y + size);
+    ctx.quadraticCurveTo(x + pinch, y + size / 2, x, y);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(make(size, size).cloth, x, y);
+    const shade = ctx.createRadialGradient(x + size * 0.45, y + size * 0.4, size * 0.1, x + size / 2, y + size / 2, size * 0.75);
+    shade.addColorStop(0, 'rgba(255,255,255,0.12)');
+    shade.addColorStop(1, 'rgba(0,0,0,0.42)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(x, y, size, size);
+    ctx.restore();
+}
+
+function drawKilt(ctx, make, x, y, w, h) {
+    const waist = h * 0.07;
+    const inset = w * 0.08;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x + inset, y);
+    ctx.lineTo(x + w - inset, y);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(make(w, h).cloth, x, y);
+    // Flat apron on the left, pleats on the right
+    const pleats = 9;
+    const start = x + w * 0.42;
+    const pleat = (x + w - start) / pleats;
+    for (let i = 0; i < pleats; i++) {
+        const shade = ctx.createLinearGradient(start + i * pleat, 0, start + (i + 1) * pleat, 0);
+        shade.addColorStop(0, 'rgba(255,255,255,0.14)');
+        shade.addColorStop(1, 'rgba(0,0,0,0.42)');
+        ctx.fillStyle = shade;
+        ctx.fillRect(start + i * pleat, y + waist, pleat, h - waist);
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(x, y, w, waist);
+    ctx.restore();
+}
+
+function renderObjectPreview() {
+    const canvas = domElements.previewCanvas;
+    if (!canvas || !isPreviewOpen() || tartanStripes.length === 0) return;
+    const t = TRANSLATIONS[currentLang];
+    const stage = canvas.parentElement;
+    const density = window.devicePixelRatio || 1;
+    previewStageSize = stage.clientWidth + 'x' + stage.clientHeight;
+    canvas.style.width = stage.clientWidth + 'px';
+    canvas.style.height = stage.clientHeight + 'px';
+    canvas.width = Math.max(1, Math.round(stage.clientWidth * density));
+    canvas.height = Math.max(1, Math.round(stage.clientHeight * density));
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const threadMm = parseFloat(domElements.threadMm?.value) || 1.11;
+    const isSymmetric = domElements.sym?.checked || false;
+    const { sequence, widthCm } = buildWeavingSheetData(tartanStripes, isSymmetric, threadMm);
+
+    // Scene in cm: scarf 30 x 180 with its fringes, cushion 45, kilt 60; labels take fixed pixels
+    const labelPx = 22 * density;
+    const scale = Math.min(canvas.width / 185, (canvas.height - labelPx * 2) / 192);
+    const threadsPerPixel = 10 / threadMm / scale;
+    const make = (w, h) => makeClothCanvas(sequence, threadsPerPixel, w, h);
+    const px = cm => Math.max(1, Math.round(cm * scale));
+
+    const sceneWidth = px(175);
+    let x = Math.round((canvas.width - sceneWidth) / 2);
+    const top = labelPx + px(6);
+    ctx.font = `${Math.round(12 * density)}px sans-serif`;
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = '#ccc';
+    const label = (text, lx) => ctx.fillText(text, lx, top - px(6) - 2);
+
+    label(t.preview_scarf, x);
+    drawScarf(ctx, make, x, top, px(30), px(180), px(6));
+    x += px(50);
+    label(t.preview_cushion, x);
+    drawCushion(ctx, make, x, top, px(45));
+    const cushionX = x;
+    x += px(65);
+    label(t.preview_kilt, x);
+    drawKilt(ctx, make, x, top, px(60), px(60));
+
+    // Scale bar and size of a repeat, in the free space under the small objects
+    const barY = top + px(60) + labelPx * 2;
+    ctx.fillStyle = '#ccc';
+    ctx.fillRect(cushionX, barY, px(10), Math.max(2, Math.round(2 * density)));
+    ctx.fillText('10 cm', cushionX, barY - 3);
+    ctx.fillText(t.preview_repeat.replace('%', widthCm.toFixed(1)), cushionX, barY + labelPx);
+    canvas.setAttribute('aria-label', t.preview_title);
+}
+
+function openObjectPreview() {
+    if (!domElements.previewBoard || tartanStripes.length === 0) return;
+    if (isPatchworkOpen()) closePatchworkBoard();
+    previewOpener = document.activeElement;
+    domElements.previewBoard.hidden = false;
+    renderObjectPreview();
+    domElements.btnPreviewClose?.focus();
+}
+
+function closeObjectPreview() {
+    if (!isPreviewOpen()) return;
+    domElements.previewBoard.hidden = true;
+    (previewOpener?.isConnected ? previewOpener : domElements.btnPreviewObjects)?.focus();
+    previewOpener = null;
+}
+
+function watchPreviewStage() {
+    const stage = domElements.previewCanvas?.parentElement;
+    if (!stage || typeof ResizeObserver === 'undefined') return;
+    new ResizeObserver(() => {
+        clearTimeout(previewLayoutTimer);
+        previewLayoutTimer = setTimeout(() => {
+            if (isPreviewOpen() && stage.clientWidth + 'x' + stage.clientHeight !== previewStageSize) renderObjectPreview();
+        }, 50);
+    }).observe(stage);
 }
 
 // --- WEAVING SHEET ---
@@ -3251,6 +3506,7 @@ window.generatePatchwork = function() {
         patchworkLayout = null;
     }
     if (!wasOpen) patchworkOpener = document.activeElement;
+    closeObjectPreview();
     board.hidden = false;
     setPatchworkStatus(status);
     renderPatchworkBoard();
