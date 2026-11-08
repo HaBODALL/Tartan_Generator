@@ -753,6 +753,19 @@
             </select>
         </div>
 
+        <div class="control-row">
+            <label for="relief-strength" data-i18n="lbl_relief_strength">Intensité du relief</label>
+            <span style="display:flex; align-items:center; gap:6px;">
+                <input type="range" id="relief-strength" min="0" max="200" step="10" value="100" style="width:110px;">
+                <output id="relief-strength-value" for="relief-strength" style="font-size:11px; color:#aaa; min-width:38px; text-align:right;">100 %</output>
+            </span>
+        </div>
+
+        <div class="control-row">
+            <label for="yarn-irregular" data-i18n="lbl_yarn" data-i18n-title="title_yarn" title="Légères variations de teinte d'un fil à l'autre, comme sur une vraie laine">Irrégularité de la laine</label>
+            <input type="checkbox" id="yarn-irregular">
+        </div>
+
         <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
             <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
         </div>

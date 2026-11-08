@@ -159,6 +159,36 @@ function runTests() {
             console.info('✅ relief masks shade like a round yarn');
         },
         () => {
+            // Test relief strength: 0% is flat, 200% has more contrast than 100%
+            const spread = () => { const m = getReliefMasks(8)[0]; return Math.max(...m) - Math.min(...m); };
+            const saved = domElements.reliefStrength;
+            try {
+                domElements.reliefStrength = { value: '100' };
+                const normal = spread();
+                domElements.reliefStrength = { value: '0' };
+                assertEqual(spread(), 0, 'relief strength 0 is flat');
+                domElements.reliefStrength = { value: '200' };
+                assertSilent(spread() > normal, 'relief strength 200 has more contrast');
+                domElements.reliefStrength = { value: '500' };
+                assertEqual(readReliefStrength(), 2, 'relief strength is capped at 200%');
+            } finally {
+                domElements.reliefStrength = saved;
+            }
+            console.info('✅ relief strength scales the shading');
+        },
+        () => {
+            // Test varyYarnColors: stable, within the spread, and actually varied
+            const base = hexToPixel('#808080');
+            const colors = new Uint32Array(200).fill(base);
+            const a = varyYarnColors(colors), b = varyYarnColors(colors);
+            assertSilent(a.every((p, i) => p === b[i]), 'yarn variation is the same on every redraw');
+            const greys = [...a].map(p => p & 0xFF);
+            assertSilent(greys.every(g => Math.abs(g - 128) <= Math.ceil(128 * YARN_VARIATION) + 1), 'yarn variation stays within its spread');
+            assertSilent(new Set(greys).size > 5, 'yarn variation changes the threads');
+            assertSilent(a.every(p => (p >>> 24) === 0xFF), 'yarn variation keeps colors opaque');
+            console.info('✅ yarn irregularity is stable and subtle');
+        },
+        () => {
             // Test createStripes: widths even and within limits, sett respected, no identical neighbors
             const palette = ['R', 'G', 'B', 'K'].map(code => ({ code, hex: '#' + code }));
             for (let run = 0; run < 200; run++) {
