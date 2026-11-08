@@ -281,6 +281,11 @@ const TRANSLATIONS = {
         crit_sym: "Symétrique",
         crit_asym: "Asymétrique",
         patch_pins_dropped: "Nouvelle grille : les épingles n'ont pas été gardées.",
+        btn_share_link: "Copier le lien",
+        title_share_link: "Un lien qui rouvre exactement ce motif",
+        msg_link_copied: "Lien du motif copié.",
+        msg_link_manual: "Copiez ce lien :",
+        msg_link_invalid: "Ce lien de motif est incomplet ou invalide.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -385,6 +390,11 @@ const TRANSLATIONS = {
         crit_sym: "Symmetric",
         crit_asym: "Asymmetric",
         patch_pins_dropped: "New grid: the pins were not kept.",
+        btn_share_link: "Copy link",
+        title_share_link: "A link that reopens exactly this pattern",
+        msg_link_copied: "Pattern link copied.",
+        msg_link_manual: "Copy this link:",
+        msg_link_invalid: "This pattern link is incomplete or invalid.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -398,8 +408,10 @@ function setup() {
     initCanvas();
     bindEvents();
 
-    // Initial Startup
-    if (!loadState()) {
+    // Initial Startup. A shared link wins over the saved state, which joins the history.
+    const restored = loadState();
+    const opened = openSharedLink();
+    if (!restored && !opened) {
         randomizeUserPalette();
         window.handleGenerateClick();
     }
@@ -554,6 +566,7 @@ function cacheDomElements() {
     domElements.patchworkSize = document.getElementById('patchwork-size');
     domElements.patchworkInfo = document.getElementById('patchwork-info');
     domElements.patchworkScale = document.getElementById('patchwork-scale');
+    domElements.btnShareLink = document.getElementById('btn-share-link');
     domElements.patchworkMode = document.getElementById('patchwork-mode');
     domElements.patchworkAxisX = document.getElementById('patchwork-axis-x');
     domElements.patchworkAxisY = document.getElementById('patchwork-axis-y');
@@ -724,6 +737,9 @@ function bindEvents() {
     const btnExportPng = domElements.btnExportPng;
     if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
     if (domElements.btnExportSvg) domElements.btnExportSvg.addEventListener('click', exportSVG);
+    if (domElements.btnShareLink) domElements.btnShareLink.addEventListener('click', copySharedLink);
+    // A link pasted in the address bar of an open page only changes the hash
+    window.addEventListener('hashchange', openSharedLink);
 
     const btnExportTxt = domElements.btnExportTxt;
     if (btnExportTxt) btnExportTxt.addEventListener('click', exportTXT);
@@ -2129,6 +2145,146 @@ function exportPNG() {
 
     // Save canvas
     saveCanvas(filename, 'png');
+}
+
+// --- SHARED LINK ---
+// The pattern travels in the part of the URL after #, so no server is involved:
+// #tartan=1&sym=1&z=1&mm=0.3&s=R.C80000.48_B.000064.8
+function encodeSharedPattern(p) {
+    const fields = [
+        'tartan=1',
+        `sym=${p.symmetric ? 1 : 0}`,
+        `z=${p.zTwist ? 1 : 0}`,
+        `mm=${p.threadMm}`,
+        `id=${p.id}`
+    ];
+    if (p.relief !== null) fields.push(`rel=${p.relief}`);
+    if (p.yarn) fields.push('yarn=1');
+    fields.push('s=' + p.stripes.map(s => `${s.code}.${s.hex.slice(1)}.${s.count}`).join('_'));
+    return fields.join('&');
+}
+
+// Returns null for anything that is not a complete, valid pattern.
+function decodeSharedPattern(hash) {
+    const text = String(hash).replace(/^#/, '');
+    if (!text.startsWith('tartan=1&') || text.length > 20000) return null;
+    const fields = new Map(text.split('&').map(part => {
+        const i = part.indexOf('=');
+        return [part.slice(0, i), part.slice(i + 1)];
+    }));
+
+    const parts = (fields.get('s') || '').split('_');
+    if (parts.length < 2 || parts.length > 256) return null;
+    const stripes = [];
+    for (const part of parts) {
+        const m = /^([A-Za-z0-9]{1,8})\.([0-9A-Fa-f]{6})\.([1-9][0-9]{0,5})$/.exec(part);
+        if (!m) return null;
+        stripes.push({ code: m[1], hex: '#' + m[2].toUpperCase(), count: parseInt(m[3], 10) });
+    }
+
+    const mm = parseFloat(fields.get('mm'));
+    const relief = parseFloat(fields.get('rel'));
+    const id = /^[0-9]{1,9}$/.test(fields.get('id') || '') ? parseInt(fields.get('id'), 10) : null;
+    return {
+        stripes,
+        symmetric: fields.get('sym') === '1',
+        zTwist: fields.get('z') !== '0',
+        threadMm: mm > 0 && mm <= 20 ? mm : null,
+        id,
+        relief: relief >= 0 && relief <= 2 ? relief : null,
+        yarn: fields.get('yarn') === '1'
+    };
+}
+
+function paletteFromStripes(stripes) {
+    const palette = [];
+    for (const s of stripes) {
+        const hex = s.hex.toUpperCase();
+        if (palette.some(c => c.hex.toUpperCase() === hex)) continue;
+        palette.push(SRT_PALETTE.find(c => c.hex.toUpperCase() === hex && c.code === s.code)
+            || SRT_PALETTE.find(c => c.hex.toUpperCase() === hex)
+            || { code: s.code, name: s.code, variant: null, hex: s.hex });
+    }
+    return palette;
+}
+
+// Makes a complete pattern the current one. The previous pattern goes to the history.
+function applyLoadedPattern(p) {
+    if (tartanStripes.length > 0) pushToHistory();
+    tartanStripes = p.stripes;
+    userPalette = paletteFromStripes(p.stripes);
+    generationID = p.id ?? Math.floor(Math.random() * 1000000);
+
+    if (domElements.sym) domElements.sym.checked = p.symmetric;
+    if (domElements.weaveZ && p.zTwist !== undefined) {
+        domElements.weaveZ.checked = p.zTwist;
+        if (domElements.weaveS) domElements.weaveS.checked = !p.zTwist;
+    }
+    if (p.threadMm && domElements.threadMm) {
+        domElements.threadMm.value = p.threadMm;
+        if (domElements.threadType) domElements.threadType.value = 'custom';
+        applyThreadTypeUI();
+    }
+    if (p.relief !== undefined && domElements.effectRelief) {
+        domElements.effectRelief.checked = p.relief !== null;
+        if (p.relief !== null && domElements.reliefStrength) domElements.reliefStrength.value = Math.round(p.relief * 100);
+    }
+    if (p.yarn !== undefined && domElements.yarnIrregular) domElements.yarnIrregular.checked = p.yarn;
+    updateReliefStrengthUI();
+
+    const counts = p.stripes.map(s => s.count);
+    if (domElements.targetStripes) domElements.targetStripes.value = p.stripes.length;
+    if (domElements.minWidth) domElements.minWidth.value = Math.min(...counts);
+    if (domElements.maxWidth) domElements.maxWidth.value = Math.max(...counts);
+    if (domElements.checkMode) domElements.checkMode.checked = counts.every(c => c === counts[0]);
+    commitStructureSettings();
+
+    showAppMessage(null);
+    updateUserPaletteUI();
+    updateGeneratedListUI();
+    matchSrtWithExamples();
+    redrawTartan();
+    updateUndoButton();
+    saveState();
+}
+
+// Opens the pattern of the current URL, then cleans the URL: a reload must not bring it back
+// over later work. Returns true when a pattern was opened.
+function openSharedLink() {
+    if (!location.hash.startsWith('#tartan=')) return false;
+    const pattern = decodeSharedPattern(location.hash);
+    history.replaceState(null, '', location.pathname + location.search);
+    if (!pattern) {
+        showAppMessage('msg_link_invalid', true);
+        return false;
+    }
+    applyLoadedPattern(pattern);
+    return true;
+}
+
+function buildSharedLink() {
+    const relief = getEffectType() === 'relief' ? readReliefStrength() : null;
+    const encoded = encodeSharedPattern({
+        stripes: tartanStripes,
+        symmetric: domElements.sym?.checked || false,
+        zTwist: domElements.weaveZ?.checked ?? true,
+        threadMm: parseFloat(domElements.threadMm?.value) || 1.11,
+        id: generationID,
+        relief,
+        yarn: domElements.yarnIrregular?.checked || false
+    });
+    return location.href.split('#')[0] + '#' + encoded;
+}
+
+function copySharedLink() {
+    if (tartanStripes.length === 0) return;
+    const link = buildSharedLink();
+    const manualCopy = () => window.prompt(TRANSLATIONS[currentLang].msg_link_manual, link);
+    if (!navigator.clipboard) {
+        manualCopy();
+        return;
+    }
+    navigator.clipboard.writeText(link).then(() => showAppMessage('msg_link_copied')).catch(manualCopy);
 }
 
 // --- EXPORT SVG ---
