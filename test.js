@@ -462,6 +462,36 @@ function runTests() {
             assertEqual(findCloseNeighbors([st('#101010'), st('#FFFFFF'), st('#141414')], true).length, 0, 'a symmetric sett does not wrap');
             assertEqual(findCloseNeighbors([st('#101010'), st('#141414'), st('#101010'), st('#141414')], true).length, 1, 'a pair is listed once');
             console.info('✅ color readability');
+        },
+        () => {
+            // Estimate from a photo: simulated cloth with a known sett
+            const named = list => list.map(([code, count]) => ({ code, hex: SRT_PALETTE.find(c => c.code === code).hex, count }));
+            const cloth = (stripes, sym, w, h, px) => {
+                const threads = countSettThreads(stripes, sym), colors = buildThreadColors(stripes, sym, threads);
+                const pixels = new Uint32Array(w * h);
+                for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+                    const tx = Math.floor(x / px), ty = Math.floor(y / px);
+                    pixels[y * w + x] = ((tx - [2, 1, 0, 3][ty & 3]) & 3) < 2 ? colors[ty % threads] : colors[tx % threads];
+                }
+                return { data: new Uint8ClampedArray(pixels.buffer), width: w, height: h };
+            };
+            const proportions = list => list.map(s => s.code + s.count).join(' ');
+            const sym = named([['R', 72], ['B', 8], ['K', 12], ['Y', 2], ['K', 12], ['W', 2], ['G', 24], ['K', 4]]);
+            const found = estimateTartan(cloth(sym, true, 800, 600, 2), { targetThreads: countSettThreads(sym, true) });
+            assertEqual(found.symmetric, true, 'estimate finds the symmetry');
+            assertEqual(found.confidence, 'good', 'estimate is confident with two repeats');
+            assertSilent([proportions(sym), proportions([...sym].reverse())].includes(proportions(found.stripes)), 'estimate reads the sett: ' + proportions(found.stripes));
+            const asym = named([['R', 40], ['W', 8], ['B', 30], ['Y', 6], ['G', 24]]);
+            const other = estimateTartan(cloth(asym, false, 800, 600, 2), { targetThreads: 108 });
+            assertEqual(other.symmetric, false, 'estimate recognizes an asymmetric sett');
+            assertEqual(other.stripes.length, 5, 'estimate reads every stripe of an asymmetric sett');
+            const plain = { data: new Uint8ClampedArray(200 * 200 * 4).fill(128), width: 200, height: 200 };
+            assertEqual(estimateTartan(plain), null, 'a plain image gives no sett');
+            const blur = absorbTransitions([{ width: 40, lab: [10, 0, 0] }, { width: 2, lab: [50, 0, 0] }, { width: 40, lab: [90, 0, 0] }]);
+            assertEqual(blur.length, 2, 'the blur between two stripes is not a stripe');
+            const thin = absorbTransitions([{ width: 40, lab: [30, 0, 0] }, { width: 2, lab: [90, 0, 80] }, { width: 40, lab: [30, 0, 0] }]);
+            assertEqual(thin.length, 3, 'a thin colored line stays');
+            console.info('✅ estimate from a photo');
         }
     ];
 

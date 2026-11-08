@@ -155,6 +155,14 @@ const VISION_MATRICES = {
     deuter: [0.367322, 0.860646, -0.227968, 0.280085, 0.672501, 0.047413, -0.011820, 0.042940, 0.968881],
     tritan: [1.255528, -0.076749, -0.178779, -0.078411, 0.930809, 0.147602, 0.004733, 0.691367, 0.303900]
 };
+// Estimating a tartan from a photo
+const ESTIMATE_MAX_SIDE = 1200;     // Longest side analyzed, in pixels
+const ESTIMATE_PERIOD_MAX = 14;     // Mean color difference allowed between two repeats
+const ESTIMATE_MIRROR_MAX = 11;     // Mean color difference allowed between the two sides of a pivot
+const ESTIMATE_EDGE_WIDTH = 3;      // Narrower segments may be only the blur between two stripes
+const ESTIMATE_MAX_COLORS = 8;
+const ESTIMATE_DARK_FLOOR = 0.015;  // Under this linear level, differences are only noise
+let srtLabTable = null;
 // Thread shown at the top left corner of the canvas (not whole while moving)
 let viewX = 0;
 let viewY = 0;
@@ -333,6 +341,20 @@ const TRANSLATIONS = {
         vision_deuter: "Deutéranopie (vert)",
         vision_tritan: "Tritanopie (bleu)",
         note_vision: "À l'écran seulement : les exports gardent les vraies couleurs.",
+        btn_import_photo: "Photo",
+        title_import_photo: "Estimer un tartan à partir d'une photo. L'image reste sur votre appareil.",
+        estimate_title: "Estimer un tartan depuis une photo",
+        estimate_hint: "Tracez un rectangle sur la photo pour ne garder que le tissu. Pour un bon résultat : tissu à plat, bien éclairé, au moins deux motifs visibles.",
+        lbl_estimate_tolerance: "Tolérance de couleur",
+        lbl_estimate_threads: "Fils par motif",
+        lbl_estimate_code: "Code SRT estimé",
+        btn_estimate_apply: "Utiliser ce motif",
+        estimate_good: "Répétition et symétrie détectées. Les nombres de fils sont des proportions, à vérifier.",
+        estimate_fair: "Répétition détectée, sans symétrie : motif asymétrique, ou photo trop irrégulière.",
+        estimate_low: "Moins de deux motifs reconnus : le résultat ne décrit que ce qui se voit sur la photo.",
+        estimate_none: "Aucune bande reconnue. Essayez de cadrer le tissu seul, ou changez la tolérance.",
+        msg_photo_err: "Cette image n'a pas pu être lue.",
+        msg_estimate_done: "Motif estimé depuis la photo : vérifiez les couleurs et les proportions.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -478,6 +500,20 @@ const TRANSLATIONS = {
         vision_deuter: "Deuteranopia (green)",
         vision_tritan: "Tritanopia (blue)",
         note_vision: "On screen only: exports keep the true colors.",
+        btn_import_photo: "Photo",
+        title_import_photo: "Estimate a tartan from a photo. The image stays on your device.",
+        estimate_title: "Estimate a tartan from a photo",
+        estimate_hint: "Drag a rectangle on the photo to keep only the cloth. For a good result: flat cloth, even light, at least two repeats in view.",
+        lbl_estimate_tolerance: "Color tolerance",
+        lbl_estimate_threads: "Threads per sett",
+        lbl_estimate_code: "Estimated SRT code",
+        btn_estimate_apply: "Use this pattern",
+        estimate_good: "Repeat and symmetry found. Thread counts are proportions, to be checked.",
+        estimate_fair: "Repeat found, without symmetry: an asymmetric pattern, or an uneven photo.",
+        estimate_low: "Fewer than two repeats recognized: the result only describes what the photo shows.",
+        estimate_none: "No stripes recognized. Try framing only the cloth, or change the tolerance.",
+        msg_photo_err: "This image could not be read.",
+        msg_estimate_done: "Pattern estimated from the photo: check its colors and proportions.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -650,6 +686,15 @@ function cacheDomElements() {
     domElements.patchworkInfo = document.getElementById('patchwork-info');
     domElements.patchworkScale = document.getElementById('patchwork-scale');
     domElements.btnShareLink = document.getElementById('btn-share-link');
+    domElements.estimateModal = document.getElementById('estimate-modal');
+    domElements.estimateSource = document.getElementById('estimate-source');
+    domElements.estimateResult = document.getElementById('estimate-result');
+    domElements.estimateTolerance = document.getElementById('estimate-tolerance');
+    domElements.estimateThreads = document.getElementById('estimate-threads');
+    domElements.estimateCode = document.getElementById('estimate-code');
+    domElements.estimateStatus = document.getElementById('estimate-status');
+    domElements.btnEstimateApply = document.getElementById('btn-estimate-apply');
+    domElements.btnEstimateCancel = document.getElementById('btn-estimate-cancel');
     domElements.readabilityList = document.getElementById('readability-list');
     domElements.readabilityBadge = document.getElementById('readability-badge');
     domElements.visionSelect = document.getElementById('vision-select');
@@ -733,6 +778,21 @@ function bindEvents() {
 
     const btnImportSrt = domElements.btnImportSrt;
     if (btnImportSrt) btnImportSrt.addEventListener('click', importSRT);
+
+    const importPhoto = document.getElementById('import-photo');
+    const btnImportPhoto = document.getElementById('btn-import-photo');
+    if (importPhoto && btnImportPhoto) {
+        btnImportPhoto.addEventListener('click', () => importPhoto.click());
+        importPhoto.addEventListener('change', () => {
+            openEstimateFromFile(importPhoto.files[0]);
+            importPhoto.value = ''; // The same photo can be chosen again
+        });
+    }
+    if (domElements.btnEstimateCancel) domElements.btnEstimateCancel.addEventListener('click', closeEstimate);
+    if (domElements.btnEstimateApply) domElements.btnEstimateApply.addEventListener('click', applyEstimate);
+    if (domElements.estimateTolerance) domElements.estimateTolerance.addEventListener('change', runEstimate);
+    if (domElements.estimateThreads) domElements.estimateThreads.addEventListener('change', runEstimate);
+    bindEstimateSelection();
 
     const importFile = document.getElementById('import-file');
     const btnImportFile = document.getElementById('btn-import-file');
@@ -961,6 +1021,14 @@ function bindEvents() {
     }
 }
 document.addEventListener('keydown', (e) => {
+    if (isEstimateOpen()) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeEstimate();
+        }
+        return;
+    }
+
     if (isWeavingSheetOpen()) {
         if (e.key === 'Escape') {
             e.preventDefault();
@@ -2578,7 +2646,551 @@ function copySharedLink() {
     navigator.clipboard.writeText(link).then(() => showAppMessage('msg_link_copied')).catch(manualCopy);
 }
 
+// --- ESTIMATE A TARTAN FROM A PHOTO ---
+// A twill shows as much warp as weft, so the mean of a column is half its warp thread and
+// half the average weft, which is the same for every column. The stripes can therefore be
+// read from the means of the columns, then the repeat and the pivots from their profile.
+
+// Mean linear color along one axis. shear > 0 follows lines tilted by that slope.
+// `step` skips lines across the axis, to go faster. Returns the bins seen by most lines.
+function axisProfile(image, axis, shear = 0, step = 1) {
+    const { data, width, height } = image;
+    const along = axis === 'x' ? width : height;
+    const across = axis === 'x' ? height : width;
+    const spread = Math.ceil(Math.abs(shear) * across);
+    const offset = shear < 0 ? spread : 0;
+    const bins = along + spread + 1;
+    const sums = new Float64Array(bins * 3);
+    const counts = new Uint32Array(bins);
+    const linear = new Float64Array(256);
+    for (let i = 0; i < 256; i++) linear[i] = srgbToLinear(i);
+
+    for (let b = 0; b < across; b += step) {
+        const shift = b * shear + offset;
+        for (let a = 0; a < along; a++) {
+            const x = axis === 'x' ? a : b, y = axis === 'x' ? b : a;
+            const bin = Math.round(a + shift);
+            const p = (y * width + x) * 4;
+            sums[bin * 3] += linear[data[p]];
+            sums[bin * 3 + 1] += linear[data[p + 1]];
+            sums[bin * 3 + 2] += linear[data[p + 2]];
+            counts[bin]++;
+        }
+    }
+
+    const needed = Math.max(1, across / step * 0.7);
+    let first = 0, last = bins - 1;
+    while (first < bins && counts[first] < needed) first++;
+    while (last > first && counts[last] < needed) last--;
+    const n = last - first + 1;
+    const colors = new Float64Array(n * 3);
+    for (let i = 0; i < n; i++) {
+        const count = Math.max(1, counts[first + i]);
+        for (let c = 0; c < 3; c++) colors[i * 3 + c] = sums[(first + i) * 3 + c] / count;
+    }
+    return { n, colors };
+}
+
+// Divides out a steady change of light across the photo
+function removeLightTrend(profile) {
+    const { n, colors } = profile;
+    const middle = (n - 1) / 2;
+    let sumXY = 0, sumXX = 0, sumY = 0;
+    const log = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+        log[i] = Math.log(0.2126 * colors[i * 3] + 0.7152 * colors[i * 3 + 1] + 0.0722 * colors[i * 3 + 2] + 1e-4);
+        sumY += log[i];
+    }
+    const mean = sumY / n;
+    for (let i = 0; i < n; i++) {
+        sumXY += (i - middle) * (log[i] - mean);
+        sumXX += (i - middle) * (i - middle);
+    }
+    const slope = sumXX > 0 ? sumXY / sumXX : 0;
+    const flat = new Float64Array(n * 3);
+    for (let i = 0; i < n; i++) {
+        const gain = Math.exp(-slope * (i - middle));
+        for (let c = 0; c < 3; c++) flat[i * 3 + c] = colors[i * 3 + c] * gain;
+    }
+    return { n, colors: flat };
+}
+
+// Edges are sharpest when the lines follow the stripes
+function profileSharpness(profile) {
+    let total = 0;
+    for (let i = 3; i < profile.n * 3; i += 3) {
+        total += Math.pow(profile.colors[i + 1] - profile.colors[i - 2], 2);
+    }
+    return total / Math.max(1, profile.n);
+}
+
+// Slope of the stripes: a photo is rarely perfectly straight (up to about 8 degrees here)
+function estimateShear(image, axis) {
+    const across = axis === 'x' ? image.height : image.width;
+    const step = Math.max(1, Math.floor(across / 200));
+    let best = 0, bestScore = -1;
+    const search = (from, to, delta) => {
+        for (let shear = from; shear <= to + 1e-9; shear += delta) {
+            const score = profileSharpness(axisProfile(image, axis, shear, step));
+            if (score > bestScore) {
+                bestScore = score;
+                best = shear;
+            }
+        }
+    };
+    search(-0.14, 0.14, 0.01);
+    const coarse = best;
+    search(coarse - 0.008, coarse + 0.008, 0.002);
+    return best;
+}
+
+// Removes the constant weft part from the means, then converts to Lab
+function unmixProfile(profile) {
+    const { n, colors } = profile;
+    const mean = [0, 0, 0];
+    for (let i = 0; i < n * 3; i++) mean[i % 3] += colors[i] / n;
+    const lab = new Float64Array(n * 3);
+    const clamp = v => Math.max(ESTIMATE_DARK_FLOOR, Math.min(1, v));
+    for (let i = 0; i < n; i++) {
+        const value = linearRgbToLab(
+            clamp(2 * colors[i * 3] - mean[0]),
+            clamp(2 * colors[i * 3 + 1] - mean[1]),
+            clamp(2 * colors[i * 3 + 2] - mean[2])
+        );
+        lab.set(value, i * 3);
+    }
+    return lab;
+}
+
+function labDistance(a, i, b, j) {
+    const dL = a[i * 3] - b[j * 3], da = a[i * 3 + 1] - b[j * 3 + 1], db = a[i * 3 + 2] - b[j * 3 + 2];
+    return Math.sqrt(dL * dL + da * da + db * db);
+}
+
+// Smallest shift that lays the profile over itself, or null when under two repeats are seen
+function findPeriod(lab, n) {
+    const minLag = Math.max(8, Math.floor(n / 25));
+    const maxLag = Math.floor(n * 0.78);
+    if (maxLag <= minLag) return null;
+    const mismatch = new Float64Array(maxLag + 4);
+    for (let lag = 1; lag < maxLag + 4 && lag < n; lag++) {
+        let sum = 0;
+        for (let i = 0; i + lag < n; i++) sum += labDistance(lab, i, lab, i + lag);
+        mismatch[lag] = sum / (n - lag);
+    }
+
+    let lowest = Infinity, average = 0, seen = 0;
+    for (let lag = minLag; lag <= maxLag; lag++) {
+        lowest = Math.min(lowest, mismatch[lag]);
+        average += mismatch[lag];
+        seen++;
+    }
+    average /= seen;
+    // A plain area lays over itself at any shift: that is not a repeat
+    if (average < 3 || lowest > ESTIMATE_PERIOD_MAX || lowest > average * 0.6) return null;
+
+    const accepted = Math.max(lowest * 1.3, lowest + 1.5);
+    for (let lag = minLag; lag <= maxLag; lag++) {
+        if (mismatch[lag] > accepted) continue;
+        let isMinimum = true;
+        for (let k = 1; k <= 3 && isMinimum; k++) {
+            if (mismatch[lag] > mismatch[lag - k] || mismatch[lag] > mismatch[lag + k]) isMinimum = false;
+        }
+        if (isMinimum) return { lag, mismatch: mismatch[lag] };
+    }
+    return null;
+}
+
+// Best mirror point of the profile. With a known repeat, it must hold over half a repeat.
+function findMirror(lab, n, period) {
+    const reach = period ? Math.ceil(period / 2) : Math.floor(n / 2);
+    const needed = period ? Math.floor(reach * 0.95) : Math.max(16, Math.floor(n * 0.3));
+    let best = null;
+    for (let twice = 1; twice < 2 * n - 2; twice++) {
+        let left = twice % 2 === 0 ? twice / 2 - 1 : (twice - 1) / 2;
+        let right = twice % 2 === 0 ? twice / 2 + 1 : left + 1;
+        let sum = 0, compared = 0;
+        while (left >= 0 && right < n && compared < reach) {
+            sum += labDistance(lab, left--, lab, right++);
+            compared++;
+        }
+        if (compared < needed) continue;
+        const distance = sum / compared;
+        if (!best || distance < best.distance) best = { center: twice / 2, distance, reach: compared };
+    }
+    return best;
+}
+
+function averageBuckets(lab, n, length, bucketOf) {
+    const sums = new Float64Array(length * 3);
+    const counts = new Uint32Array(length);
+    for (let i = 0; i < n; i++) {
+        const b = bucketOf(i);
+        if (b < 0 || b >= length) continue;
+        for (let c = 0; c < 3; c++) sums[b * 3 + c] += lab[i * 3 + c];
+        counts[b]++;
+    }
+    for (let b = 0; b < length; b++) {
+        if (counts[b] > 0) {
+            for (let c = 0; c < 3; c++) sums[b * 3 + c] /= counts[b];
+        } else if (b > 0) {
+            for (let c = 0; c < 3; c++) sums[b * 3 + c] = sums[(b - 1) * 3 + c];
+        }
+    }
+    return sums;
+}
+
+// Half a repeat, from one pivot to the other
+function foldMirrored(lab, n, center, period) {
+    const length = period ? Math.round(period / 2) + 1 : Math.floor(Math.max(center, n - 1 - center)) + 1;
+    return {
+        length,
+        lab: averageBuckets(lab, n, length, i => {
+            const t = period ? positiveModulo(i - center, period) : Math.abs(i - center);
+            return Math.floor(period ? Math.min(t, period - t) : t);
+        })
+    };
+}
+
+// One repeat, starting on its strongest edge so that no stripe is cut in two
+function foldRepeat(lab, n, period) {
+    const folded = averageBuckets(lab, n, period, i => i % period);
+    let start = 0, strongest = -1;
+    for (let i = 0; i < period; i++) {
+        const edge = labDistance(folded, i, folded, (i + period - 1) % period);
+        if (edge > strongest) {
+            strongest = edge;
+            start = i;
+        }
+    }
+    const rotated = new Float64Array(period * 3);
+    for (let i = 0; i < period; i++) rotated.set(folded.subarray(((i + start) % period) * 3, ((i + start) % period) * 3 + 3), i * 3);
+    return { length: period, lab: rotated };
+}
+
+// Starts from one segment per position and merges the most similar neighbors
+function segmentProfile(lab, length, tolerance, cyclic = false) {
+    let segments = [];
+    for (let i = 0; i < length; i++) segments.push({ width: 1, lab: [lab[i * 3], lab[i * 3 + 1], lab[i * 3 + 2]] });
+    const distance = (a, b) => Math.hypot(a.lab[0] - b.lab[0], a.lab[1] - b.lab[1], a.lab[2] - b.lab[2]);
+
+    const gaps = new Float64Array(length);
+    for (let i = 0; i + 1 < segments.length; i++) gaps[i] = distance(segments[i], segments[i + 1]);
+    while (segments.length > 1) {
+        let at = 0;
+        for (let i = 1; i + 1 < segments.length; i++) if (gaps[i] < gaps[at]) at = i;
+        if (gaps[at] > tolerance) break;
+        const a = segments[at], b = segments[at + 1];
+        const width = a.width + b.width;
+        a.lab = a.lab.map((v, c) => (v * a.width + b.lab[c] * b.width) / width);
+        a.width = width;
+        segments.splice(at + 1, 1);
+        gaps.copyWithin(at + 1, at + 2);
+        if (at > 0) gaps[at - 1] = distance(segments[at - 1], a);
+        if (at + 1 < segments.length) gaps[at] = distance(a, segments[at + 1]);
+    }
+    return absorbTransitions(segments, cyclic);
+}
+
+// A narrow segment whose color lies between its two neighbors is only the blur of their edge
+function absorbTransitions(segments, cyclic = false) {
+    const result = [];
+    for (let i = 0; i < segments.length; i++) {
+        const s = segments[i], before = result[result.length - 1], after = segments[i + 1];
+        if (before && after && s.width <= ESTIMATE_EDGE_WIDTH && isBetween(s.lab, before.lab, after.lab)) {
+            const half = s.width / 2;
+            before.width += half;
+            after.width += half;
+            continue;
+        }
+        result.push({ width: s.width, lab: s.lab });
+    }
+    // In a repeat, the two ends touch each other
+    if (cyclic && result.length > 3) {
+        const isBlur = (s, a, b) => s.width <= ESTIMATE_EDGE_WIDTH && isBetween(s.lab, a.lab, b.lab);
+        if (isBlur(result[0], result[result.length - 1], result[1])) result[1].width += result.shift().width;
+        if (isBlur(result[result.length - 1], result[result.length - 2], result[0])) result[0].width += result.pop().width;
+    }
+    return result;
+}
+
+function isBetween(point, a, b) {
+    const ab = [0, 1, 2].map(c => b[c] - a[c]);
+    const ap = [0, 1, 2].map(c => point[c] - a[c]);
+    const length = ab.reduce((sum, v) => sum + v * v, 0);
+    if (length === 0) return false;
+    const t = ab.reduce((sum, v, c) => sum + v * ap[c], 0) / length;
+    if (t <= 0 || t >= 1) return false;
+    return Math.hypot(...ab.map((v, c) => ap[c] - v * t)) <= 10;
+}
+
+function nearestSrtColor(lab) {
+    if (!srtLabTable) srtLabTable = SRT_PALETTE.map(color => ({ color, lab: hexToLab(color.hex) }));
+    let best = null, bestDistance = Infinity;
+    for (const entry of srtLabTable) {
+        const d = Math.hypot(entry.lab[0] - lab[0], entry.lab[1] - lab[1], entry.lab[2] - lab[2]);
+        if (d < bestDistance) {
+            bestDistance = d;
+            best = entry.color;
+        }
+    }
+    return best;
+}
+
+// From measured segments to a sett: SRT colors, at most 8 of them, even thread counts.
+function segmentsToStripes(segments, symmetric, targetThreads) {
+    // The dark floor and the light of a photo lift black: it is rarely a true dark grey
+    const blackColor = SRT_PALETTE.find(c => c.code === 'K');
+    const nameColor = lab => lab[0] < 17 && Math.hypot(lab[1], lab[2]) < 8 ? blackColor : nearestSrtColor(lab);
+    let parts = segments.map(s => ({ color: nameColor(s.lab), width: s.width }));
+    const totals = () => {
+        const map = new Map();
+        for (const p of parts) map.set(p.color, (map.get(p.color) || 0) + p.width);
+        return map;
+    };
+    const replace = (from, to) => parts.forEach(p => { if (p.color === from) p.color = to; });
+
+    // One shade per SRT code: the code could not tell two shades apart
+    for (const [color] of [...totals()].sort((a, b) => b[1] - a[1])) {
+        const widest = [...totals()].filter(([c]) => c.code === color.code).sort((a, b) => b[1] - a[1])[0][0];
+        if (widest !== color) replace(color, widest);
+    }
+    while (totals().size > ESTIMATE_MAX_COLORS) {
+        const entries = [...totals()];
+        let pair = null, closest = Infinity;
+        for (let i = 0; i < entries.length; i++) {
+            for (let j = i + 1; j < entries.length; j++) {
+                const d = colorDifference(entries[i][0].hex, entries[j][0].hex);
+                if (d < closest) {
+                    closest = d;
+                    pair = entries[i][1] < entries[j][1] ? [entries[i][0], entries[j][0]] : [entries[j][0], entries[i][0]];
+                }
+            }
+        }
+        replace(pair[0], pair[1]);
+    }
+
+    const merged = [];
+    for (const p of parts) {
+        const previous = merged[merged.length - 1];
+        if (previous && previous.color === p.color) previous.width += p.width;
+        else merged.push({ ...p });
+    }
+    if (!symmetric && merged.length > 2 && merged[0].color === merged[merged.length - 1].color) {
+        merged[0].width += merged.pop().width;
+    }
+    if (merged.length < 2) return null;
+
+    // A pivot is seen from its middle: its whole width is twice what was measured
+    const last = merged.length - 1;
+    const fullWidth = merged.map((p, i) => symmetric && (i === 0 || i === last) ? Math.max(1, 2 * p.width - 1) : p.width);
+    const repeatWidth = fullWidth.reduce((sum, w, i) => sum + (symmetric && i !== 0 && i !== last ? 2 * w : w), 0);
+    const factor = targetThreads / repeatWidth;
+    return merged.map((p, i) => ({
+        code: p.color.code,
+        hex: p.color.hex,
+        count: Math.max(2, Math.round(fullWidth[i] * factor / 2) * 2)
+    }));
+}
+
+function analyzeAxis(image, axis, tolerance) {
+    const profile = axisProfile(image, axis, estimateShear(image, axis));
+    const n = profile.n;
+    let lab = unmixProfile(profile);
+    let period = findPeriod(lab, n);
+    // The light correction is kept only if it makes the repeats line up better
+    const flatLab = unmixProfile(removeLightTrend(profile));
+    const flatPeriod = findPeriod(flatLab, n);
+    if (flatPeriod && (!period || flatPeriod.mismatch < period.mismatch * 0.9)) {
+        lab = flatLab;
+        period = flatPeriod;
+    }
+    const mirror = findMirror(lab, n, period?.lag);
+    const symmetric = !!mirror && mirror.distance <= ESTIMATE_MIRROR_MAX;
+
+    let folded, rank;
+    if (period && symmetric) {
+        folded = foldMirrored(lab, n, mirror.center, period.lag);
+        rank = 3;
+    } else if (period) {
+        folded = foldRepeat(lab, n, period.lag);
+        rank = 2;
+    } else if (symmetric) {
+        folded = foldMirrored(lab, n, mirror.center, null);
+        rank = 1;
+    } else {
+        folded = { length: n, lab };
+        rank = 0;
+    }
+    return { axis, n, rank, symmetric, period: period?.lag ?? null, segments: segmentProfile(folded.lab, folded.length, tolerance, !symmetric && !!period) };
+}
+
+// image: { data, width, height } in RGBA. Returns null when no sett can be read.
+function estimateTartan(image, { tolerance = 12, targetThreads = 240 } = {}) {
+    const results = [analyzeAxis(image, 'x', tolerance), analyzeAxis(image, 'y', tolerance)]
+        .filter(r => r.segments.length >= 2)
+        .sort((a, b) => b.rank - a.rank || b.n - a.n);
+    if (results.length === 0) return null;
+    const best = results[0];
+    const stripes = segmentsToStripes(best.segments, best.symmetric, targetThreads);
+    if (!stripes) return null;
+    return { stripes, symmetric: best.symmetric, confidence: ['low', 'low', 'fair', 'good'][best.rank], axis: best.axis, period: best.period };
+}
+
+let estimateState = null; // { photo: canvas, region, result, opener }
+
+function isEstimateOpen() {
+    return !!domElements.estimateModal && !domElements.estimateModal.hidden;
+}
+
+async function openEstimateFromFile(file) {
+    if (!file) return;
+    let bitmap = null;
+    if (file.size <= 40000000) {
+        try {
+            bitmap = await createImageBitmap(file);
+        } catch (error) {
+            console.warn('Could not read the photo', error);
+        }
+    }
+    if (!bitmap) {
+        showAppMessage('msg_photo_err', true);
+        return;
+    }
+    const ratio = Math.min(1, ESTIMATE_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    const photo = document.createElement('canvas');
+    photo.width = Math.max(1, Math.round(bitmap.width * ratio));
+    photo.height = Math.max(1, Math.round(bitmap.height * ratio));
+    const ctx = photo.getContext('2d', { willReadFrequently: true });
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(bitmap, 0, 0, photo.width, photo.height);
+    bitmap.close();
+
+    estimateState = { photo, region: null, result: null, opener: document.activeElement };
+    if (domElements.estimateThreads) {
+        domElements.estimateThreads.value = parseInt(domElements.sett?.value, 10) || 240;
+    }
+    domElements.estimateModal.hidden = false;
+    domElements.btnEstimateCancel?.focus();
+    drawEstimateSource();
+    runEstimate();
+}
+
+function closeEstimate() {
+    if (!isEstimateOpen()) return;
+    domElements.estimateModal.hidden = true;
+    estimateState?.opener?.focus();
+    estimateState = null;
+}
+
+// The photo, with what is outside the selected area dimmed
+function drawEstimateSource(selection = estimateState?.region) {
+    const canvas = domElements.estimateSource;
+    if (!canvas || !estimateState) return;
+    const { photo } = estimateState;
+    const scale = Math.min(1, 360 / photo.width, 280 / photo.height);
+    canvas.width = Math.max(1, Math.round(photo.width * scale));
+    canvas.height = Math.max(1, Math.round(photo.height * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(photo, 0, 0, canvas.width, canvas.height);
+    if (!selection) return;
+    const r = { x: selection.x * scale, y: selection.y * scale, w: selection.w * scale, h: selection.h * scale };
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(0, 0, canvas.width, r.y);
+    ctx.fillRect(0, r.y + r.h, canvas.width, canvas.height - r.y - r.h);
+    ctx.fillRect(0, r.y, r.x, r.h);
+    ctx.fillRect(r.x + r.w, r.y, canvas.width - r.x - r.w, r.h);
+    ctx.strokeStyle = '#f5d08a';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(r.x, r.y, r.w, r.h);
+}
+
+function readEstimateThreads() {
+    const value = parseInt(domElements.estimateThreads?.value, 10) || 240;
+    return Math.max(20, Math.min(2000, value));
+}
+
+function runEstimate() {
+    if (!estimateState) return;
+    const t = TRANSLATIONS[currentLang];
+    const { photo, region } = estimateState;
+    const area = region || { x: 0, y: 0, w: photo.width, h: photo.height };
+    const image = photo.getContext('2d', { willReadFrequently: true }).getImageData(area.x, area.y, area.w, area.h);
+    const result = estimateTartan(image, {
+        tolerance: parseInt(domElements.estimateTolerance?.value, 10) || 12,
+        targetThreads: readEstimateThreads()
+    });
+    estimateState.result = result;
+
+    const canvas = domElements.estimateResult;
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    if (result) renderPatternCanvas(canvas, { stripes: result.stripes, symmetric: result.symmetric }, 'fit');
+    domElements.estimateCode.value = result ? buildSRTCode(result.stripes, result.symmetric) : '';
+    domElements.estimateStatus.textContent = result ? t['estimate_' + result.confidence] : t.estimate_none;
+    domElements.btnEstimateApply.disabled = !result;
+}
+
+function applyEstimate() {
+    const result = estimateState?.result;
+    if (!result) return;
+    closeEstimate();
+    applyLoadedPattern({ stripes: result.stripes, symmetric: result.symmetric });
+    showAppMessage('msg_estimate_done');
+}
+
+// Drag on the photo to keep only the cloth. Too small a drag goes back to the whole photo.
+function bindEstimateSelection() {
+    const canvas = domElements.estimateSource;
+    if (!canvas) return;
+    let start = null, current = null;
+    const toPhoto = (e) => {
+        const box = canvas.getBoundingClientRect();
+        const { photo } = estimateState;
+        const clamp = (v, max) => Math.max(0, Math.min(max, v));
+        return {
+            x: clamp((e.clientX - box.left) / box.width, 1) * photo.width,
+            y: clamp((e.clientY - box.top) / box.height, 1) * photo.height
+        };
+    };
+    const rectangle = (a, b) => ({
+        x: Math.round(Math.min(a.x, b.x)),
+        y: Math.round(Math.min(a.y, b.y)),
+        w: Math.round(Math.abs(a.x - b.x)),
+        h: Math.round(Math.abs(a.y - b.y))
+    });
+    canvas.addEventListener('pointerdown', (e) => {
+        if (!estimateState || e.button !== 0) return;
+        start = toPhoto(e);
+        current = null;
+        canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener('pointermove', (e) => {
+        if (!start) return;
+        current = rectangle(start, toPhoto(e));
+        drawEstimateSource(current);
+    });
+    const finish = () => {
+        if (!start) return;
+        start = null;
+        estimateState.region = current && current.w >= 40 && current.h >= 40 ? current : null;
+        current = null;
+        drawEstimateSource();
+        runEstimate();
+    };
+    canvas.addEventListener('pointerup', finish);
+    canvas.addEventListener('pointercancel', finish);
+}
+
 // --- COLOR READABILITY ---
+function linearRgbToLab(r, g, b) {
+    // D65 white point
+    const f = t => t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116;
+    const fx = f((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047);
+    const fy = f(0.2126 * r + 0.7152 * g + 0.0722 * b);
+    const fz = f((0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883);
+    return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+
 function hexToLab(hex, matrix = null) {
     const v = parseInt(hex.slice(1), 16);
     let r = srgbToLinear(v >>> 16), g = srgbToLinear((v >>> 8) & 0xFF), b = srgbToLinear(v & 0xFF);
@@ -2590,12 +3202,7 @@ function hexToLab(hex, matrix = null) {
             clamp(matrix[6] * r + matrix[7] * g + matrix[8] * b)
         ];
     }
-    // D65 white point
-    const f = t => t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116;
-    const fx = f((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047);
-    const fy = f(0.2126 * r + 0.7152 * g + 0.0722 * b);
-    const fz = f((0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883);
-    return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+    return linearRgbToLab(r, g, b);
 }
 
 function colorDifference(hexA, hexB, matrix = null) {
