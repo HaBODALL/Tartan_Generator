@@ -375,6 +375,20 @@ function runTests() {
             assertEqual(parseExportedText('hello'), null, 'other text refused');
             assertEqual(parseExportedText('TARTAN GENERATOR - EXPORT\nCODE INK/STITCH:\nnothing'), null, 'file without stripes refused');
             console.info('✅ text import');
+        },
+        () => {
+            // Weaving sheet numbers
+            const stripes = [{ code: 'R', hex: '#R', count: 40 }, { code: 'K', hex: '#K', count: 10 }, { code: 'W', hex: '#W', count: 30 }];
+            const sym = buildWeavingSheetData(stripes, true, 0.5);
+            assertEqual(sym.sequence.map(s => s.code).join(''), 'RKWK', 'sheet expands a symmetric sett');
+            assertEqual(sym.totalThreads, countSettThreads(stripes, true), 'sheet agrees with the sett count');
+            assertEqual(sym.widthCm, 4.5, 'sheet width');
+            assertEqual(sym.colors.find(c => c.code === 'K').threads, 20, 'sheet adds up a color used twice');
+            assertSilent(Math.abs(sym.colors.reduce((a, c) => a + c.percent, 0) - 100) < 1e-9, 'sheet percentages add up to 100');
+            assertEqual(sym.yarnPerSquareMeter, 4000, 'sheet yarn: 2 x 2000 threads per meter at 0.5 mm');
+            assertSilent(Math.abs(sym.colors.reduce((a, c) => a + c.meters, 0) - 4000) < 1e-6, 'sheet yarn adds up');
+            assertEqual(buildWeavingSheetData(stripes, false, 0.5).sequence.length, 3, 'sheet keeps an asymmetric sett');
+            console.info('✅ weaving sheet');
         }
     ];
 

@@ -289,6 +289,23 @@ const TRANSLATIONS = {
         btn_import_file: "Fichier",
         title_import_file: "Rouvrir un fichier texte exporté avec « Détails »",
         msg_import_file_err: "Ce fichier n'est pas un export de détails valide.",
+        btn_weaving_sheet: "Fiche de tissage",
+        title_weaving_sheet: "Une fiche imprimable : ordre des fils et quantité de fil par couleur",
+        btn_print: "Imprimer",
+        sheet_title: "Fiche de tissage",
+        sheet_srt: "Code SRT",
+        sheet_threads: "Fils par motif",
+        sheet_width: "Largeur du motif",
+        sheet_thread: "Diamètre du fil",
+        sheet_weave: "Armure",
+        sheet_twill: "Sergé 2/2",
+        sheet_structure: "Structure",
+        sheet_order: "Ordre des fils sur un motif",
+        sheet_colors: "Fil par couleur",
+        sheet_color: "Couleur",
+        sheet_col_threads: "Fils",
+        sheet_col_yarn: "Mètres par m² de tissu",
+        sheet_note: "Quantités théoriques pour la chaîne et la trame réunies, sans l'embuvage ni les chutes : prévoyez une marge.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -401,6 +418,23 @@ const TRANSLATIONS = {
         btn_import_file: "File",
         title_import_file: "Reopen a text file exported with \"Details\"",
         msg_import_file_err: "This file is not a valid details export.",
+        btn_weaving_sheet: "Weaving sheet",
+        title_weaving_sheet: "A printable sheet: thread order and yarn per color",
+        btn_print: "Print",
+        sheet_title: "Weaving sheet",
+        sheet_srt: "SRT code",
+        sheet_threads: "Threads per sett",
+        sheet_width: "Sett width",
+        sheet_thread: "Thread diameter",
+        sheet_weave: "Weave",
+        sheet_twill: "2/2 twill",
+        sheet_structure: "Structure",
+        sheet_order: "Thread order for one sett",
+        sheet_colors: "Yarn per color",
+        sheet_color: "Color",
+        sheet_col_threads: "Threads",
+        sheet_col_yarn: "Meters per m² of cloth",
+        sheet_note: "Theoretical amounts for warp and weft together, without take-up or waste: allow a margin.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -573,6 +607,11 @@ function cacheDomElements() {
     domElements.patchworkInfo = document.getElementById('patchwork-info');
     domElements.patchworkScale = document.getElementById('patchwork-scale');
     domElements.btnShareLink = document.getElementById('btn-share-link');
+    domElements.btnWeavingSheet = document.getElementById('btn-weaving-sheet');
+    domElements.sheetModal = document.getElementById('sheet-modal');
+    domElements.sheetBody = document.getElementById('sheet-body');
+    domElements.btnSheetPrint = document.getElementById('btn-sheet-print');
+    domElements.btnSheetClose = document.getElementById('btn-sheet-close');
     domElements.patchworkMode = document.getElementById('patchwork-mode');
     domElements.patchworkAxisX = document.getElementById('patchwork-axis-x');
     domElements.patchworkAxisY = document.getElementById('patchwork-axis-y');
@@ -754,6 +793,12 @@ function bindEvents() {
     if (btnExportPng) btnExportPng.addEventListener('click', exportPNG);
     if (domElements.btnExportSvg) domElements.btnExportSvg.addEventListener('click', exportSVG);
     if (domElements.btnShareLink) domElements.btnShareLink.addEventListener('click', copySharedLink);
+    if (domElements.btnWeavingSheet) domElements.btnWeavingSheet.addEventListener('click', openWeavingSheet);
+    if (domElements.btnSheetPrint) domElements.btnSheetPrint.addEventListener('click', () => window.print());
+    if (domElements.btnSheetClose) domElements.btnSheetClose.addEventListener('click', closeWeavingSheet);
+    if (domElements.sheetModal) {
+        domElements.sheetModal.addEventListener('click', (e) => { if (e.target === domElements.sheetModal) closeWeavingSheet(); });
+    }
     // A link pasted in the address bar of an open page only changes the hash
     window.addEventListener('hashchange', openSharedLink);
 
@@ -826,6 +871,14 @@ function bindEvents() {
     }
 }
 document.addEventListener('keydown', (e) => {
+    if (isWeavingSheetOpen()) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeWeavingSheet();
+        }
+        return;
+    }
+
     // While the mood board is open, only Escape is handled (it closes the board)
     if (isPatchworkOpen()) {
         if (e.key === 'Escape') {
@@ -2360,6 +2413,121 @@ function copySharedLink() {
         return;
     }
     navigator.clipboard.writeText(link).then(() => showAppMessage('msg_link_copied')).catch(manualCopy);
+}
+
+// --- WEAVING SHEET ---
+// Everything needed to warp a loom: the order of the threads and the yarn per color.
+// Warp and weft follow the same sequence, so a color has the same share of both.
+function buildWeavingSheetData(stripes, isSymmetric, threadMm) {
+    const sequence = stripes.map(s => ({ ...s }));
+    if (isSymmetric) {
+        for (let i = stripes.length - 2; i >= 1; i--) sequence.push({ ...stripes[i] });
+    }
+    const totalThreads = sequence.reduce((sum, s) => sum + s.count, 0);
+    const yarnPerSquareMeter = 2 * 1000 / threadMm; // Threads per meter of width, warp + weft, 1 m each
+
+    const byColor = new Map();
+    for (const s of sequence) {
+        const color = byColor.get(s.hex) || { code: s.code, hex: s.hex, threads: 0 };
+        color.threads += s.count;
+        byColor.set(s.hex, color);
+    }
+    const colors = [...byColor.values()].map(c => ({
+        ...c,
+        percent: c.threads / totalThreads * 100,
+        meters: c.threads / totalThreads * yarnPerSquareMeter
+    }));
+    return { sequence, colors, totalThreads, widthCm: totalThreads * threadMm / 10, yarnPerSquareMeter };
+}
+
+let weavingSheetOpener = null;
+
+function isWeavingSheetOpen() {
+    return !!domElements.sheetModal && !domElements.sheetModal.hidden;
+}
+
+function sheetElement(tag, text, className) {
+    const el = document.createElement(tag);
+    if (text !== undefined) el.textContent = text;
+    if (className) el.className = className;
+    return el;
+}
+
+function openWeavingSheet() {
+    if (tartanStripes.length === 0 || !domElements.sheetBody) return;
+    const t = TRANSLATIONS[currentLang];
+    const isSymmetric = domElements.sym?.checked || false;
+    const threadMm = parseFloat(domElements.threadMm?.value) || 1.11;
+    const data = buildWeavingSheetData(tartanStripes, isSymmetric, threadMm);
+    const palette = paletteFromStripes(tartanStripes);
+    const body = domElements.sheetBody;
+    body.textContent = '';
+
+    body.appendChild(sheetElement('h2', t.sheet_title));
+    body.appendChild(sheetElement('p', `ID ${String(generationID).padStart(6, '0')} · ${getFormattedDate().replace(/_/g, '-')}`, 'sheet-meta'));
+
+    const head = sheetElement('div', undefined, 'sheet-head');
+    const swatch = document.createElement('canvas');
+    swatch.width = 360;
+    swatch.height = 360;
+    swatch.className = 'sheet-swatch';
+    renderPatternCanvas(swatch, { stripes: tartanStripes, symmetric: isSymmetric }, 'fit');
+    const facts = sheetElement('dl', undefined, 'sheet-facts');
+    const twill = (domElements.weaveZ?.checked ?? true) ? 'Z' : 'S';
+    [
+        [t.sheet_srt, buildSRTCode(tartanStripes, isSymmetric)],
+        [t.sheet_threads, String(data.totalThreads)],
+        [t.sheet_width, `${data.widthCm.toFixed(1)} cm`],
+        [t.sheet_thread, `${threadMm} mm`],
+        [t.sheet_weave, `${t.sheet_twill} ${twill}`],
+        [t.sheet_structure, isSymmetric ? t.crit_sym : t.crit_asym]
+    ].forEach(([term, value]) => facts.append(sheetElement('dt', term), sheetElement('dd', value)));
+    head.append(swatch, facts);
+    body.appendChild(head);
+
+    // Stripes drawn to scale, in weaving order
+    const band = sheetElement('div', undefined, 'sheet-band');
+    data.sequence.forEach(s => {
+        const part = document.createElement('span');
+        part.style.background = s.hex;
+        part.style.flexGrow = s.count;
+        part.title = `${s.code} ${s.count}`;
+        band.appendChild(part);
+    });
+    body.appendChild(band);
+
+    body.appendChild(sheetElement('h3', t.sheet_order));
+    body.appendChild(sheetElement('p', data.sequence.map(s => `${s.code} ${s.count}`).join(' · '), 'sheet-order'));
+
+    body.appendChild(sheetElement('h3', t.sheet_colors));
+    const table = sheetElement('table', undefined, 'sheet-table');
+    const headRow = table.createTHead().insertRow();
+    [t.sheet_color, t.sheet_col_threads, '%', t.sheet_col_yarn].forEach(label => headRow.appendChild(sheetElement('th', label)));
+    const rows = table.createTBody();
+    data.colors.forEach(c => {
+        const row = rows.insertRow();
+        const name = row.insertCell();
+        const chip = sheetElement('span', undefined, 'sheet-chip');
+        chip.style.background = c.hex;
+        const color = palette.find(p => p.hex.toUpperCase() === c.hex.toUpperCase());
+        name.append(chip, document.createTextNode(formatColorLabel(color)));
+        row.insertCell().textContent = String(c.threads);
+        row.insertCell().textContent = c.percent.toFixed(1);
+        row.insertCell().textContent = Math.round(c.meters).toLocaleString(currentLang);
+    });
+    body.appendChild(table);
+    body.appendChild(sheetElement('p', t.sheet_note, 'sheet-note'));
+
+    weavingSheetOpener = document.activeElement;
+    domElements.sheetModal.hidden = false;
+    domElements.btnSheetPrint?.focus();
+}
+
+function closeWeavingSheet() {
+    if (!isWeavingSheetOpen()) return;
+    domElements.sheetModal.hidden = true;
+    weavingSheetOpener?.focus();
+    weavingSheetOpener = null;
 }
 
 // --- EXPORT SVG ---
