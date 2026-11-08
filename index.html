@@ -525,13 +525,27 @@
     }
     .patchwork-board[hidden] { display: none; }
     .modal-overlay[hidden] { display: none; }
-    .estimate-paper { background: #222; border: 1px solid #555; color: #ddd; width: 700px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: 18px; border-radius: 8px; font-size: 13px; }
+    .estimate-paper { background: #222; border: 1px solid #555; color: #ddd; width: 760px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: 18px; border-radius: 8px; font-size: 13px; }
     .estimate-paper h2 { font-size: 17px; margin-bottom: 4px; }
     .estimate-hint { color: #999; font-size: 12px; margin-bottom: 10px; }
     .estimate-views { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: flex-start; }
     #estimate-source { max-width: 100%; cursor: crosshair; touch-action: none; border: 1px solid #555; }
     #estimate-result { width: 280px; height: 280px; max-width: 100%; border: 1px solid #555; }
     .estimate-status { color: #f5d08a; margin: 10px 0; min-height: 1.3em; }
+    .estimate-proposals { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+    .proposal-cell { position: relative; }
+    .proposal-tile { display: block; width: 100%; padding: 0; background: #111; border: 2px solid #444; border-radius: 4px; color: #ccc; cursor: pointer; overflow: hidden; }
+    .proposal-tile canvas { display: block; width: 100%; aspect-ratio: 1; }
+    .proposal-caption { display: block; padding: 2px 3px; font-size: 10px; line-height: 1.25; min-height: 2.5em; }
+    .proposal-cell.selected .proposal-tile { border-color: #e74c3c; }
+    .proposal-cell.silver .proposal-tile { border-color: #c8ccd4; }
+    .proposal-cell.gold .proposal-tile { border-color: #f5c542; box-shadow: 0 0 0 1px #f5c542; }
+    .proposal-stars { position: absolute; top: 4px; right: 4px; display: flex; gap: 3px; }
+    .proposal-star { width: 24px; height: 24px; padding: 0; border: 1px solid #666; border-radius: 3px; background: rgba(0, 0, 0, 0.72); color: #777; font-size: 14px; line-height: 1; cursor: pointer; }
+    .proposal-star:hover, .proposal-star:focus-visible { border-color: #e74c3c; outline: 2px solid #e74c3c; }
+    .star-gold[aria-pressed="true"] { color: #f5c542; border-color: #f5c542; }
+    .star-silver[aria-pressed="true"] { color: #e4e7ec; border-color: #e4e7ec; }
+    @media (max-width: 768px) { .estimate-proposals { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     .estimate-code-label { display: block; margin-top: 8px; color: #aaa; font-size: 12px; }
     .estimate-code { width: 100%; background: #111; border: 1px solid #444; color: #0f0; padding: 5px; font-family: monospace; font-size: 12px; resize: vertical; }
     .btn-secondary:disabled { opacity: 0.45; cursor: default; }
@@ -566,7 +580,8 @@
     .sheet-table th:first-child, .sheet-table td:first-child { text-align: left; }
     .sheet-chip { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border: 1px solid #999; vertical-align: -2px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     .sheet-note { color: #666; font-size: 11px; margin-top: 10px; }
-    .sheet-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .sheet-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .sheet-actions [hidden] { display: none; }
     @media (max-width: 768px) { .import-box { flex-wrap: wrap; } .import-input { flex-basis: 100%; } }
     @media print {
       html, body { height: auto; width: auto; overflow: visible; background: #fff; }
@@ -1025,6 +1040,8 @@
         <canvas id="estimate-result" width="280" height="280"></canvas>
       </div>
       <p id="estimate-status" class="estimate-status" role="status" aria-live="polite"></p>
+      <p class="estimate-hint" data-i18n="estimate_stars">Comparez jusqu'à 10 lectures. Étoile d'or : c'est le bon motif. Étoile d'argent : c'est proche ; les motifs argent servent à générer un intermédiaire.</p>
+      <div id="estimate-proposals" class="estimate-proposals"></div>
       <div class="control-row">
         <label for="estimate-tolerance" data-i18n="lbl_estimate_tolerance">Tolérance de couleur</label>
         <input type="range" id="estimate-tolerance" min="4" max="30" step="1" value="12">
@@ -1036,6 +1053,8 @@
       <label for="estimate-code" class="estimate-code-label" data-i18n="lbl_estimate_code">Code SRT estimé</label>
       <textarea id="estimate-code" class="estimate-code" rows="2" readonly></textarea>
       <div class="sheet-actions">
+        <button type="button" class="btn-secondary" id="btn-estimate-back" data-i18n="btn_estimate_back" hidden>Tour précédent</button>
+        <button type="button" class="btn-secondary" id="btn-estimate-refine" data-i18n="btn_estimate_refine" disabled>Générer l'intermédiaire</button>
         <button type="button" class="btn-secondary" id="btn-estimate-apply" data-i18n="btn_estimate_apply">Utiliser ce motif</button>
         <button type="button" class="btn-secondary" id="btn-estimate-cancel" data-i18n="btn_close">Fermer</button>
       </div>
