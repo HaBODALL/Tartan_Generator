@@ -1678,39 +1678,60 @@ function shadePixel(pixel, factor) {
 function fillTwillRelief(pixels, tileW, tileH, threadColors, isZTwist, k) {
     const shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
     const masks = getReliefMasks(k);
-    const shades = [];
-    const shadeBase = new Map();
-    const baseFor = (color) => {
-        let base = shadeBase.get(color);
-        if (base === undefined) {
-            base = shades.length;
+    const blockCache = new Map();
+
+    // Pre-calculate 4 shaded blocks (k*k pixels each) per unique color.
+    // This avoids generating shades and computing indices inside the tight loop.
+    const getBlocksForColor = (color) => {
+        let blocks = blockCache.get(color);
+        if (blocks === undefined) {
+            blocks = [new Uint32Array(k * k), new Uint32Array(k * k), new Uint32Array(k * k), new Uint32Array(k * k)];
+            const shades = new Uint32Array(RELIEF_LEVELS);
             for (let l = 0; l < RELIEF_LEVELS; l++) {
-                shades.push(shadePixel(color, RELIEF_MIN + l * (RELIEF_MAX - RELIEF_MIN) / (RELIEF_LEVELS - 1)));
+                shades[l] = shadePixel(color, RELIEF_MIN + l * (RELIEF_MAX - RELIEF_MIN) / (RELIEF_LEVELS - 1));
             }
-            shadeBase.set(color, base);
+            for (let type = 0; type < 4; type++) {
+                const mask = masks[type];
+                const block = blocks[type];
+                for (let i = 0; i < k * k; i++) block[i] = shades[mask[i]];
+            }
+            blockCache.set(color, blocks);
         }
-        return base;
+        return blocks;
     };
-    const weftOver = (x, y) => ((x - shifts[y & 3]) & 3) < 2;
+
+    // Cache the block sets per array index so we bypass Map lookups completely
+    const length = Math.max(tileW, tileH);
+    const blocksByColor = new Array(length);
+    for (let i = 0; i < length; i++) blocksByColor[i] = getBlocksForColor(threadColors[i]);
+
     const rowPixels = tileW * k;
 
     for (let y = 0; y < tileH; y++) {
+        const shiftY = shifts[y & 3];
+        const shiftPrevY = shifts[(y - 1) & 3];
+        const blocksY = blocksByColor[y];
+        let offset = y * k * rowPixels;
+
         for (let x = 0; x < tileW; x++) {
-            let color, type;
-            if (weftOver(x, y)) {
-                color = threadColors[y];
-                type = ((x - shifts[y & 3]) & 3) === 0 ? 0 : 1;
+            let type;
+            let blocks;
+            if (((x - shiftY) & 3) < 2) {
+                blocks = blocksY;
+                type = ((x - shiftY) & 3) === 0 ? 0 : 1;
             } else {
-                color = threadColors[x];
-                type = weftOver(x, y - 1) ? 2 : 3;
+                blocks = blocksByColor[x];
+                type = ((x - shiftPrevY) & 3) < 2 ? 2 : 3;
             }
-            const base = baseFor(color);
-            const mask = masks[type];
-            let offset = y * k * rowPixels + x * k;
+
+            const block = blocks[type];
+            let pxOffset = offset + x * k;
+
+            // Copy the pre-calculated shaded block onto the canvas array
             for (let py = 0; py < k; py++) {
                 const m = py * k;
-                for (let px = 0; px < k; px++) pixels[offset + px] = shades[base + mask[m + px]];
-                offset += rowPixels;
+                for (let px = 0; px < k; px++) pixels[pxOffset + px] = block[m + px];
+                pxOffset += rowPixels;
             }
         }
     }
