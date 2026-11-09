@@ -1678,19 +1678,35 @@ function shadePixel(pixel, factor) {
 function fillTwillRelief(pixels, tileW, tileH, threadColors, isZTwist, k) {
     const shifts = isZTwist ? [2, 1, 0, 3] : [2, 3, 0, 1];
     const masks = getReliefMasks(k);
-    const shades = [];
-    const shadeBase = new Map();
-    const baseFor = (color) => {
-        let base = shadeBase.get(color);
-        if (base === undefined) {
-            base = shades.length;
-            for (let l = 0; l < RELIEF_LEVELS; l++) {
-                shades.push(shadePixel(color, RELIEF_MIN + l * (RELIEF_MAX - RELIEF_MIN) / (RELIEF_LEVELS - 1)));
-            }
-            shadeBase.set(color, base);
+
+    // Cache fully rendered k x k blocks (split into k rows of length k)
+    const blocks = new Map();
+    const getBlockRows = (color, type) => {
+        let colorBlocks = blocks.get(color);
+        if (!colorBlocks) {
+            colorBlocks = [null, null, null, null];
+            blocks.set(color, colorBlocks);
         }
-        return base;
+        if (!colorBlocks[type]) {
+            const mask = masks[type];
+            const rows = new Array(k);
+            const shades = new Uint32Array(RELIEF_LEVELS);
+            for (let l = 0; l < RELIEF_LEVELS; l++) {
+                shades[l] = shadePixel(color, RELIEF_MIN + l * (RELIEF_MAX - RELIEF_MIN) / (RELIEF_LEVELS - 1));
+            }
+            for (let py = 0; py < k; py++) {
+                const row = new Uint32Array(k);
+                const m = py * k;
+                for (let px = 0; px < k; px++) {
+                    row[px] = shades[mask[m + px]];
+                }
+                rows[py] = row;
+            }
+            colorBlocks[type] = rows;
+        }
+        return colorBlocks[type];
     };
+
     const weftOver = (x, y) => ((x - shifts[y & 3]) & 3) < 2;
     const rowPixels = tileW * k;
 
@@ -1704,12 +1720,10 @@ function fillTwillRelief(pixels, tileW, tileH, threadColors, isZTwist, k) {
                 color = threadColors[x];
                 type = weftOver(x, y - 1) ? 2 : 3;
             }
-            const base = baseFor(color);
-            const mask = masks[type];
+            const blockRows = getBlockRows(color, type);
             let offset = y * k * rowPixels + x * k;
             for (let py = 0; py < k; py++) {
-                const m = py * k;
-                for (let px = 0; px < k; px++) pixels[offset + px] = shades[base + mask[m + px]];
+                pixels.set(blockRows[py], offset);
                 offset += rowPixels;
             }
         }
