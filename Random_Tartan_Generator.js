@@ -378,6 +378,30 @@ const TRANSLATIONS = {
         proposal_intermediate: "Intermédiaire",
         proposal_kept: "Votre choix précédent",
         msg_estimate_gold: "Motif confirmé d'après la photo. Les nombres de fils restent des proportions.",
+                nav_atelier: "Atelier",
+        nav_planche: "Planche",
+        menu_nouveau: "Nouveau",
+        menu_nouveau_random: "Aléatoire",
+        menu_nouveau_srt: "Depuis code SRT",
+        menu_nouveau_photo: "Depuis une photo",
+        menu_nouveau_image: "Depuis une image (art/photo)",
+        menu_nouveau_file: "Rouvrir un fichier (.txt)",
+        menu_exporter: "Exporter",
+        menu_export_png: "Image PNG (vue actuelle)",
+        menu_export_svg: "Vecteur SVG (raccordable)",
+        menu_export_txt: "Fichier détails (.txt)",
+        menu_export_sheet: "Fiche de tissage (imprimable)",
+        menu_export_all: "Tout exporter",
+        tab_motif: "Motif",
+        tab_couleurs: "Couleurs",
+        tab_tissu: "Tissu",
+        btn_redo: "Rétablir",
+        btn_reset_view: "Centrer",
+        lbl_view_mode: "Vue objet",
+        view_flat: "Tissu à plat",
+        view_scarf: "Écharpe",
+        view_cushion: "Coussin",
+        view_kilt: "Kilt",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -558,6 +582,30 @@ const TRANSLATIONS = {
         proposal_intermediate: "Intermediate",
         proposal_kept: "Your previous choice",
         msg_estimate_gold: "Pattern confirmed from the photo. Thread counts are still proportions.",
+                nav_atelier: "Studio",
+        nav_planche: "Board",
+        menu_nouveau: "New",
+        menu_nouveau_random: "Random",
+        menu_nouveau_srt: "From SRT code",
+        menu_nouveau_photo: "From a tartan photo",
+        menu_nouveau_image: "From an image (art/photo)",
+        menu_nouveau_file: "Reopen a text file (.txt)",
+        menu_exporter: "Export",
+        menu_export_png: "PNG Image (current view)",
+        menu_export_svg: "SVG Vector (seamless repeat)",
+        menu_export_txt: "Details file (.txt)",
+        menu_export_sheet: "Weaving sheet (printable)",
+        menu_export_all: "Export all",
+        tab_motif: "Pattern",
+        tab_couleurs: "Colors",
+        tab_tissu: "Fabric",
+        btn_redo: "Redo",
+        btn_reset_view: "Center",
+        lbl_view_mode: "Object view",
+        view_flat: "Flat cloth",
+        view_scarf: "Scarf",
+        view_cushion: "Cushion",
+        view_kilt: "Kilt",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -570,6 +618,7 @@ function setup() {
     cacheDomElements();
     initCanvas();
     bindEvents();
+    setupRedesignUI();
 
     // Initial Startup. A shared link wins over the saved state, which joins the history.
     const restored = loadState();
@@ -1782,6 +1831,8 @@ function updateGeneratedListUI() {
     }
 
     if(srtInput) srtInput.value = srtString;
+    const inlineSrt = document.getElementById('srt-inline-input');
+    if (inlineSrt) inlineSrt.value = srtString;
     if (typeof matchSrtWithExamples === 'function') matchSrtWithExamples();
 }
 
@@ -3255,6 +3306,119 @@ let estimateState = null; // { photo, region, proposals, selected, result, round
 
 function isEstimateOpen() {
     return !!domElements.estimateModal && !domElements.estimateModal.hidden;
+}
+
+
+// Find the closest SRT shade for an RGB color using Lab Euclidean distance
+function findClosestSRTColor(r, g, b) {
+    const lab = linearRgbToLab(srgbToLinear(r), srgbToLinear(g), srgbToLinear(b));
+    let best = SRT_PALETTE[0];
+    let bestDist = Infinity;
+    for (let i = 0; i < SRT_PALETTE.length; i++) {
+        const item = SRT_PALETTE[i];
+        const v = parseInt(item.hex.slice(1), 16);
+        const ir = (v >>> 16) & 0xFF, ig = (v >>> 8) & 0xFF, ib = v & 0xFF;
+        const itemLab = linearRgbToLab(srgbToLinear(ir), srgbToLinear(ig), srgbToLinear(ib));
+        const dist = Math.hypot(lab[0] - itemLab[0], lab[1] - itemLab[1], lab[2] - itemLab[2]);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = item;
+        }
+    }
+    return best;
+}
+
+// Generate an authentic tartan sett from any random image (art, landscape, photo)
+async function generateTartanFromImage(file) {
+    if (!file) return;
+    let bitmap = null;
+    if (file.size <= 40000000) {
+        try {
+            bitmap = await createImageBitmap(file);
+        } catch (e) {
+            console.warn('Could not read image bitmap', e);
+        }
+    }
+    if (!bitmap) {
+        showAppMessage('msg_photo_err', true);
+        return;
+    }
+
+    // Downscale image to a small canvas (e.g. 128x128) to extract dominant colors fast
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(bitmap, 0, 0, 128, 128);
+    bitmap.close();
+
+    const imgData = ctx.getImageData(0, 0, 128, 128).data;
+    const colorVotes = new Map();
+
+    // Sample pixels and map each to the closest official SRT shade
+    const step = 4 * 4; // Sample every 4th pixel
+    for (let i = 0; i < imgData.length; i += step) {
+        const r = imgData[i], g = imgData[i + 1], b = imgData[i + 2], a = imgData[i + 3];
+        if (a < 128) continue;
+        const closest = findClosestSRTColor(r, g, b);
+        const count = colorVotes.get(closest) || 0;
+        colorVotes.set(closest, count + 1);
+    }
+
+    // Sort candidate SRT colors by frequency
+    const sortedColors = Array.from(colorVotes.entries()).sort((a, b) => b[1] - a[1]);
+    if (sortedColors.length === 0) {
+        showAppMessage('msg_photo_err', true);
+        return;
+    }
+
+    // Select 3 to 6 distinct color codes
+    const selectedSRT = [];
+    const seenCodes = new Set();
+    for (const [col] of sortedColors) {
+        if (!seenCodes.has(col.code)) {
+            seenCodes.add(col.code);
+            selectedSRT.push(col);
+            if (selectedSRT.length >= 5) break;
+        }
+    }
+    if (selectedSRT.length < 2) {
+        // Fallback: pick another distinct shade from palette
+        for (const col of SRT_PALETTE) {
+            if (!seenCodes.has(col.code)) {
+                selectedSRT.push(col);
+                break;
+            }
+        }
+    }
+
+    // Synthesize harmonious stripe widths based on color prominence
+    const targetThreads = parseInt(domElements.sett?.value, 10) || 240;
+    const minW = parseInt(domElements.minWidth?.value, 10) || 4;
+    const maxW = parseInt(domElements.maxWidth?.value, 10) || 64;
+
+    const numStripes = Math.min(8, Math.max(4, selectedSRT.length * 2 - 1));
+    const newStripes = [];
+    for (let i = 0; i < numStripes; i++) {
+        const color = selectedSRT[i % selectedSRT.length];
+        // Distribute width: dominant colors get wider stripes, accents get thinner stripes
+        let count = (i === 0 || i === numStripes - 1) ? Math.min(maxW, Math.max(minW * 2, 32)) : Math.max(minW, Math.round((Math.random() * (maxW - minW) + minW) / 2) * 2);
+        newStripes.push({ code: color.code, hex: color.hex, count: count });
+    }
+
+    // Scale stripes to match target sett
+    const scaled = rescaleStripes(newStripes, targetThreads);
+
+    if (typeof pushToHistory === 'function') pushToHistory();
+    tartanStripes = scaled;
+    userPalette = selectedSRT;
+    commitStructureSettings();
+    showAppMessage(null);
+    updateUserPaletteUI();
+    updateGeneratedListUI();
+    redrawTartan();
+    updateUndoButton();
+    saveState();
 }
 
 async function openEstimateFromFile(file) {
@@ -4806,3 +4970,168 @@ window.generatePatchworkZIP = async function() {
         patchworkExporting = false;
     }
 };
+
+// ==========================================
+// REDESIGN UI INTEGRATION: ATELIER / PLANCHE & TOPBAR
+// ==========================================
+
+function setupRedesignUI() {
+    // Mode switcher: Atelier / Planche
+    const btnNavAtelier = document.getElementById('nav-atelier');
+    const btnNavPlanche = document.getElementById('nav-planche');
+
+    function switchMode(mode) {
+        if (mode === 'planche') {
+            btnNavAtelier?.classList.remove('active');
+            btnNavPlanche?.classList.add('active');
+            if (domElements.previewBoard) domElements.previewBoard.hidden = true;
+            if (window.generatePatchwork) window.generatePatchwork();
+        } else {
+            btnNavPlanche?.classList.remove('active');
+            btnNavAtelier?.classList.add('active');
+            if (domElements.patchworkBoard) domElements.patchworkBoard.hidden = true;
+        }
+    }
+
+    if (btnNavAtelier) btnNavAtelier.addEventListener('click', () => switchMode('atelier'));
+    if (btnNavPlanche) btnNavPlanche.addEventListener('click', () => switchMode('planche'));
+
+    // Top Bar Dropdowns: Nouveau & Exporter
+    function setupDropdown(toggleId, menuId) {
+        const toggle = document.getElementById(toggleId);
+        const menu = document.getElementById(menuId);
+        if (!toggle || !menu) return;
+
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = !menu.hidden;
+            // Close all dropdowns
+            document.querySelectorAll('.top-dropdown-menu').forEach(m => m.hidden = true);
+            toggle.setAttribute('aria-expanded', !isOpen);
+            menu.hidden = isOpen;
+        });
+
+        document.addEventListener('click', () => {
+            menu.hidden = true;
+            toggle.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    setupDropdown('btn-menu-nouveau', 'menu-nouveau-list');
+    setupDropdown('btn-menu-exporter', 'menu-exporter-list');
+
+    // Action items for menu Nouveau
+    document.getElementById('action-new-random')?.addEventListener('click', () => {
+        window.handleGenerateClick();
+    });
+
+    document.getElementById('action-new-srt')?.addEventListener('click', () => {
+        const srtInput = document.getElementById('srt-inline-input');
+        if (srtInput) {
+            srtInput.focus();
+            srtInput.select();
+        }
+    });
+
+    const fileRandomImage = document.getElementById('import-random-image');
+    document.getElementById('action-new-image')?.addEventListener('click', () => {
+        fileRandomImage?.click();
+    });
+    fileRandomImage?.addEventListener('change', () => {
+        if (fileRandomImage.files?.[0]) {
+            generateTartanFromImage(fileRandomImage.files[0]);
+            fileRandomImage.value = '';
+        }
+    });
+
+    document.getElementById('action-new-photo')?.addEventListener('click', () => {
+        document.getElementById('import-photo')?.click();
+    });
+
+    document.getElementById('action-new-file')?.addEventListener('click', () => {
+        document.getElementById('import-file')?.click();
+    });
+
+    // Action items for menu Exporter
+    document.getElementById('action-export-png')?.addEventListener('click', () => {
+        if (typeof exportPNG === 'function') exportPNG();
+    });
+    document.getElementById('action-export-svg')?.addEventListener('click', () => {
+        if (typeof exportSVG === 'function') exportSVG();
+    });
+    document.getElementById('action-export-txt')?.addEventListener('click', () => {
+        if (typeof exportTXT === 'function') exportTXT();
+    });
+    document.getElementById('action-export-sheet')?.addEventListener('click', () => {
+        if (typeof openWeavingSheet === 'function') openWeavingSheet();
+    });
+    document.getElementById('action-export-all')?.addEventListener('click', () => {
+        if (typeof exportAll === 'function') exportAll();
+    });
+
+    // Sidebar tab buttons: Motif / Couleurs / Tissu
+    const tabBtns = document.querySelectorAll('.sidebar-tab-btn');
+    const tabPanes = document.querySelectorAll('.sidebar-tab-pane');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            tabBtns.forEach(b => {
+                b.classList.toggle('active', b === btn);
+                b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+            });
+            tabPanes.forEach(pane => {
+                const match = pane.id === ("tab-" + tabId);
+                pane.hidden = !match;
+            });
+        });
+    });
+
+    // Canvas overlay buttons
+    document.getElementById('canvas-zoom-in')?.addEventListener('click', () => {
+        if (typeof stepZoom === 'function') stepZoom(1);
+    });
+    document.getElementById('canvas-zoom-out')?.addEventListener('click', () => {
+        if (typeof stepZoom === 'function') stepZoom(-1);
+    });
+    document.getElementById('canvas-reset-view')?.addEventListener('click', () => {
+        if (typeof resetView === 'function') resetView();
+    });
+
+    // Interactive SRT inline bottom bar
+    const srtInlineInput = document.getElementById('srt-inline-input');
+    if (srtInlineInput) {
+        srtInlineInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyInlineSRT(srtInlineInput.value);
+            }
+        });
+        srtInlineInput.addEventListener('change', () => {
+            applyInlineSRT(srtInlineInput.value);
+        });
+    }
+
+    // Fabric View Object mode buttons
+    document.querySelectorAll('.view-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const mode = btn.getAttribute('data-view');
+            if (mode === 'flat') {
+                if (domElements.previewBoard) domElements.previewBoard.hidden = true;
+            } else {
+                if (typeof openObjectPreview === 'function') openObjectPreview();
+            }
+        });
+    });
+}
+
+function applyInlineSRT(code) {
+    if (!code) return;
+    const input = document.getElementById('import-text');
+    if (input) {
+        input.value = code;
+        if (typeof importSRT === 'function') importSRT();
+    }
+}

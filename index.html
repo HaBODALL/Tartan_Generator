@@ -512,7 +512,214 @@
         font-size: 12px;
     }
 
-    /* ==================== PATCHWORK BOARD ==================== */
+
+    /* REDESIGN TOPBAR & DROPDOWNS */
+    .top-nav-modes {
+      display: flex;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 0 12px;
+    }
+    .top-nav-btn {
+      background: transparent;
+      color: #999;
+      border: none;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .top-nav-btn:hover { color: #fff; background: #252525; }
+    .top-nav-btn.active {
+      background: #333;
+      color: #fff;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .top-dropdown {
+      position: relative;
+    }
+    .top-btn {
+      background: #222;
+      color: #ddd;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 5px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .top-btn:hover {
+      background: #2d2d2d;
+      border-color: #666;
+      color: #fff;
+    }
+    .top-dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 4px;
+      background: #1c1c1c;
+      border: 1px solid #444;
+      border-radius: 6px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+      min-width: 200px;
+      z-index: 1000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .top-dropdown-menu[hidden] { display: none; }
+    .top-dropdown-item {
+      background: transparent;
+      border: none;
+      color: #ccc;
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+      width: 100%;
+    }
+    .top-dropdown-item:hover, .top-dropdown-item:focus-visible {
+      background: #e74c3c;
+      color: #fff;
+      outline: none;
+    }
+
+    /* REDESIGN SIDEBAR TABS */
+    .sidebar-tabs {
+      display: flex;
+      background: #111;
+      border-bottom: 1px solid #333;
+      margin: 12px -16px 16px -16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .sidebar-tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #888;
+      padding: 10px 0;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .sidebar-tab-btn:hover { color: #ccc; }
+    .sidebar-tab-btn.active {
+      color: #fff;
+      border-bottom-color: #e74c3c;
+      background: rgba(231, 76, 60, 0.08);
+    }
+    .sidebar-tab-pane[hidden] { display: none; }
+
+    /* REDESIGN CANVAS CONTROLS & SRT BAR */
+    .canvas-overlay-controls {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 25;
+      display: flex;
+      gap: 6px;
+      background: rgba(15, 15, 15, 0.85);
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 3px;
+      backdrop-filter: blur(4px);
+    }
+    .canvas-ctrl-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #ccc;
+      border-radius: 4px;
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .canvas-ctrl-btn:hover { background: #333; color: #fff; }
+
+    .canvas-srt-bar {
+      position: absolute;
+      bottom: 12px;
+      left: 16px;
+      right: 16px;
+      z-index: 25;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: rgba(15, 15, 15, 0.88);
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 6px 12px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .canvas-srt-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #888;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .canvas-srt-input {
+      flex: 1;
+      background: #090909;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 13px;
+      padding: 5px 8px;
+      min-width: 0;
+    }
+    .canvas-srt-input:focus {
+      border-color: #3498db;
+      outline: none;
+    }
+
+    .view-mode-group {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .view-mode-btn {
+      flex: 1;
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #aaa;
+      padding: 6px 0;
+      font-size: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .view-mode-btn.active {
+      background: #e74c3c;
+      color: #fff;
+      border-color: #e74c3c;
+    }
+
+/* ==================== PATCHWORK BOARD ==================== */
     .patchwork-board {
         position: absolute;
         inset: 0;
@@ -688,14 +895,50 @@
       <h1>Random Tartan Generator</h1>
       <span class="version-badge">v1.2.4</span>
     </div>
-    <button class="btn-about-header" id="btn-about" data-i18n="btn_about" >ℹ️ À propos</button>
+
+    <div class="top-nav-modes" role="tablist" aria-label="Mode de travail">
+      <button class="top-nav-btn active" id="nav-atelier" role="tab" aria-selected="true" data-i18n="nav_atelier">Atelier</button>
+      <button class="top-nav-btn" id="nav-planche" role="tab" aria-selected="false" data-i18n="nav_planche">Planche</button>
+    </div>
+
+    <div class="top-actions">
+      <div class="top-dropdown">
+        <button type="button" class="top-btn" id="btn-menu-nouveau" aria-expanded="false" aria-haspopup="true">
+          <span data-i18n="menu_nouveau">Nouveau</span> &#x25BE;
+        </button>
+        <div class="top-dropdown-menu" id="menu-nouveau-list" hidden>
+          <button type="button" class="top-dropdown-item" id="action-new-random" data-i18n="menu_nouveau_random">Aléatoire</button>
+          <button type="button" class="top-dropdown-item" id="action-new-srt" data-i18n="menu_nouveau_srt">Depuis code SRT</button>
+          <button type="button" class="top-dropdown-item" id="action-new-photo" data-i18n="menu_nouveau_photo">Depuis une photo</button>
+          <button type="button" class="top-dropdown-item" id="action-new-image" data-i18n="menu_nouveau_image">Depuis une image (art/photo)</button>
+          <button type="button" class="top-dropdown-item" id="action-new-file" data-i18n="menu_nouveau_file">Rouvrir un fichier (.txt)</button>
+        </div>
+      </div>
+
+      <div class="top-dropdown">
+        <button type="button" class="top-btn" id="btn-menu-exporter" aria-expanded="false" aria-haspopup="true">
+          <span data-i18n="menu_exporter">Exporter</span> &#x25BE;
+        </button>
+        <div class="top-dropdown-menu" id="menu-exporter-list" hidden>
+          <button type="button" class="top-dropdown-item" id="action-export-png" data-i18n="menu_export_png">Image PNG (vue actuelle)</button>
+          <button type="button" class="top-dropdown-item" id="action-export-svg" data-i18n="menu_export_svg">Vecteur SVG (raccordable)</button>
+          <button type="button" class="top-dropdown-item" id="action-export-txt" data-i18n="menu_export_txt">Fichier détails (.txt)</button>
+          <button type="button" class="top-dropdown-item" id="action-export-sheet" data-i18n="menu_export_sheet">Fiche de tissage (imprimable)</button>
+          <button type="button" class="top-dropdown-item" id="action-export-all" data-i18n="menu_export_all">Tout exporter</button>
+        </div>
+      </div>
+
+      <button type="button" class="top-btn" id="btn-share-link" data-i18n-title="title_share_link" title="Un lien qui rouvre exactement ce motif">
+        🔗 <span data-i18n="btn_share_link">Copier le lien</span>
+      </button>
+
+      <input type="file" id="import-random-image" accept="image/*" hidden aria-hidden="true">
+    </div>
+
+    <button class="btn-about-header" id="btn-about" data-i18n="btn_about">ℹ️ À propos</button>
     <div class="lang-switch">
-      <button id="lang-btn-fr" class="lang-btn active" >
-        FR
-      </button>
-      <button id="lang-btn-en" class="lang-btn" >
-        EN
-      </button>
+      <button id="lang-btn-fr" class="lang-btn active">FR</button>
+      <button id="lang-btn-en" class="lang-btn">EN</button>
     </div>
   </header>
 
@@ -714,6 +957,19 @@
       </div>
     </div>
     <div id="canvas-container">
+        <!-- Canvas overlay navigation / zoom buttons -->
+        <div class="canvas-overlay-controls">
+            <button type="button" class="canvas-ctrl-btn" id="canvas-zoom-in" title="Zoomer" aria-label="Zoomer">+</button>
+            <button type="button" class="canvas-ctrl-btn" id="canvas-zoom-out" title="Dézoomer" aria-label="Dézoomer">−</button>
+            <button type="button" class="canvas-ctrl-btn" id="canvas-reset-view" title="Réinitialiser la vue (double-clic)" aria-label="Réinitialiser la vue">⌖</button>
+        </div>
+
+        <!-- Interactive bottom SRT code bar -->
+        <div class="canvas-srt-bar">
+            <label class="canvas-srt-label" for="srt-inline-input">CODE SRT :</label>
+            <input type="text" class="canvas-srt-input" id="srt-inline-input" placeholder="Ex: R/72 B8 K12 Y2..." aria-label="Code SRT interactif">
+        </div>
+
         <button id="btn-toggle-ui" class="btn-toggle-ui" aria-label="Afficher/Masquer le panneau" title="Afficher/Masquer le panneau" data-i18n-title="title_toggle_ui" data-i18n-label="title_toggle_ui">▶</button>
         <div id="preview-board" class="patchwork-board" role="dialog" aria-labelledby="preview-title" hidden>
             <div class="patchwork-bar">
@@ -736,38 +992,12 @@
     </div>
 
     <div class="sidebar" id="sidebar">
-      <!-- SECTION: IMPORT -->
-      <label style="font-size: 14px; color: #aaa; margin-bottom: 5px; display: block;" for="import-text">Code <span id="btn-srt-help" style="border-bottom: 1px dashed #888; cursor: pointer;" data-i18n-title="srt_help_tooltip" role="button" tabindex="0" aria-label="Aide sur le code SRT">SRT</span></label>
-      <div class="import-box" style="position: relative;">
-          <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import_short" placeholder="Coller ici (ex: K4 R32)..." >
-          <button class="btn-secondary" id="btn-import-srt" data-i18n="btn_import" >IMPORTER</button>
-          <button class="btn-secondary" id="btn-import-file" data-i18n="btn_import_file" data-i18n-title="title_import_file" title="Rouvrir un fichier texte exporté avec « Détails »">Fichier</button>
-          <input type="file" id="import-file" accept=".txt,text/plain" hidden aria-hidden="true">
-          <button class="btn-secondary" id="btn-import-photo" data-i18n="btn_import_photo" data-i18n-title="title_import_photo" title="Estimer un tartan à partir d'une photo. L'image reste sur votre appareil.">Photo</button>
-          <input type="file" id="import-photo" accept="image/*" hidden aria-hidden="true">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-          <label for="srt-examples" class="sr-only" data-i18n="opt_load_example">-- Charger un exemple --</label>
-          <select id="srt-examples" style="width:100%; background:#222; color:#ccc; border:1px solid #444; padding:5px; border-radius:3px;">
-              <option value="" data-i18n="opt_load_example">-- Charger un exemple --</option>
-              <option value="R/72 B8 K12 Y2 K12 W2 K12 G24 R8 K2 R/4">Royal Stewart (Sym)</option>
-              <option value="B/24 K4 B4 K4 B4 K20 G24 K6 G24 K4 G4 K4 G/24">Black Watch (Sym)</option>
-              <option value="K/3 W14 K52 DR18 K8 DR18 K8 DR18 K52 W14 K/6">Knights Breton (Sym)</option>
-              <option value="...K10 W10...">Shepherd Check (Asym)</option>
-              <option value="...R20 G20...">Simple Check (Asym)</option>
-              <option value="...R20 O20 Y20 G20 B20 DB20 P20...">Rainbow Check (Asym)</option>
-              <option value="...DR80 K80...">Lumberjack Check (Asym)</option>
-              <option value="...R20 W20...">Vichy Red Check (Asym)</option>
-          </select>
-      </div>
-
-      <!-- SECTION: GENERATION -->
+      <!-- PERMANENT TOP GENERATION HEADER IN SIDEBAR -->
       <div class="generate-row">
-          <button class="btn-generate" id="btn-generate" >
+          <button class="btn-generate" id="btn-generate">
               <span data-i18n="btn_generate">GÉNÉRER</span>
           </button>
-          <button class="btn-undo" id="btn-undo" disabled title="Aucun historique" >
+          <button class="btn-undo" id="btn-undo" disabled title="Aucun historique">
               ↩️ <span data-i18n="btn_undo">Annuler</span>
           </button>
       </div>
@@ -776,258 +1006,205 @@
 
       <div class="locks-container">
           <label class="checkbox-lock" for="lock-colors">
-              <input type="checkbox" id="lock-colors" > <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
+              <input type="checkbox" id="lock-colors"> <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
           </label>
           <label class="checkbox-lock" for="lock-structure">
-              <input type="checkbox" id="lock-structure" > <span data-i18n="chk_keep_struct">Conserver Structure</span>
+              <input type="checkbox" id="lock-structure"> <span data-i18n="chk_keep_struct">Conserver Structure</span>
           </label>
       </div>
 
-      <!-- SECTION: HISTORY -->
-      <details open>
-  <summary data-i18n="sec_history">Historique (10 motifs max)</summary>
-  <div class="details-content">
-      <div id="history-list" class="history-list"></div>
-  </div>
-</details>
+      <!-- TABS NAVIGATION -->
+      <div class="sidebar-tabs" role="tablist">
+          <button type="button" class="sidebar-tab-btn active" data-tab="motif" role="tab" aria-selected="true" data-i18n="tab_motif">Motif</button>
+          <button type="button" class="sidebar-tab-btn" data-tab="couleurs" role="tab" aria-selected="false" data-i18n="tab_couleurs">Couleurs</button>
+          <button type="button" class="sidebar-tab-btn" data-tab="tissu" role="tab" aria-selected="false" data-i18n="tab_tissu">Tissu</button>
+      </div>
 
-      <!-- SECTION: STRUCTURE -->
-      <details open>
-  <summary data-i18n="sec_structure">Structure du Motif</summary>
-  <div class="details-content">
-
-      <div class="control-group">
-        <div class="control-row">
-             <label class="checkbox-lock" for="check-sym" style="font-size:15px;">
-                 <input type="checkbox" id="check-sym" checked> <span data-i18n="chk_symmetry">Symétrie</span>
-             </label>
-             <label class="checkbox-lock" for="check-mode-check" style="font-size:15px; color:#888;">
-                 <input type="checkbox" id="check-mode-check" >
-                 <span data-i18n="chk_check_mode"> Damier</span>
-                 <span class="info-icon" data-i18n-title="desc_check_mode" title="Génère des bandes de largeurs égales" style="margin-left: 5px; cursor: help; font-size: 12px; color: #555;">ⓘ</span>
-             </label>
-        </div>
-
-        <div class="control-row" style="justify-content: flex-start; gap: 15px;">
-            <label id="lbl-weave-dir" data-i18n="lbl_weave_dir">Sens du tissage</label>
-            <div class="checkbox-lock" style="font-size:15px;">
-                <input type="radio" id="weave-z" name="weave-dir" value="Z" checked aria-labelledby="lbl-weave-dir"> <label for="weave-z" style="cursor:pointer;">Twist Z</label>
+      <!-- TAB 1: MOTIF -->
+      <div class="sidebar-tab-pane" id="tab-motif">
+          <div class="control-group">
+            <div class="control-row">
+                 <label class="checkbox-lock" for="check-sym" style="font-size:15px;">
+                     <input type="checkbox" id="check-sym" checked> <span data-i18n="chk_symmetry">Symétrie</span>
+                 </label>
+                 <label class="checkbox-lock" for="check-mode-check" style="font-size:15px; color:#888;">
+                     <input type="checkbox" id="check-mode-check">
+                     <span data-i18n="chk_check_mode"> Damier</span>
+                     <span class="info-icon" data-i18n-title="desc_check_mode" title="Génère des bandes de largeurs égales" style="margin-left: 5px; cursor: help; font-size: 12px; color: #555;">ⓘ</span>
+                 </label>
             </div>
-            <div class="checkbox-lock" style="font-size:15px;">
-                <input type="radio" id="weave-s" name="weave-dir" value="S" aria-labelledby="lbl-weave-dir"> <label for="weave-s" style="cursor:pointer;">Twist S</label>
+
+            <div class="control-row" style="justify-content: flex-start; gap: 15px;">
+                <label id="lbl-weave-dir" data-i18n="lbl_weave_dir">Sens du tissage</label>
+                <div class="checkbox-lock" style="font-size:15px;">
+                    <input type="radio" id="weave-z" name="weave-dir" value="Z" checked aria-labelledby="lbl-weave-dir"> <label for="weave-z" style="cursor:pointer;">Twist Z</label>
+                </div>
+                <div class="checkbox-lock" style="font-size:15px;">
+                    <input type="radio" id="weave-s" name="weave-dir" value="S" aria-labelledby="lbl-weave-dir"> <label for="weave-s" style="cursor:pointer;">Twist S</label>
+                </div>
             </div>
-        </div>
 
-        <hr style="border:0; border-top:1px solid #333; margin:3px 0;">
+            <hr style="border:0; border-top:1px solid #333; margin:3px 0;">
 
-        <!-- Nombre de bandes -->
-        <div class="control-row">
-            <label for="in-stripes" data-i18n="lbl_stripes">Nombre de bandes (Cible)</label>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <input type="number" id="in-stripes" value="6" min="2" max="20" style="width:60px;" >
-                <span id="stripes-actual" style="color:#888; font-size:11px;"></span>
+            <!-- Nombre de bandes -->
+            <div class="control-row">
+                <label for="in-stripes" data-i18n="lbl_stripes">Nombre de bandes (Cible)</label>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <input type="number" id="in-stripes" value="6" min="2" max="20" style="width:60px;">
+                    <span id="stripes-actual" style="color:#888; font-size:11px;"></span>
+                </div>
             </div>
-        </div>
-        <div class="control-row">
-            <label id="lbl-limits" data-i18n="lbl_limits">Limites de fils par bande (Min/Max)</label>
-            <div style="display:flex; gap:10px;">
-              <label for="in-minwidth" class="sr-only">Minimum fils par bande</label>
-              <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum">
-              <label for="in-maxwidth" class="sr-only">Maximum fils par bande</label>
-              <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum">
+            <div class="control-row">
+                <label id="lbl-limits" data-i18n="lbl_limits">Limites de fils par bande (Min/Max)</label>
+                <div style="display:flex; gap:10px;">
+                  <label for="in-minwidth" class="sr-only">Minimum fils par bande</label>
+                  <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum">
+                  <label for="in-maxwidth" class="sr-only">Maximum fils par bande</label>
+                  <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum">
+                </div>
             </div>
-        </div>
-        <!-- Sett / Densité -->
-        <div class="control-row">
-            <label for="in-sett" data-i18n="lbl_sett">Densité (Sett)</label>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <input type="number" id="in-sett" value="260" min="150" max="300" step="2" style="width:70px;" >
-                <span id="sett-actual" style="color:#888; font-size:11px;"></span>
+            <!-- Sett / Densité -->
+            <div class="control-row">
+                <label for="in-sett" data-i18n="lbl_sett">Densité (Sett)</label>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <input type="number" id="in-sett" value="260" min="150" max="300" step="2" style="width:70px;">
+                    <span id="sett-actual" style="color:#888; font-size:11px;"></span>
+                </div>
             </div>
-        </div>
+          </div>
+
+          <div style="margin: 15px 0;">
+              <label for="srt-examples" style="font-size:12px; color:#888; display:block; margin-bottom:4px;" data-i18n="opt_load_example">-- Charger un exemple --</label>
+              <select id="srt-examples" style="width:100%; background:#222; color:#ccc; border:1px solid #444; padding:6px; border-radius:3px;">
+                  <option value="" data-i18n="opt_load_example">-- Charger un exemple --</option>
+                  <option value="R/72 B8 K12 Y2 K12 W2 K12 G24 R8 K2 R/4">Royal Stewart (Sym)</option>
+                  <option value="B/24 K4 B4 K4 B4 K20 G24 K6 G24 K4 G4 K4 G/24">Black Watch (Sym)</option>
+                  <option value="K/3 W14 K52 DR18 K8 DR18 K8 DR18 K52 W14 K/6">Knights Breton (Sym)</option>
+                  <option value="...K10 W10...">Shepherd Check (Asym)</option>
+                  <option value="...R20 G20...">Simple Check (Asym)</option>
+                  <option value="...R20 O20 Y20 G20 B20 DB20 P20...">Rainbow Check (Asym)</option>
+                  <option value="...DR80 K80...">Lumberjack Check (Asym)</option>
+                  <option value="...R20 W20...">Vichy Red Check (Asym)</option>
+              </select>
+          </div>
+
+          <!-- SECTION: HISTORY -->
+          <details open>
+              <summary data-i18n="sec_history">Historique (10 motifs max)</summary>
+              <div class="details-content">
+                  <div id="history-list" class="history-list"></div>
+              </div>
+          </details>
       </div>
 
-        </div>
-</details>
+      <!-- TAB 2: COULEURS -->
+      <div class="sidebar-tab-pane" id="tab-couleurs" hidden>
+          <div style="margin-bottom:12px;">
+              <span style="font-size:12px; color:#aaa; font-weight:600;" data-i18n="sec_palette">Palette sélectionnée (Max 8)</span>
+              <div id="color-list" style="margin-top:8px;"></div>
+          </div>
 
-<!-- SECTION: ZOOM & ECHELLE -->
-      <details >
-  <summary data-i18n="sec_zoom">Zoom et Échelle</summary>
-  <div class="details-content">
+          <details open>
+              <summary><span data-i18n="sec_readability">Lisibilité des couleurs</span> <span id="readability-badge"></span></summary>
+              <div class="details-content">
+                  <div id="readability-list" class="readability-list" aria-live="polite"></div>
+                  <div class="control-row">
+                      <label for="vision-select" data-i18n="lbl_vision">Simuler la vision</label>
+                      <select id="vision-select" class="patchwork-select">
+                          <option value="normal" data-i18n="vision_normal">Normale</option>
+                          <option value="protan" data-i18n="vision_protan">Protanopie (rouge)</option>
+                          <option value="deuter" data-i18n="vision_deuter">Deutéranopie (vert)</option>
+                          <option value="tritan" data-i18n="vision_tritan">Tritanopie (bleu)</option>
+                      </select>
+                  </div>
+                  <p class="read-note" data-i18n="note_vision">À l'écran seulement : les exports gardent les vraies couleurs.</p>
+              </div>
+          </details>
+      </div>
 
-      <div class="control-group">
-
-        <div class="control-row">
-            <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <select id="thread-type" >
-                    <option value="custom" data-i18n="opt_custom">Personnalisé</option>
-                    <option value="0.69" data-i18n="opt_merino">Mérinos</option>
-                    <option value="0.83" data-i18n="opt_cotton">Coton</option>
-                    <option value="1.11" data-i18n="opt_wool">Laine</option>
-                </select>
-                <label for="in-threadmm" class="sr-only" data-i18n="lbl_thread_mm">Diamètre du fil (mm)</label>
-                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;">
-                <span style="color:#666; font-size:11px;">mm</span>
+      <!-- TAB 3: TISSU -->
+      <div class="sidebar-tab-pane" id="tab-tissu" hidden>
+          <div class="control-group">
+            <label style="font-size:12px; color:#aaa; font-weight:600; margin-bottom:6px; display:block;" data-i18n="lbl_view_mode">Modes d'aperçu</label>
+            <div class="view-mode-group">
+                <button type="button" class="view-mode-btn active" data-view="flat" data-i18n="view_flat">À plat</button>
+                <button type="button" class="view-mode-btn" data-view="scarf" data-i18n="view_scarf">Écharpe</button>
+                <button type="button" class="view-mode-btn" data-view="cushion" data-i18n="view_cushion">Coussin</button>
+                <button type="button" class="view-mode-btn" data-view="kilt" data-i18n="view_kilt">Kilt</button>
             </div>
-        </div>
 
-        <div class="control-row">
-            <label for="in-zoom" data-i18n="lbl_zoom" data-i18n-title="title_zoom" title="Molette sur le motif ou touches + et − pour zoomer. Glisser ou flèches pour déplacer, double-clic pour revenir au début">Zoom Visuel</label>
-            <div class="zoom-controls">
-                <button type="button" class="zoom-btn" id="btn-zoom-out" data-i18n-title="btn_zoom_out" data-i18n-label="btn_zoom_out" title="Dézoomer" aria-label="Dézoomer">−</button>
-                <label for="zoom-slider" class="sr-only" data-i18n="lbl_zoom_slider">Zoom (curseur)</label>
-                <input type="range" id="zoom-slider" min="0" max="1000" step="1" value="437">
-                <button type="button" class="zoom-btn" id="btn-zoom-in" data-i18n-title="btn_zoom_in" data-i18n-label="btn_zoom_in" title="Zoomer" aria-label="Zoomer">+</button>
-                <input type="number" id="in-zoom" value="2.0" step="0.1" min="0.5" max="12">
+            <div class="control-row">
+                <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <select id="thread-type">
+                        <option value="custom" data-i18n="opt_custom">Personnalisé</option>
+                        <option value="0.69" data-i18n="opt_merino">Mérinos</option>
+                        <option value="0.83" data-i18n="opt_cotton">Coton</option>
+                        <option value="1.11" data-i18n="opt_wool">Laine</option>
+                    </select>
+                    <label for="in-threadmm" class="sr-only" data-i18n="lbl_thread_mm">Diamètre du fil (mm)</label>
+                    <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;">
+                    <span style="color:#666; font-size:11px;">mm</span>
+                </div>
             </div>
-        </div>
 
-        <div class="control-row">
-            <label for="effect-relief" data-i18n="opt_eff_relief">Relief des fils</label>
-            <input type="checkbox" id="effect-relief">
-        </div>
+            <div class="control-row">
+                <label for="effect-relief" data-i18n="opt_eff_relief">Relief des fils</label>
+                <input type="checkbox" id="effect-relief">
+            </div>
 
-        <div class="control-row relief-strength-row" hidden>
-            <label for="relief-strength" data-i18n="lbl_relief_strength">Intensité du relief</label>
-            <span style="display:flex; align-items:center; gap:6px;">
-                <input type="range" id="relief-strength" min="0" max="200" step="10" value="100" style="width:110px;">
-                <output id="relief-strength-value" for="relief-strength" style="font-size:11px; color:#aaa; min-width:38px; text-align:right;">100 %</output>
-            </span>
-        </div>
+            <div class="control-row relief-strength-row" hidden>
+                <label for="relief-strength" data-i18n="lbl_relief_strength">Intensité du relief</label>
+                <span style="display:flex; align-items:center; gap:6px;">
+                    <input type="range" id="relief-strength" min="0" max="200" step="10" value="100" style="width:110px;">
+                    <output id="relief-strength-value" for="relief-strength" style="font-size:11px; color:#aaa; min-width:38px; text-align:right;">100 %</output>
+                </span>
+            </div>
 
-        <div class="control-row">
-            <label for="yarn-irregular" data-i18n="lbl_yarn" data-i18n-title="title_yarn" title="Légères variations de teinte d'un fil à l'autre, comme sur une vraie laine">Irrégularité de la laine</label>
-            <input type="checkbox" id="yarn-irregular">
-        </div>
+            <div class="control-row">
+                <label for="yarn-irregular" data-i18n="lbl_yarn" data-i18n-title="title_yarn" title="Légères variations de teinte d'un fil à l'autre, comme sur une vraie laine">Irrégularité de la laine</label>
+                <input type="checkbox" id="yarn-irregular">
+            </div>
 
-        <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
-            <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
-        </div>
-        <button type="button" class="btn-secondary btn-preview-objects" id="btn-preview-objects" data-i18n="btn_preview_objects">Aperçu sur objets</button>
-
+            <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
+                <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
+            </div>
+            <button type="button" class="btn-secondary btn-preview-objects" id="btn-preview-objects" data-i18n="btn_preview_objects" style="display:none;">Aperçu sur objets</button>
+          </div>
       </div>
 
-        </div>
-</details>
-
-<!-- SECTION: PALETTE -->
-      <details >
-  <summary data-i18n="sec_palette">Palette de couleurs sélectionnées (Max 8)</summary>
-  <div class="details-content">
-
-      <div id="color-list"></div>
-
-        </div>
-</details>
-
-<details>
-  <summary><span data-i18n="sec_readability">Lisibilité des couleurs</span> <span id="readability-badge"></span></summary>
-  <div class="details-content">
-      <div id="readability-list" class="readability-list" aria-live="polite"></div>
-      <div class="control-row">
-          <label for="vision-select" data-i18n="lbl_vision">Simuler la vision</label>
-          <select id="vision-select" class="patchwork-select">
-              <option value="normal" data-i18n="vision_normal">Normale</option>
-              <option value="protan" data-i18n="vision_protan">Protanopie (rouge)</option>
-              <option value="deuter" data-i18n="vision_deuter">Deutéranopie (vert)</option>
-              <option value="tritan" data-i18n="vision_tritan">Tritanopie (bleu)</option>
-          </select>
-      </div>
-      <p class="read-note" data-i18n="note_vision">À l'écran seulement : les exports gardent les vraies couleurs.</p>
-  </div>
-</details>
-
-<!-- SECTION: EXPORT -->
-      <details >
-  <summary data-i18n="sec_srt">Code SRT du Tartan</summary>
-  <div class="details-content">
-
-      <div class="srt-container">
-          <label for="srt-display" class="sr-only" data-i18n="sec_srt">Code SRT du Tartan</label>
-          <textarea id="srt-display" class="srt-display" readonly></textarea>
-          <button id="btn-copy-srt" class="btn-copy-srt" aria-label="Copier le code SRT" title="Copier">📋</button>
-          <div id="copy-toast" class="copy-toast" aria-live="polite">Copié !</div>
+      <!-- HIDDEN ORIGINAL INPUTS TO PRESERVE COMPATIBILITY -->
+      <div style="display:none;">
+          <input type="text" id="import-text" class="import-input">
+          <button id="btn-import-srt">IMPORTER</button>
+          <button id="btn-import-file">Fichier</button>
+          <input type="file" id="import-file" accept=".txt,text/plain">
+          <button id="btn-import-photo">Photo</button>
+          <input type="file" id="import-photo" accept="image/*">
+          <span id="btn-srt-help">SRT</span>
+          <textarea id="srt-display"></textarea>
+          <button id="btn-copy-srt"></button>
+          <div id="copy-toast"></div>
+          <button id="btn-export-png"></button>
+          <button id="btn-export-svg"></button>
+          <button id="btn-export-txt"></button>
+          <button id="btn-weaving-sheet"></button>
+          <button id="btn-export-all"></button>
+          <select id="patchwork-mode"><option value="random">Aléatoire</option><option value="criteria">Par critères</option></select>
+          <select id="patchwork-axis-x"><option value="stripes">Bandes</option></select>
+          <select id="patchwork-axis-y"><option value="colors">Couleurs</option></select>
+          <div id="patchwork-qty-row"><input type="number" id="patchwork-qty" value="12"></div>
+          <input type="number" id="patchwork-size" value="300">
+          <select id="patchwork-scale"><option value="fit">Motif entier</option></select>
+          <div id="patchwork-info"></div>
+          <button id="btn-generate-patchwork"></button>
+          <input type="range" id="zoom-slider" min="0" max="1000" value="437">
+          <button id="btn-zoom-in"></button>
+          <button id="btn-zoom-out"></button>
+          <input type="number" id="in-zoom" value="2.0">
       </div>
 
-        </div>
-</details>
-
-<details >
-  <summary data-i18n="sec_export">Export</summary>
-  <div class="details-content">
-
-      <div class="export-buttons">
-          <button class="btn-export" id="btn-export-png" >Image</button>
-          <button class="btn-export" id="btn-export-svg" data-i18n-title="title_export_svg" title="Un motif complet en vectoriel, raccordable, à la taille réelle du tissu">SVG</button>
-          <button class="btn-export" id="btn-export-txt" data-i18n="btn_details" >Détails</button>
-          <button class="btn-export" id="btn-weaving-sheet" data-i18n="btn_weaving_sheet" data-i18n-title="title_weaving_sheet" title="Une fiche imprimable : ordre des fils et quantité de fil par couleur">Fiche de tissage</button>
-          <button class="btn-export" id="btn-share-link" data-i18n="btn_share_link" data-i18n-title="title_share_link" title="Un lien qui rouvre exactement ce motif">Copier le lien</button>
-          <button class="btn-export btn-primary" id="btn-export-all" data-i18n="btn_export_all" >Exporter tout</button>
-      </div>
-
-        </div>
-</details>
-
-<details >
-  <summary data-i18n="sec_patchwork">Patchwork (planche d'inspiration)</summary>
-  <div class="details-content">
-
-      <div class="control-group" style="margin-bottom: 12px;">
-      <div class="control-row">
-          <label for="patchwork-mode" data-i18n="lbl_patch_mode">Mode</label>
-          <select id="patchwork-mode" class="patchwork-select">
-              <option value="random" data-i18n="opt_mode_random">Aléatoire</option>
-              <option value="criteria" data-i18n="opt_mode_criteria">Par critères</option>
-          </select>
-      </div>
-      <div class="control-row patchwork-criteria-row" hidden>
-          <label for="patchwork-axis-x" data-i18n="lbl_axis_x">Critère en colonnes</label>
-          <select id="patchwork-axis-x" class="patchwork-select">
-              <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
-              <option value="stripes" data-i18n="axis_stripes">Nombre de bandes</option>
-              <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
-              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
-              <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
-          </select>
-      </div>
-      <div class="control-row patchwork-criteria-row" hidden>
-          <label for="patchwork-axis-y" data-i18n="lbl_axis_y">Critère en lignes</label>
-          <select id="patchwork-axis-y" class="patchwork-select">
-              <option value="none" data-i18n="axis_none">Aucun</option>
-              <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
-              <option value="stripes" selected data-i18n="axis_stripes">Nombre de bandes</option>
-              <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
-              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
-              <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
-          </select>
-      </div>
-      <div class="control-row" id="patchwork-qty-row">
-          <label for="patchwork-qty" data-i18n="lbl_patch_qty">Quantité (10-100)</label>
-          <input type="number" id="patchwork-qty" value="12" min="10" max="100" class="input-number">
-      </div>
-      <div class="control-row">
-          <label for="patchwork-size" data-i18n="lbl_patch_size">Tuile à l'export (px)</label>
-          <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number">
-      </div>
-      <div class="control-row" style="margin-bottom: 5px;">
-          <label for="patchwork-scale" data-i18n="lbl_patch_scale">Échelle des tuiles</label>
-          <select id="patchwork-scale" style="background:#222; color:#ccc; border:1px solid #444; padding:4px; border-radius:3px; font-size:12px;">
-              <option value="fit" data-i18n="opt_scale_fit">Motif entier</option>
-              <option value="zoom" data-i18n="opt_scale_zoom">Zoom actuel</option>
-          </select>
-      </div>
-      <div style="font-size: 11px; color: #888; text-align: center;" id="patchwork-info">
-          <!-- Dynamic info here -->
-      </div>
-      </div>
-      <button class="btn-primary btn-open-board" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork">OUVRIR LA PLANCHE</button>
-
-        </div>
-</details>
-
-<div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
-
+      <div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
     </div>
   </div>
 
