@@ -63,3 +63,7 @@
 ## 2026-11-05 - Weave one repeat into ImageData instead of issuing canvas rects
 **Learning:** A 2/2 twill repeats every lcm(threads, 4) threads, so drawing it thread by thread with `rect()` costs far more than the pattern requires (up to 3 s at zoom 0.5 on a 4K canvas). Writing one repeat at one pixel per thread into a `Uint32Array` over `ImageData` and filling the canvas with a scaled `createPattern` took about 34 ms there, and is pixel-identical at integer zooms.
 **Action:** Do not reintroduce per-thread canvas calls or micro-optimize them in `redrawTartan`. The cost now depends on the sett size, so optimize `fillTwillPixels` if rendering ever needs to go faster. Expanding only the threads that are visible also keeps oversized imports cheap.
+
+## 2026-11-12 - Relief: cache the four shaded blocks of each color
+**Learning:** PRs #83, #86 and #87 proposed this on code older than the pan and window support (`weftColors`, `originX`, `originY`), so they conflicted and would have dropped those parameters. Ported onto the current signature, copying precomputed k x k blocks is pixel-identical and 3 to 6 times faster (240x240 at k=3: 7.7 ms to 1.3 ms; 480x480 at k=4: 31 ms to 5 ms). Full unrolling for k=8 and `Uint32Array.set` per row did not add enough to justify the extra code.
+**Action:** Done in `fillTwillRelief`; do not propose it again. Any change to this function must keep `weftColors`, `originX` and `originY`, and pass the test that compares it with a per-pixel fill.
