@@ -97,7 +97,8 @@ If the application shows a blank screen or a button does not work:
 | Text import | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
 | Weaving sheet | `buildWeavingSheetData`, `openWeavingSheet` |
-| Object preview | `averageSettColors`, `renderObjectPreview` |
+| Object views | `setObjectView`, `OBJECT_VIEWS`, `averageSettColors`, `renderObjectPreview` |
+| SRT bar | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Readability | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Photo estimate | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
 | Proposals and stars | `estimateProposals`, `blendProposals`, `setProposalStar`, `refineProposals` |
@@ -208,7 +209,8 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Import texte | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
 | Fiche de tissage | `buildWeavingSheetData`, `openWeavingSheet` |
-| Aperçu sur objets | `averageSettColors`, `renderObjectPreview` |
+| Vues d'objets | `setObjectView`, `OBJECT_VIEWS`, `averageSettColors`, `renderObjectPreview` |
+| Barre SRT | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Lisibilité | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Estimation depuis une photo | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
 | Propositions et étoiles | `estimateProposals`, `blendProposals`, `setProposalStar`, `refineProposals` |

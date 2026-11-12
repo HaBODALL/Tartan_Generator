@@ -191,7 +191,7 @@ let domElements = {
     lockColors: null,
     lockStructure: null,
     genId: null,
-    srtDisplay: null,
+    srtBarSize: null,
     undoBtn: null,
     effectRelief: null,
     btnToggleUI: null,
@@ -205,7 +205,7 @@ let currentLang = 'fr';
 const TRANSLATIONS = {
     fr: {
         ph_import: "Coller le code SRT ici (ex: K4 R32)...",
-        btn_import: "IMPORTER",
+        btn_import: "✓ Valider",
         opt_load_example: "-- Charger un exemple --",
         btn_generate: "GÉNÉRER",
         chk_keep_colors: "Conserver Couleurs",
@@ -409,11 +409,18 @@ const TRANSLATIONS = {
         tab_pattern: "Motif",
         tab_colors: "Couleurs",
         tab_fabric: "Tissu",
+        view_label: "Vue",
+        view_cloth: "Tissu",
+        strip_history: "Historique",
+        title_import: "Appliquer le code (Entrée). Échap remet le code du motif.",
+        title_copy_srt: "Copier le code SRT",
+        msg_copied: "Copié !",
+        srt_bar_size: "1 motif = %c cm · %n fils",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
         ph_import: "Paste SRT code here (e.g. K4 R32)...",
-        btn_import: "IMPORT",
+        btn_import: "✓ Apply",
         opt_load_example: "-- Load Example --",
         btn_generate: "GENERATE",
         chk_keep_colors: "Keep Colors",
@@ -617,6 +624,13 @@ const TRANSLATIONS = {
         tab_pattern: "Pattern",
         tab_colors: "Colors",
         tab_fabric: "Fabric",
+        view_label: "View",
+        view_cloth: "Cloth",
+        strip_history: "History",
+        title_import: "Apply the code (Enter). Esc puts back the code of the pattern.",
+        title_copy_srt: "Copy the SRT code",
+        msg_copied: "Copied!",
+        srt_bar_size: "1 repeat = %c cm · %n threads",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -750,7 +764,7 @@ function cacheDomElements() {
     domElements.lockColors = document.getElementById('lock-colors');
     domElements.lockStructure = document.getElementById('lock-structure');
     domElements.genId = document.getElementById('gen-id');
-    domElements.srtDisplay = document.getElementById('srt-display');
+    domElements.srtBarSize = document.getElementById('srt-bar-size');
     domElements.undoBtn = document.getElementById('btn-undo');
     domElements.effectRelief = document.getElementById('effect-relief');
     domElements.zoomSlider = document.getElementById('zoom-slider');
@@ -808,10 +822,8 @@ function cacheDomElements() {
     domElements.readabilityList = document.getElementById('readability-list');
     domElements.readabilityBadge = document.getElementById('readability-badge');
     domElements.visionSelect = document.getElementById('vision-select');
-    domElements.btnPreviewObjects = document.getElementById('btn-preview-objects');
     domElements.previewBoard = document.getElementById('preview-board');
     domElements.previewCanvas = document.getElementById('preview-canvas');
-    domElements.btnPreviewClose = document.getElementById('btn-preview-close');
     domElements.btnWeavingSheet = document.getElementById('btn-weaving-sheet');
     domElements.sheetModal = document.getElementById('sheet-modal');
     domElements.sheetBody = document.getElementById('sheet-body');
@@ -887,7 +899,24 @@ function bindEvents() {
     if (btnCloseAbout) btnCloseAbout.addEventListener('click', closeAboutModal);
 
     const btnImportSrt = domElements.btnImportSrt;
-    if (btnImportSrt) btnImportSrt.addEventListener('click', importSRT);
+    if (btnImportSrt) btnImportSrt.addEventListener('click', () => applySrtBar(false));
+    const srtField = domElements.importText;
+    if (srtField) {
+        srtField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applySrtBar(false);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                showSrtInBar(true);
+            }
+        });
+        srtField.addEventListener('input', () => {
+            srtField.removeAttribute('aria-invalid');
+            srtField.classList.toggle('edited', srtField.value.trim().toUpperCase() !== currentSrtCode());
+        });
+        srtField.addEventListener('change', () => applySrtBar(true));
+    }
 
     const importPhoto = document.getElementById('import-photo');
     const btnImportPhoto = document.getElementById('btn-import-photo');
@@ -914,7 +943,7 @@ function bindEvents() {
     const menuNewRandom = document.getElementById('menu-new-random');
     if (menuNewRandom) menuNewRandom.addEventListener('click', () => handleGenerateClick());
     const menuNewSrt = document.getElementById('menu-new-srt');
-    if (menuNewSrt) menuNewSrt.addEventListener('click', () => revealInPanel(domElements.importText));
+    if (menuNewSrt) menuNewSrt.addEventListener('click', () => { domElements.importText?.focus(); domElements.importText?.select(); });
     const menuNewExample = document.getElementById('menu-new-example');
     if (menuNewExample) menuNewExample.addEventListener('click', () => revealInPanel(domElements.srtExamples));
     const btnResetView = document.getElementById('btn-reset-view');
@@ -1062,8 +1091,7 @@ function bindEvents() {
             domElements.canvasContainer.dataset.vision = domElements.visionSelect.value;
         });
     }
-    if (domElements.btnPreviewObjects) domElements.btnPreviewObjects.addEventListener('click', openObjectPreview);
-    if (domElements.btnPreviewClose) domElements.btnPreviewClose.addEventListener('click', closeObjectPreview);
+    document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => setObjectView(btn.dataset.view)));
     watchPreviewStage();
     if (domElements.btnWeavingSheet) domElements.btnWeavingSheet.addEventListener('click', openWeavingSheet);
     if (domElements.btnSheetPrint) domElements.btnSheetPrint.addEventListener('click', () => window.print());
@@ -1080,10 +1108,9 @@ function bindEvents() {
     const btnExportAll = domElements.btnExportAll;
     if (btnExportAll) btnExportAll.addEventListener('click', exportAll);
 
-    if (domElements.btnCopySrt && domElements.copyToast && domElements.srtDisplay) {
+    if (domElements.btnCopySrt && domElements.copyToast) {
         domElements.btnCopySrt.addEventListener('click', () => {
-            domElements.srtDisplay.select();
-            navigator.clipboard.writeText(domElements.srtDisplay.value).then(() => {
+            navigator.clipboard.writeText(currentSrtCode()).then(() => {
                 domElements.copyToast.classList.add('show');
                 setTimeout(() => {
                     domElements.copyToast.classList.remove('show');
@@ -1175,8 +1202,9 @@ document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             e.preventDefault();
             closeObjectPreview();
+            return;
         }
-        return;
+        if (['+', '=', '-', '_'].includes(e.key) || e.key.startsWith('Arrow')) return;
     }
 
     // While the mood board is open, only Escape is handled (it closes the board)
@@ -1288,6 +1316,7 @@ function setLanguage(lang) {
     updateUndoButton();
     renderAppMessage();
     updateReadabilityUI();
+    updateScaleInfo(); // The size of a repeat in the SRT bar
     if (isEstimateOpen()) selectProposal(estimateState.selected);
     if (isPatchworkOpen()) renderPatchworkBoard();
     if (isPreviewOpen()) renderObjectPreview();
@@ -1828,7 +1857,6 @@ function updateUserPaletteUI() {
 
 function updateGeneratedListUI() {
     let container = domElements.generatedStripesList;
-    let srtInput = domElements.srtDisplay;
     let idLabel = domElements.genId;
 
     if(idLabel) idLabel.innerText = generationID;
@@ -1866,7 +1894,7 @@ function updateGeneratedListUI() {
         container.appendChild(fragment);
     }
 
-    if(srtInput) srtInput.value = srtString;
+    showSrtInBar();
     if (typeof matchSrtWithExamples === 'function') matchSrtWithExamples();
 }
 
@@ -2443,7 +2471,13 @@ function getTileScale(effectType, zoom) {
 
 let weaveTileCanvas = null;
 let panPointer = null; // Pointer dragging the pattern
-let previewOpener = null;
+let objectView = 'scarf';
+// Size of each object in cm; the scarf has fringes at both ends
+const OBJECT_VIEWS = {
+    scarf: { w: 30, h: 180, fringe: 6 },
+    cushion: { w: 45, h: 45, fringe: 0 },
+    kilt: { w: 60, h: 60, fringe: 0 },
+};
 let previewStageSize = '';
 let previewLayoutTimer = 0;
 
@@ -2539,6 +2573,11 @@ function updateScaleInfo(totalThreadsOverride) {
 
     let el = domElements.realWidth;
     if(el) el.innerText = sizeCm.toFixed(1) + " cm";
+    if (domElements.srtBarSize) {
+        domElements.srtBarSize.textContent = TRANSLATIONS[currentLang].srt_bar_size
+            .replace('%c', sizeCm.toFixed(1).replace('.', currentLang === 'fr' ? ',' : '.'))
+            .replace('%n', totalThreads);
+    }
 
     let elCount = domElements.threadCount;
     if(elCount) elCount.innerText = totalThreads + " threads";
@@ -2661,7 +2700,7 @@ function exportTXT() {
 
     // Code SRT
     content += `CODE SRT:\n`;
-    content += domElements.srtDisplay?.value || 'N/A';
+    content += currentSrtCode() || 'N/A';
     content += `\n\n`;
     // Code Ink/Stitch
     let isSymmetric = domElements.sym?.checked || false;
@@ -4199,54 +4238,61 @@ function renderObjectPreview() {
     const isSymmetric = domElements.sym?.checked || false;
     const { sequence, widthCm } = buildWeavingSheetData(tartanStripes, isSymmetric, threadMm);
 
-    // Scene in cm: scarf 30 x 180 with its fringes, cushion 45, kilt 60; labels take fixed pixels
+    // One object, as large as the stage allows, with a 10 cm bar and the size of a repeat under it
+    const view = OBJECT_VIEWS[objectView] ? objectView : 'scarf';
+    const o = OBJECT_VIEWS[view];
     const labelPx = 22 * density;
-    const scale = Math.min(canvas.width / 185, (canvas.height - labelPx * 2) / 192);
+    const margin = 16 * density;
+    const scale = Math.min((canvas.width - margin * 2) / o.w, (canvas.height - labelPx * 3 - margin) / (o.h + o.fringe * 2));
     const threadsPerPixel = 10 / threadMm / scale;
     const make = (w, h) => makeClothCanvas(sequence, threadsPerPixel, w, h);
     const px = cm => Math.max(1, Math.round(cm * scale));
 
-    const sceneWidth = px(175);
-    let x = Math.round((canvas.width - sceneWidth) / 2);
-    const top = labelPx + px(6);
+    const x = Math.round((canvas.width - px(o.w)) / 2);
+    const top = Math.round(labelPx + px(o.fringe));
+    if (view === 'scarf') drawScarf(ctx, make, x, top, px(o.w), px(o.h), px(o.fringe));
+    else if (view === 'cushion') drawCushion(ctx, make, x, top, px(o.w));
+    else drawKilt(ctx, make, x, top, px(o.w), px(o.h));
+
     ctx.font = `${Math.round(12 * density)}px sans-serif`;
     ctx.textBaseline = 'bottom';
     ctx.fillStyle = '#ccc';
-    const label = (text, lx) => ctx.fillText(text, lx, top - px(6) - 2);
+    const barY = top + px(o.h) + px(o.fringe) + Math.round(labelPx * 1.2);
+    ctx.fillRect(x, barY, px(10), Math.max(2, Math.round(2 * density)));
+    ctx.fillText('10 cm', x, barY - 3);
+    ctx.fillText(t.preview_repeat.replace('%', widthCm.toFixed(1)), x, barY + labelPx);
+    canvas.setAttribute('aria-label', `${t['preview_' + view]} : ${t.preview_title}`);
+}
 
-    label(t.preview_scarf, x);
-    drawScarf(ctx, make, x, top, px(30), px(180), px(6));
-    x += px(50);
-    label(t.preview_cushion, x);
-    drawCushion(ctx, make, x, top, px(45));
-    const cushionX = x;
-    x += px(65);
-    label(t.preview_kilt, x);
-    drawKilt(ctx, make, x, top, px(60), px(60));
-
-    // Scale bar and size of a repeat, in the free space under the small objects
-    const barY = top + px(60) + labelPx * 2;
-    ctx.fillStyle = '#ccc';
-    ctx.fillRect(cushionX, barY, px(10), Math.max(2, Math.round(2 * density)));
-    ctx.fillText('10 cm', cushionX, barY - 3);
-    ctx.fillText(t.preview_repeat.replace('%', widthCm.toFixed(1)), cushionX, barY + labelPx);
-    canvas.setAttribute('aria-label', t.preview_title);
+// The canvas shows the cloth, or one object made of it: a view, not a window, so the settings stay usable
+function setObjectView(view) {
+    if (view === 'cloth' || !OBJECT_VIEWS[view]) {
+        closeObjectPreview();
+        return;
+    }
+    objectView = view;
+    openObjectPreview();
 }
 
 function openObjectPreview() {
     if (!domElements.previewBoard || tartanStripes.length === 0) return;
     if (isPatchworkOpen()) closePatchworkBoard();
-    previewOpener = document.activeElement;
     domElements.previewBoard.hidden = false;
+    syncViewSwitch();
     renderObjectPreview();
-    domElements.btnPreviewClose?.focus();
 }
 
 function closeObjectPreview() {
     if (!isPreviewOpen()) return;
+    const hadFocus = domElements.previewBoard.contains(document.activeElement) || !!document.activeElement?.closest('.view-switch');
     domElements.previewBoard.hidden = true;
-    (previewOpener?.isConnected ? previewOpener : domElements.btnPreviewObjects)?.focus();
-    previewOpener = null;
+    syncViewSwitch();
+    if (hadFocus) document.querySelector('.view-btn[data-view="cloth"]')?.focus();
+}
+
+function syncViewSwitch() {
+    const current = isPreviewOpen() ? objectView : 'cloth';
+    document.querySelectorAll('.view-btn').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.view === current)));
 }
 
 function watchPreviewStage() {
@@ -4467,12 +4513,11 @@ function injectDynamicStyles() {
 
 // Function to match SRT code with examples in the select dropdown
 function matchSrtWithExamples() {
-    let srtInput = domElements.srtDisplay;
     let srtExamples = domElements.srtExamples;
-    if (!srtInput || !srtExamples) return;
+    if (!srtExamples) return;
 
     // We match by checking if the dropdown value string is included in the SRT output
-    let currentCode = srtInput.value.trim().toUpperCase();
+    let currentCode = currentSrtCode().toUpperCase();
     let found = false;
     for (let i = 1; i < srtExamples.options.length; i++) {
         let optVal = srtExamples.options[i].value.trim().toUpperCase();
@@ -4485,6 +4530,39 @@ function matchSrtWithExamples() {
     if (!found) srtExamples.selectedIndex = 0;
 }
 
+// --- SRT BAR ---
+// The code of the pattern on screen
+function currentSrtCode() {
+    return buildSRTCode(tartanStripes, domElements.sym?.checked || false);
+}
+
+// Shows the current code in the bar, unless someone is typing there (force puts it back anyway)
+function showSrtInBar(force = false) {
+    const field = domElements.importText;
+    if (!field || (!force && document.activeElement === field && field.classList.contains('edited'))) return;
+    field.value = currentSrtCode();
+    field.classList.remove('edited');
+    field.removeAttribute('aria-invalid');
+}
+
+// Applies the code typed in the bar. Leaving the field only applies a code that reads well, without a message.
+function applySrtBar(fromLeaving) {
+    const field = domElements.importText;
+    if (!field) return;
+    const text = field.value.trim().toUpperCase();
+    if (!text) { showSrtInBar(true); return; }
+    if (text === currentSrtCode()) { field.classList.remove('edited'); return; }
+    if (fromLeaving && !looksLikeSrt(text)) { field.setAttribute('aria-invalid', 'true'); return; }
+    importSRT();
+}
+
+function looksLikeSrt(text) {
+    if (!/^[A-Z0-9\s.\/]+$/.test(text)) return false;
+    const codes = new Set();
+    for (const m of text.matchAll(/([A-Z]+)\/?(\d+)/g)) if (SRT_PALETTE.some(c => c.code === m[1])) codes.add(m[1]);
+    return codes.size >= 2;
+}
+
 // --- LOAD SRT EXAMPLE ---
 let importInputElement = null;
 window.loadExample = function(val) {
@@ -4492,12 +4570,12 @@ window.loadExample = function(val) {
     if (!importInputElement) importInputElement = domElements.importText;
     if(importInputElement) {
         importInputElement.value = val;
-        importSRT();
+        importSRT(false);
     }
 }
 
 // --- IMPORT SRT (OFFICIAL LOGIC) ---
-window.importSRT = function() {
+window.importSRT = function(keepShades = true) {
     if (!importInputElement) importInputElement = domElements.importText;
     let input = importInputElement;
     if(!input) return;
@@ -4542,6 +4620,15 @@ window.importSRT = function() {
     let match;
     let newStripes = [];
     let newPaletteMap = new Map();
+    // Editing the code keeps the shade each color already has (an SRT code names a color, not a shade)
+    const keptShades = new Map();
+    if (keepShades === true) {
+        for (const s of tartanStripes) {
+            if (keptShades.has(s.code)) continue;
+            const shade = SRT_PALETTE.find(c => c.code === s.code && c.hex.toUpperCase() === String(s.hex).toUpperCase());
+            if (shade) keptShades.set(s.code, shade);
+        }
+    }
 
     // ⚡ Bolt Optimization: O(1) lookup map for parsing
     let srtLookup = new Map();
@@ -4565,6 +4652,8 @@ window.importSRT = function() {
         let colorObj;
         if (newPaletteMap.has(code)) {
             colorObj = newPaletteMap.get(code);
+        } else if (keptShades.has(code)) {
+            colorObj = keptShades.get(code);
         } else {
             let variants = SRT_PALETTE.filter(c => c.code === code);
             if (variants.length > 0) {
@@ -4616,6 +4705,7 @@ window.importSRT = function() {
     userPalette = Array.from(newPaletteMap.values());
     commitStructureSettings();
     showAppMessage(null);
+    if (domElements.importText) domElements.importText.classList.remove('edited');
 
     updateUserPaletteUI();
     redrawTartan();

@@ -18,10 +18,10 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 * Génération aléatoire sous contraintes : nombre de bandes, largeur des bandes, sett, symétrique ou asymétrique, mode damier.
 * Conservation des couleurs ou de la structure pendant la génération.
 * Choix de 8 couleurs au plus parmi les 137 nuances SRT.
-* Historique des 10 derniers motifs, et annulation.
+* Historique des 10 derniers motifs en bande sous le motif, et annulation.
 
 **Reprendre un motif** (menu *Nouveau* de la barre du haut)
-* Coller un code SRT (`R/72 B8 K12 ...`) ou charger un exemple.
+* Taper ou coller un code SRT (`R/72 B8 K12 ...`) dans la barre sous le motif, qui affiche aussi le code du motif courant : `Entrée` valide, `Échap` remet le code. Les couleurs déjà présentes gardent leur nuance. Ou charger un exemple.
 * Rouvrir un fichier texte produit par l'export *Détails*, avec ses teintes exactes et ses réglages de rendu.
 * Ouvrir un lien partagé.
 * **Retrouver le tartan d'une image** (photo, scan ou dessin). Cadrez le tissu, comparez jusqu'à 10 lectures, donnez une étoile d'*or* à la bonne ou des étoiles d'*argent* à celles qui sont proches, et générez un intermédiaire à partir d'elles. L'image reste sur votre appareil. Les nombres de fils sont des proportions : une photo ne donne pas le nombre réel de fils. Cette fonction n'a pour l'instant été validée que sur des photos simulées.
@@ -30,7 +30,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 **Explorer**
 * Mood board de 10 à 100 motifs, avec épingles et variantes autour d'une tuile.
 * Mode par critères : une grille dont les colonnes et les lignes font varier chacune un réglage (couleurs, bandes, largeur max, sett, symétrie).
-* Aperçu sur une écharpe, un coussin et un kilt, à l'échelle d'après la taille du fil.
+* Vues Écharpe, Coussin et Kilt sur le motif, à l'échelle d'après la taille du fil ; les réglages restent utilisables pendant ce temps.
 * Lisibilité des couleurs : alerte sur les bandes voisines difficiles à distinguer, et simulation du daltonisme (à l'écran seulement).
 
 **Rendu**
