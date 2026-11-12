@@ -405,6 +405,10 @@ const TRANSLATIONS = {
         menu_export_all: "Tout : PNG, SVG et détails",
         btn_about_short: "À propos",
         btn_reset_view: "Revenir au début du motif",
+        panel_tabs: "Sections du panneau",
+        tab_pattern: "Motif",
+        tab_colors: "Couleurs",
+        tab_fabric: "Tissu",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -609,6 +613,10 @@ const TRANSLATIONS = {
         menu_export_all: "All: PNG, SVG and details",
         btn_about_short: "About",
         btn_reset_view: "Back to the start of the pattern",
+        panel_tabs: "Panel sections",
+        tab_pattern: "Pattern",
+        tab_colors: "Colors",
+        tab_fabric: "Fabric",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -902,6 +910,7 @@ function bindEvents() {
     bindEstimateSelection();
 
     setupMenus();
+    setupTabs();
     const menuNewRandom = document.getElementById('menu-new-random');
     if (menuNewRandom) menuNewRandom.addEventListener('click', () => handleGenerateClick());
     const menuNewSrt = document.getElementById('menu-new-srt');
@@ -1986,10 +1995,51 @@ function focusOpener(el) {
     (menu ? menu.querySelector('.menu-btn') : el).focus();
 }
 
-// Shows a control of the side panel: opens the panel and its section, then gives it the focus
+// Side panel tabs (Motif, Couleurs, Tissu): click, or arrows, Home and End on the tab row
+const PANEL_TABS = ['pattern', 'colors', 'fabric'];
+
+function setupTabs() {
+    PANEL_TABS.forEach((name, i) => {
+        const tab = document.getElementById('tab-' + name);
+        if (!tab) return;
+        tab.addEventListener('click', () => selectTab(name));
+        tab.addEventListener('keydown', (e) => {
+            let next = null;
+            if (e.key === 'ArrowRight') next = (i + 1) % PANEL_TABS.length;
+            else if (e.key === 'ArrowLeft') next = (i + PANEL_TABS.length - 1) % PANEL_TABS.length;
+            else if (e.key === 'Home') next = 0;
+            else if (e.key === 'End') next = PANEL_TABS.length - 1;
+            if (next === null) return;
+            e.preventDefault();
+            e.stopPropagation(); // The arrows move between tabs, not the pattern
+            selectTab(PANEL_TABS[next], true);
+        });
+    });
+}
+
+function selectTab(name, focus = false) {
+    PANEL_TABS.forEach(other => {
+        const tab = document.getElementById('tab-' + other);
+        const panel = document.getElementById('panel-' + other);
+        if (!tab || !panel) return;
+        const selected = other === name;
+        tab.setAttribute('aria-selected', String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+        panel.hidden = !selected;
+        if (selected && focus) tab.focus();
+    });
+}
+
+function currentTab() {
+    return PANEL_TABS.find(name => document.getElementById('tab-' + name)?.getAttribute('aria-selected') === 'true');
+}
+
+// Shows a control of the side panel: opens the panel, its tab and its section, then gives it the focus
 function revealInPanel(el) {
     if (!el) return;
     if (domElements.sidebar && domElements.sidebar.classList.contains('collapsed')) toggleSidebar();
+    const panel = el.closest('.tab-panel');
+    if (panel) selectTab(panel.id.replace('panel-', ''));
     const section = el.closest('details');
     if (section) section.open = true;
     el.scrollIntoView({ block: 'nearest' });
@@ -3959,6 +4009,11 @@ function updateReadabilityUI() {
         deficient.forEach(d => list.appendChild(readabilityRow(d.pair, t['vision_' + d.type])));
     }
     if (domElements.readabilityBadge) domElements.readabilityBadge.textContent = close.length > 0 ? '⚠' : '';
+    // Seen from the other tabs too
+    const tabBadge = document.getElementById('tab-colors-badge');
+    if (tabBadge) tabBadge.textContent = close.length > 0 ? '⚠' : '';
+    const colorsTab = document.getElementById('tab-colors');
+    if (colorsTab) colorsTab.title = close.length > 0 ? t.read_close : '';
 }
 
 // The filters act on what is displayed, so the exports keep the true colors.

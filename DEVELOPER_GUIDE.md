@@ -90,6 +90,7 @@ If the application shows a blank screen or a button does not work:
 | Rendering | `redrawTartan`, `buildThreadColors`, `fillTwillPixels`, `fillTwillRelief` |
 | View | `setZoom`, `zoomViewAt`, `panView`, `resetView`, `viewX` / `viewY` |
 | Top bar menus | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener` |
+| Side panel tabs (Motif, Couleurs, Tissu) | `setupTabs`, `selectTab`, `currentTab`, `PANEL_TABS` |
 | Saving and history | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |
 | Loading a whole pattern | `applyLoadedPattern` (shared link, text file, image) |
 | Shared link | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |
@@ -200,6 +201,7 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Rendu | `redrawTartan`, `buildThreadColors`, `fillTwillPixels`, `fillTwillRelief` |
 | Vue | `setZoom`, `zoomViewAt`, `panView`, `resetView`, `viewX` / `viewY` |
 | Menus de la barre du haut | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener` |
+| Onglets du panneau (Motif, Couleurs, Tissu) | `setupTabs`, `selectTab`, `currentTab`, `PANEL_TABS` |
 | Sauvegarde et historique | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |
 | Charger un motif complet | `applyLoadedPattern` (lien, fichier texte, image) |
 | Lien partagé | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |

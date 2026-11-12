@@ -80,6 +80,16 @@
     .menu-item { background: transparent; color: #ddd; border: none; border-radius: 4px; padding: 9px 12px; font-size: 13px; text-align: left; cursor: pointer; }
     .menu-item:hover, .menu-item:focus-visible { background: #3a3a3a; color: #fff; }
 
+    /* Side panel: a fixed top (Générer, locks, tabs), then one tab at a time */
+    .panel-top { position: sticky; top: -16px; z-index: 50; background: #181818; margin: -16px -16px 12px; padding: 16px 16px 0; box-shadow: 0 6px 10px -8px rgba(0,0,0,0.9); }
+    .panel-tabs { display: flex; margin: 4px -16px 0; border-bottom: 1px solid #333; }
+    .panel-tab { flex: 1; background: transparent; color: #999; border: none; border-bottom: 2px solid transparent; padding: 10px 6px 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .panel-tab:hover { color: #ddd; }
+    .panel-tab[aria-selected="true"] { color: #fff; border-bottom-color: #e74c3c; }
+    .tab-badge { color: #f1c40f; font-size: 12px; }
+    .tab-panel[hidden] { display: none; }
+    .sidebar.collapsed .panel-top { display: none; }
+
     /* Zoom tools on the canvas */
     .canvas-tools { position: absolute; left: 10px; bottom: 10px; z-index: 200; display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.65); border: 1px solid #333; border-radius: 6px; padding: 4px; }
     .canvas-tools #zoom-slider { width: 100px; }
@@ -794,27 +804,37 @@
     </div>
 
     <div class="sidebar" id="sidebar">
-      <!-- SECTION: GENERATION -->
-      <div class="generate-row">
-          <button class="btn-generate" id="btn-generate" >
-              <span data-i18n="btn_generate">GÉNÉRER</span>
-          </button>
-          <button class="btn-undo" id="btn-undo" disabled title="Aucun historique" >
-              ↩️ <span data-i18n="btn_undo">Annuler</span>
-          </button>
+      <!-- Always visible: Générer, undo, locks and the tabs -->
+      <div class="panel-top">
+        <!-- SECTION: GENERATION -->
+        <div class="generate-row">
+            <button class="btn-generate" id="btn-generate" >
+                <span data-i18n="btn_generate">GÉNÉRER</span>
+            </button>
+            <button class="btn-undo" id="btn-undo" disabled title="Aucun historique" >
+                ↩️ <span data-i18n="btn_undo">Annuler</span>
+            </button>
+        </div>
+  
+        <div id="app-message" class="app-message" role="status" aria-live="polite" hidden></div>
+  
+        <div class="locks-container">
+            <label class="checkbox-lock" for="lock-colors">
+                <input type="checkbox" id="lock-colors" > <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
+            </label>
+            <label class="checkbox-lock" for="lock-structure">
+                <input type="checkbox" id="lock-structure" > <span data-i18n="chk_keep_struct">Conserver Structure</span>
+            </label>
+        </div>
+  
+        <div class="panel-tabs" role="tablist" data-i18n-label="panel_tabs" aria-label="Sections du panneau">
+          <button type="button" class="panel-tab" role="tab" id="tab-pattern" aria-controls="panel-pattern" aria-selected="true" tabindex="0"><span data-i18n="tab_pattern">Motif</span></button>
+          <button type="button" class="panel-tab" role="tab" id="tab-colors" aria-controls="panel-colors" aria-selected="false" tabindex="-1"><span data-i18n="tab_colors">Couleurs</span> <span class="tab-badge" id="tab-colors-badge" aria-hidden="true"></span></button>
+          <button type="button" class="panel-tab" role="tab" id="tab-fabric" aria-controls="panel-fabric" aria-selected="false" tabindex="-1"><span data-i18n="tab_fabric">Tissu</span></button>
+        </div>
       </div>
 
-      <div id="app-message" class="app-message" role="status" aria-live="polite" hidden></div>
-
-      <div class="locks-container">
-          <label class="checkbox-lock" for="lock-colors">
-              <input type="checkbox" id="lock-colors" > <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
-          </label>
-          <label class="checkbox-lock" for="lock-structure">
-              <input type="checkbox" id="lock-structure" > <span data-i18n="chk_keep_struct">Conserver Structure</span>
-          </label>
-      </div>
-
+      <div class="tab-panel" role="tabpanel" id="panel-pattern" aria-labelledby="tab-pattern">
       <!-- SECTION: IMPORT -->
       <label style="font-size: 14px; color: #aaa; margin-bottom: 5px; display: block;" for="import-text">Code <span id="btn-srt-help" style="border-bottom: 1px dashed #888; cursor: pointer;" data-i18n-title="srt_help_tooltip" role="button" tabindex="0" aria-label="Aide sur le code SRT">SRT</span></label>
       <div class="import-box" style="position: relative;">
@@ -906,84 +926,7 @@
         </div>
 </details>
 
-<!-- SECTION: ZOOM & ECHELLE -->
-      <details >
-  <summary data-i18n="sec_zoom">Fil et rendu</summary>
-  <div class="details-content">
-
-      <div class="control-group">
-
-        <div class="control-row">
-            <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <select id="thread-type" >
-                    <option value="custom" data-i18n="opt_custom">Personnalisé</option>
-                    <option value="0.69" data-i18n="opt_merino">Mérinos</option>
-                    <option value="0.83" data-i18n="opt_cotton">Coton</option>
-                    <option value="1.11" data-i18n="opt_wool">Laine</option>
-                </select>
-                <label for="in-threadmm" class="sr-only" data-i18n="lbl_thread_mm">Diamètre du fil (mm)</label>
-                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;">
-                <span style="color:#666; font-size:11px;">mm</span>
-            </div>
-        </div>
-
-        <div class="control-row">
-            <label for="effect-relief" data-i18n="opt_eff_relief">Relief des fils</label>
-            <input type="checkbox" id="effect-relief">
-        </div>
-
-        <div class="control-row relief-strength-row" hidden>
-            <label for="relief-strength" data-i18n="lbl_relief_strength">Intensité du relief</label>
-            <span style="display:flex; align-items:center; gap:6px;">
-                <input type="range" id="relief-strength" min="0" max="200" step="10" value="100" style="width:110px;">
-                <output id="relief-strength-value" for="relief-strength" style="font-size:11px; color:#aaa; min-width:38px; text-align:right;">100 %</output>
-            </span>
-        </div>
-
-        <div class="control-row">
-            <label for="yarn-irregular" data-i18n="lbl_yarn" data-i18n-title="title_yarn" title="Légères variations de teinte d'un fil à l'autre, comme sur une vraie laine">Irrégularité de la laine</label>
-            <input type="checkbox" id="yarn-irregular">
-        </div>
-
-        <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
-            <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
-        </div>
-        <button type="button" class="btn-secondary btn-preview-objects" id="btn-preview-objects" data-i18n="btn_preview_objects">Aperçu sur objets</button>
-
-      </div>
-
-        </div>
-</details>
-
-<!-- SECTION: PALETTE -->
-      <details >
-  <summary data-i18n="sec_palette">Palette de couleurs sélectionnées (Max 8)</summary>
-  <div class="details-content">
-
-      <div id="color-list"></div>
-
-        </div>
-</details>
-
-<details>
-  <summary><span data-i18n="sec_readability">Lisibilité des couleurs</span> <span id="readability-badge"></span></summary>
-  <div class="details-content">
-      <div id="readability-list" class="readability-list" aria-live="polite"></div>
-      <div class="control-row">
-          <label for="vision-select" data-i18n="lbl_vision">Simuler la vision</label>
-          <select id="vision-select" class="patchwork-select">
-              <option value="normal" data-i18n="vision_normal">Normale</option>
-              <option value="protan" data-i18n="vision_protan">Protanopie (rouge)</option>
-              <option value="deuter" data-i18n="vision_deuter">Deutéranopie (vert)</option>
-              <option value="tritan" data-i18n="vision_tritan">Tritanopie (bleu)</option>
-          </select>
-      </div>
-      <p class="read-note" data-i18n="note_vision">À l'écran seulement : les exports gardent les vraies couleurs.</p>
-  </div>
-</details>
-
-<!-- SECTION: EXPORT -->
+<!-- SECTION: SRT CODE -->
       <details >
   <summary data-i18n="sec_srt">Code SRT du Tartan</summary>
   <div class="details-content">
@@ -1054,6 +997,91 @@
 
         </div>
 </details>
+
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-colors" aria-labelledby="tab-colors" hidden>
+<!-- SECTION: PALETTE -->
+      <details open>
+  <summary data-i18n="sec_palette">Palette de couleurs sélectionnées (Max 8)</summary>
+  <div class="details-content">
+
+      <div id="color-list"></div>
+
+        </div>
+</details>
+
+<details>
+  <summary><span data-i18n="sec_readability">Lisibilité des couleurs</span> <span id="readability-badge"></span></summary>
+  <div class="details-content">
+      <div id="readability-list" class="readability-list" aria-live="polite"></div>
+      <div class="control-row">
+          <label for="vision-select" data-i18n="lbl_vision">Simuler la vision</label>
+          <select id="vision-select" class="patchwork-select">
+              <option value="normal" data-i18n="vision_normal">Normale</option>
+              <option value="protan" data-i18n="vision_protan">Protanopie (rouge)</option>
+              <option value="deuter" data-i18n="vision_deuter">Deutéranopie (vert)</option>
+              <option value="tritan" data-i18n="vision_tritan">Tritanopie (bleu)</option>
+          </select>
+      </div>
+      <p class="read-note" data-i18n="note_vision">À l'écran seulement : les exports gardent les vraies couleurs.</p>
+  </div>
+</details>
+
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-fabric" aria-labelledby="tab-fabric" hidden>
+<!-- SECTION: ZOOM & ECHELLE -->
+      <details open>
+  <summary data-i18n="sec_zoom">Fil et rendu</summary>
+  <div class="details-content">
+
+      <div class="control-group">
+
+        <div class="control-row">
+            <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="thread-type" >
+                    <option value="custom" data-i18n="opt_custom">Personnalisé</option>
+                    <option value="0.69" data-i18n="opt_merino">Mérinos</option>
+                    <option value="0.83" data-i18n="opt_cotton">Coton</option>
+                    <option value="1.11" data-i18n="opt_wool">Laine</option>
+                </select>
+                <label for="in-threadmm" class="sr-only" data-i18n="lbl_thread_mm">Diamètre du fil (mm)</label>
+                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;">
+                <span style="color:#666; font-size:11px;">mm</span>
+            </div>
+        </div>
+
+        <div class="control-row">
+            <label for="effect-relief" data-i18n="opt_eff_relief">Relief des fils</label>
+            <input type="checkbox" id="effect-relief">
+        </div>
+
+        <div class="control-row relief-strength-row" hidden>
+            <label for="relief-strength" data-i18n="lbl_relief_strength">Intensité du relief</label>
+            <span style="display:flex; align-items:center; gap:6px;">
+                <input type="range" id="relief-strength" min="0" max="200" step="10" value="100" style="width:110px;">
+                <output id="relief-strength-value" for="relief-strength" style="font-size:11px; color:#aaa; min-width:38px; text-align:right;">100 %</output>
+            </span>
+        </div>
+
+        <div class="control-row">
+            <label for="yarn-irregular" data-i18n="lbl_yarn" data-i18n-title="title_yarn" title="Légères variations de teinte d'un fil à l'autre, comme sur une vraie laine">Irrégularité de la laine</label>
+            <input type="checkbox" id="yarn-irregular">
+        </div>
+
+        <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
+            <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
+        </div>
+        <button type="button" class="btn-secondary btn-preview-objects" id="btn-preview-objects" data-i18n="btn_preview_objects">Aperçu sur objets</button>
+
+      </div>
+
+        </div>
+</details>
+
+      </div>
 
 <div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
 
