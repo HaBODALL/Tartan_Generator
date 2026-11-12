@@ -80,6 +80,16 @@
     .menu-item { background: transparent; color: #ddd; border: none; border-radius: 4px; padding: 9px 12px; font-size: 13px; text-align: left; cursor: pointer; }
     .menu-item:hover, .menu-item:focus-visible { background: #3a3a3a; color: #fff; }
 
+    /* Side panel: a fixed top (Générer, locks, tabs), then one tab at a time */
+    .panel-top { position: sticky; top: -16px; z-index: 50; background: #181818; margin: -16px -16px 12px; padding: 16px 16px 0; box-shadow: 0 6px 10px -8px rgba(0,0,0,0.9); }
+    .panel-tabs { display: flex; margin: 4px -16px 0; border-bottom: 1px solid #333; }
+    .panel-tab { flex: 1; background: transparent; color: #999; border: none; border-bottom: 2px solid transparent; padding: 10px 6px 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .panel-tab:hover { color: #ddd; }
+    .panel-tab[aria-selected="true"] { color: #fff; border-bottom-color: #e74c3c; }
+    .tab-badge { color: #f1c40f; font-size: 12px; }
+    .tab-panel[hidden] { display: none; }
+    .sidebar.collapsed .panel-top { display: none; }
+
     /* Zoom tools on the canvas */
     .canvas-tools { position: absolute; left: 10px; bottom: 10px; z-index: 200; display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.65); border: 1px solid #333; border-radius: 6px; padding: 4px; }
     .canvas-tools #zoom-slider { width: 100px; }
@@ -151,9 +161,11 @@
     }
 
     /* ZONE CANVAS */
+    .canvas-column { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     #canvas-container {
         position: relative;
         flex: 1;
+        min-height: 0;
         display: flex; align-items: center; justify-content: center;
         background: #050505;
         overflow: hidden;
@@ -212,15 +224,22 @@
         flex-direction: column;
       }
 
-      #canvas-container {
+      .canvas-column {
         width: 100%;
-        height: 40%;
+        height: 50%;
         flex: none;
       }
+      .srt-bar { height: 40px; padding: 0 8px; gap: 4px; }
+      .srt-bar-size { display: none; }
+      .history-strip { height: 48px; padding: 4px 8px; }
+      .history-strip-label { display: none; }
+      .history-thumb { width: 36px; height: 36px; }
+      .view-btn { padding: 4px 7px; }
+      .view-switch-label { display: none; }
 
       .sidebar {
         width: 100%;
-        height: 60%;
+        height: 50%;
         border-left: none;
         border-top: 1px solid #333;
         box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
@@ -238,6 +257,7 @@
         bottom: 10px;
         right: 10px;
       }
+      .view-switch { top: 8px; left: 8px; }
       .btn-toggle-ui.collapsed {
         transform: rotate(-90deg);
       }
@@ -254,10 +274,11 @@
       .canvas-tools #zoom-slider { width: 70px; }
 
       /* The mood board needs room: it takes most of the height while open */
-      .app-main:has(#patchwork-board:not([hidden])) #canvas-container { height: 75%; }
+      .app-main:has(.sidebar.collapsed) .canvas-column { height: 100%; }
+      .app-main:has(#patchwork-board:not([hidden])) .canvas-column { height: 75%; }
       .app-main:has(#patchwork-board:not([hidden])) .sidebar { height: 25%; }
       .app-main:has(#patchwork-board:not([hidden])) .btn-toggle-ui { display: none; }
-      .app-main:has(#preview-board:not([hidden])) #canvas-container { height: 75%; }
+      .app-main:has(#preview-board:not([hidden])) .canvas-column { height: 75%; }
       .app-main:has(#preview-board:not([hidden])) .sidebar { height: 25%; }
       .app-main:has(#preview-board:not([hidden])) .btn-toggle-ui { display: none; }
     }
@@ -434,12 +455,32 @@
     .import-box { display: flex; gap: 5px; margin-bottom: 20px; }
     .import-input { flex-grow: 1; background: #111; border: 1px solid #444; color: #0f0; padding: 5px; font-family: monospace; font-size: 11px; }
 
-    .srt-container { position: relative; width: 100%; margin-bottom: 10px; }
-    .srt-display { width: 100%; background: #000; border: 1px solid #444; color: #3498db; font-family: monospace; font-size: 12px; padding: 10px; padding-right: 35px; resize: none; margin-bottom: 0; }
-    .btn-copy-srt { position: absolute; right: 5px; top: 5px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 4px 6px; cursor: pointer; font-size: 12px; transition: 0.2s; }
-    .btn-copy-srt:hover { background: #444; color: #fff; }
-    .copy-toast { position: absolute; right: 40px; top: 8px; background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; opacity: 0; pointer-events: none; transition: opacity 0.3s; font-weight: bold; }
+    /* SRT bar under the pattern */
+    /* Whole-pixel heights keep the pattern canvas on whole pixels */
+    .srt-bar { position: relative; display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 10px; background: #111; border-top: 1px solid #333; flex-shrink: 0; }
+    .srt-bar-label { color: #888; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .srt-help { border-bottom: 1px dashed #888; cursor: pointer; }
+    .srt-bar .import-input { flex: 1; min-width: 0; margin: 0; background: #000; border: 1px solid #444; color: #5dade2; font-family: monospace; font-size: 13px; padding: 6px 8px; border-radius: 4px; }
+    .srt-bar .import-input.edited { border-color: #f1c40f; }
+    .srt-bar .import-input[aria-invalid="true"] { border-color: #e74c3c; }
+    .srt-bar-btn { background: #222; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 5px 9px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .srt-bar-btn:hover { background: #333; color: #fff; }
+    .srt-bar-size { color: #888; font-size: 11px; font-family: monospace; white-space: nowrap; }
+    .copy-toast { position: absolute; right: 10px; top: -26px; background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; opacity: 0; pointer-events: none; transition: opacity 0.3s; font-weight: bold; }
     .copy-toast.show { opacity: 1; }
+
+    /* History strip under the SRT bar */
+    .history-strip { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #0d0d0d; border-top: 1px solid #222; flex-shrink: 0; height: 58px; }
+    .history-strip-label { color: #888; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+
+    /* Object views on the canvas */
+    .view-switch { position: absolute; left: 10px; top: 10px; z-index: 210; display: flex; align-items: center; gap: 2px; background: rgba(0,0,0,0.65); border: 1px solid #333; border-radius: 6px; padding: 3px; }
+    .view-switch-label { color: #888; font-size: 11px; padding: 0 6px 0 4px; }
+    .view-btn { background: transparent; color: #bbb; border: none; border-radius: 4px; padding: 4px 9px; font-size: 12px; cursor: pointer; }
+    .view-btn:hover { background: #333; color: #fff; }
+    .view-btn[aria-pressed="true"] { background: #e74c3c; color: #fff; }
+    #canvas-container:has(#patchwork-board:not([hidden])) .view-switch { display: none; }
+    .preview-board { padding-top: 52px; }
 
     .btn-secondary { padding: 8px 12px; background: #333; color: #fff; border: 1px solid #444; cursor: pointer; border-radius: 3px; font-size: 11px; white-space: nowrap;}
     .btn-secondary:hover { background: #444; }
@@ -508,12 +549,17 @@
 
     /* ==================== HISTORY ==================== */
     .history-list {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        display: flex;
         gap: 6px;
+        overflow-x: auto;
+        flex: 1;
+        min-width: 0;
+        padding: 2px;
     }
     .history-thumb {
-        aspect-ratio: 1;
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
         padding: 0;
         overflow: hidden;
         border: 1px solid #444;
@@ -531,7 +577,6 @@
         height: 100%;
     }
     .history-empty {
-        grid-column: 1 / -1;
         color: #888;
         font-size: 12px;
     }
@@ -586,7 +631,6 @@
     #canvas-container[data-vision="tritan"] canvas { filter: url(#vision-tritan); }
     #canvas-container > canvas { touch-action: none; cursor: grab; }
     #canvas-container > canvas.panning { cursor: grabbing; }
-    .btn-preview-objects { display: block; width: 100%; margin-top: 8px; font-size: 12px; }
     .preview-stage { flex: 1; min-height: 0; overflow: hidden; }
     .preview-stage canvas { display: block; }
     .sheet-paper { background: #fff; color: #111; width: 680px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: 24px; border-radius: 6px; font-size: 13px; }
@@ -762,6 +806,7 @@
         </div>
       </div>
     </div>
+    <div class="canvas-column">
     <div id="canvas-container">
         <div class="canvas-tools" id="canvas-tools">
             <label for="in-zoom" class="sr-only" data-i18n="lbl_zoom">Zoom Visuel</label>
@@ -773,11 +818,14 @@
             <button type="button" class="zoom-btn" id="btn-reset-view" data-i18n-title="btn_reset_view" data-i18n-label="btn_reset_view" title="Revenir au début du motif" aria-label="Revenir au début du motif">⌖</button>
         </div>
         <button id="btn-toggle-ui" class="btn-toggle-ui" aria-label="Afficher/Masquer le panneau" title="Afficher/Masquer le panneau" data-i18n-title="title_toggle_ui" data-i18n-label="title_toggle_ui">▶</button>
-        <div id="preview-board" class="patchwork-board" role="dialog" aria-labelledby="preview-title" hidden>
-            <div class="patchwork-bar">
-                <span id="preview-title" class="patchwork-title" data-i18n="preview_title">Le motif à l'échelle, d'après la taille du fil</span>
-                <button type="button" class="btn-secondary" id="btn-preview-close" data-i18n="btn_patch_close">Fermer</button>
-            </div>
+        <div class="view-switch" role="group" data-i18n-label="view_label" aria-label="Vue">
+            <span class="view-switch-label" data-i18n="view_label" aria-hidden="true">Vue</span>
+            <button type="button" class="view-btn" data-view="cloth" aria-pressed="true" data-i18n="view_cloth">Tissu</button>
+            <button type="button" class="view-btn" data-view="scarf" aria-pressed="false" data-i18n="preview_scarf">Écharpe</button>
+            <button type="button" class="view-btn" data-view="cushion" aria-pressed="false" data-i18n="preview_cushion">Coussin</button>
+            <button type="button" class="view-btn" data-view="kilt" aria-pressed="false" data-i18n="preview_kilt">Kilt</button>
+        </div>
+        <div id="preview-board" class="patchwork-board preview-board" hidden>
             <div class="preview-stage"><canvas id="preview-canvas" role="img"></canvas></div>
         </div>
         <div id="patchwork-board" class="patchwork-board" role="dialog" aria-labelledby="patchwork-title" hidden>
@@ -793,36 +841,58 @@
         </div>
     </div>
 
+    <!-- SRT bar: shows the code of the pattern, and takes a new one (Entrée or ✓) -->
+    <div class="srt-bar">
+        <label class="srt-bar-label" for="import-text">Code <span id="btn-srt-help" class="srt-help" data-i18n-title="srt_help_tooltip" role="button" tabindex="0" aria-label="Aide sur le code SRT">SRT</span></label>
+        <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import_short" placeholder="Coller ici (ex: K4 R32)..." maxlength="2000" spellcheck="false" autocomplete="off" aria-describedby="srt-bar-size">
+        <button type="button" class="srt-bar-btn" id="btn-import-srt" data-i18n="btn_import" data-i18n-title="title_import" title="Appliquer le code (Entrée)">✓ Valider</button>
+        <button type="button" class="srt-bar-btn" id="btn-copy-srt" data-i18n-title="title_copy_srt" data-i18n-label="title_copy_srt" title="Copier le code SRT" aria-label="Copier le code SRT">📋</button>
+        <span id="copy-toast" class="copy-toast" aria-live="polite" data-i18n="msg_copied">Copié !</span>
+        <span id="srt-bar-size" class="srt-bar-size"></span>
+    </div>
+
+    <!-- History: the last patterns, most recent first -->
+    <div class="history-strip">
+        <span class="history-strip-label" data-i18n="strip_history">Historique</span>
+        <div id="history-list" class="history-list" role="group" data-i18n-label="sec_history" aria-label="Historique (10 motifs max)"></div>
+    </div>
+    </div>
+
     <div class="sidebar" id="sidebar">
-      <!-- SECTION: GENERATION -->
-      <div class="generate-row">
-          <button class="btn-generate" id="btn-generate" >
-              <span data-i18n="btn_generate">GÉNÉRER</span>
-          </button>
-          <button class="btn-undo" id="btn-undo" disabled title="Aucun historique" >
-              ↩️ <span data-i18n="btn_undo">Annuler</span>
-          </button>
+      <!-- Always visible: Générer, undo, locks and the tabs -->
+      <div class="panel-top">
+        <!-- SECTION: GENERATION -->
+        <div class="generate-row">
+            <button class="btn-generate" id="btn-generate" >
+                <span data-i18n="btn_generate">GÉNÉRER</span>
+            </button>
+            <button class="btn-undo" id="btn-undo" disabled title="Aucun historique" >
+                ↩️ <span data-i18n="btn_undo">Annuler</span>
+            </button>
+        </div>
+  
+        <div id="app-message" class="app-message" role="status" aria-live="polite" hidden></div>
+  
+        <div class="locks-container">
+            <label class="checkbox-lock" for="lock-colors">
+                <input type="checkbox" id="lock-colors" > <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
+            </label>
+            <label class="checkbox-lock" for="lock-structure">
+                <input type="checkbox" id="lock-structure" > <span data-i18n="chk_keep_struct">Conserver Structure</span>
+            </label>
+        </div>
+  
+        <div class="panel-tabs" role="tablist" data-i18n-label="panel_tabs" aria-label="Sections du panneau">
+          <button type="button" class="panel-tab" role="tab" id="tab-pattern" aria-controls="panel-pattern" aria-selected="true" tabindex="0"><span data-i18n="tab_pattern">Motif</span></button>
+          <button type="button" class="panel-tab" role="tab" id="tab-colors" aria-controls="panel-colors" aria-selected="false" tabindex="-1"><span data-i18n="tab_colors">Couleurs</span> <span class="tab-badge" id="tab-colors-badge" aria-hidden="true"></span></button>
+          <button type="button" class="panel-tab" role="tab" id="tab-fabric" aria-controls="panel-fabric" aria-selected="false" tabindex="-1"><span data-i18n="tab_fabric">Tissu</span></button>
+        </div>
       </div>
 
-      <div id="app-message" class="app-message" role="status" aria-live="polite" hidden></div>
-
-      <div class="locks-container">
-          <label class="checkbox-lock" for="lock-colors">
-              <input type="checkbox" id="lock-colors" > <span data-i18n="chk_keep_colors">Conserver Couleurs</span>
-          </label>
-          <label class="checkbox-lock" for="lock-structure">
-              <input type="checkbox" id="lock-structure" > <span data-i18n="chk_keep_struct">Conserver Structure</span>
-          </label>
-      </div>
-
-      <!-- SECTION: IMPORT -->
-      <label style="font-size: 14px; color: #aaa; margin-bottom: 5px; display: block;" for="import-text">Code <span id="btn-srt-help" style="border-bottom: 1px dashed #888; cursor: pointer;" data-i18n-title="srt_help_tooltip" role="button" tabindex="0" aria-label="Aide sur le code SRT">SRT</span></label>
-      <div class="import-box" style="position: relative;">
-          <input type="text" id="import-text" class="import-input" data-i18n-placeholder="ph_import_short" placeholder="Coller ici (ex: K4 R32)..." maxlength="2000" >
-          <button class="btn-secondary" id="btn-import-srt" data-i18n="btn_import" >IMPORTER</button>
-          <input type="file" id="import-file" accept=".txt,text/plain" hidden aria-hidden="true">
-          <input type="file" id="import-photo" accept="image/*" hidden aria-hidden="true">
-      </div>
+      <div class="tab-panel" role="tabpanel" id="panel-pattern" aria-labelledby="tab-pattern">
+      <!-- SECTION: EXAMPLES (the SRT code itself is in the bar under the pattern) -->
+      <input type="file" id="import-file" accept=".txt,text/plain" hidden aria-hidden="true">
+      <input type="file" id="import-photo" accept="image/*" hidden aria-hidden="true">
 
       <div style="margin-bottom: 15px;">
           <label for="srt-examples" class="sr-only" data-i18n="opt_load_example">-- Charger un exemple --</label>
@@ -838,14 +908,6 @@
               <option value="...R20 W20...">Vichy Red Check (Asym)</option>
           </select>
       </div>
-
-      <!-- SECTION: HISTORY -->
-      <details open>
-  <summary data-i18n="sec_history">Historique (10 motifs max)</summary>
-  <div class="details-content">
-      <div id="history-list" class="history-list"></div>
-  </div>
-</details>
 
       <!-- SECTION: STRUCTURE -->
       <details open>
@@ -901,98 +963,6 @@
                 <span id="sett-actual" style="color:#888; font-size:11px;"></span>
             </div>
         </div>
-      </div>
-
-        </div>
-</details>
-
-<!-- SECTION: ZOOM & ECHELLE -->
-      <details >
-  <summary data-i18n="sec_zoom">Fil et rendu</summary>
-  <div class="details-content">
-
-      <div class="control-group">
-
-        <div class="control-row">
-            <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <select id="thread-type" >
-                    <option value="custom" data-i18n="opt_custom">Personnalisé</option>
-                    <option value="0.69" data-i18n="opt_merino">Mérinos</option>
-                    <option value="0.83" data-i18n="opt_cotton">Coton</option>
-                    <option value="1.11" data-i18n="opt_wool">Laine</option>
-                </select>
-                <label for="in-threadmm" class="sr-only" data-i18n="lbl_thread_mm">Diamètre du fil (mm)</label>
-                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;">
-                <span style="color:#666; font-size:11px;">mm</span>
-            </div>
-        </div>
-
-        <div class="control-row">
-            <label for="effect-relief" data-i18n="opt_eff_relief">Relief des fils</label>
-            <input type="checkbox" id="effect-relief">
-        </div>
-
-        <div class="control-row relief-strength-row" hidden>
-            <label for="relief-strength" data-i18n="lbl_relief_strength">Intensité du relief</label>
-            <span style="display:flex; align-items:center; gap:6px;">
-                <input type="range" id="relief-strength" min="0" max="200" step="10" value="100" style="width:110px;">
-                <output id="relief-strength-value" for="relief-strength" style="font-size:11px; color:#aaa; min-width:38px; text-align:right;">100 %</output>
-            </span>
-        </div>
-
-        <div class="control-row">
-            <label for="yarn-irregular" data-i18n="lbl_yarn" data-i18n-title="title_yarn" title="Légères variations de teinte d'un fil à l'autre, comme sur une vraie laine">Irrégularité de la laine</label>
-            <input type="checkbox" id="yarn-irregular">
-        </div>
-
-        <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
-            <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
-        </div>
-        <button type="button" class="btn-secondary btn-preview-objects" id="btn-preview-objects" data-i18n="btn_preview_objects">Aperçu sur objets</button>
-
-      </div>
-
-        </div>
-</details>
-
-<!-- SECTION: PALETTE -->
-      <details >
-  <summary data-i18n="sec_palette">Palette de couleurs sélectionnées (Max 8)</summary>
-  <div class="details-content">
-
-      <div id="color-list"></div>
-
-        </div>
-</details>
-
-<details>
-  <summary><span data-i18n="sec_readability">Lisibilité des couleurs</span> <span id="readability-badge"></span></summary>
-  <div class="details-content">
-      <div id="readability-list" class="readability-list" aria-live="polite"></div>
-      <div class="control-row">
-          <label for="vision-select" data-i18n="lbl_vision">Simuler la vision</label>
-          <select id="vision-select" class="patchwork-select">
-              <option value="normal" data-i18n="vision_normal">Normale</option>
-              <option value="protan" data-i18n="vision_protan">Protanopie (rouge)</option>
-              <option value="deuter" data-i18n="vision_deuter">Deutéranopie (vert)</option>
-              <option value="tritan" data-i18n="vision_tritan">Tritanopie (bleu)</option>
-          </select>
-      </div>
-      <p class="read-note" data-i18n="note_vision">À l'écran seulement : les exports gardent les vraies couleurs.</p>
-  </div>
-</details>
-
-<!-- SECTION: EXPORT -->
-      <details >
-  <summary data-i18n="sec_srt">Code SRT du Tartan</summary>
-  <div class="details-content">
-
-      <div class="srt-container">
-          <label for="srt-display" class="sr-only" data-i18n="sec_srt">Code SRT du Tartan</label>
-          <textarea id="srt-display" class="srt-display" readonly></textarea>
-          <button id="btn-copy-srt" class="btn-copy-srt" aria-label="Copier le code SRT" title="Copier">📋</button>
-          <div id="copy-toast" class="copy-toast" aria-live="polite">Copié !</div>
       </div>
 
         </div>
@@ -1054,6 +1024,90 @@
 
         </div>
 </details>
+
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-colors" aria-labelledby="tab-colors" hidden>
+<!-- SECTION: PALETTE -->
+      <details open>
+  <summary data-i18n="sec_palette">Palette de couleurs sélectionnées (Max 8)</summary>
+  <div class="details-content">
+
+      <div id="color-list"></div>
+
+        </div>
+</details>
+
+<details>
+  <summary><span data-i18n="sec_readability">Lisibilité des couleurs</span> <span id="readability-badge"></span></summary>
+  <div class="details-content">
+      <div id="readability-list" class="readability-list" aria-live="polite"></div>
+      <div class="control-row">
+          <label for="vision-select" data-i18n="lbl_vision">Simuler la vision</label>
+          <select id="vision-select" class="patchwork-select">
+              <option value="normal" data-i18n="vision_normal">Normale</option>
+              <option value="protan" data-i18n="vision_protan">Protanopie (rouge)</option>
+              <option value="deuter" data-i18n="vision_deuter">Deutéranopie (vert)</option>
+              <option value="tritan" data-i18n="vision_tritan">Tritanopie (bleu)</option>
+          </select>
+      </div>
+      <p class="read-note" data-i18n="note_vision">À l'écran seulement : les exports gardent les vraies couleurs.</p>
+  </div>
+</details>
+
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-fabric" aria-labelledby="tab-fabric" hidden>
+<!-- SECTION: ZOOM & ECHELLE -->
+      <details open>
+  <summary data-i18n="sec_zoom">Fil et rendu</summary>
+  <div class="details-content">
+
+      <div class="control-group">
+
+        <div class="control-row">
+            <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="thread-type" >
+                    <option value="custom" data-i18n="opt_custom">Personnalisé</option>
+                    <option value="0.69" data-i18n="opt_merino">Mérinos</option>
+                    <option value="0.83" data-i18n="opt_cotton">Coton</option>
+                    <option value="1.11" data-i18n="opt_wool">Laine</option>
+                </select>
+                <label for="in-threadmm" class="sr-only" data-i18n="lbl_thread_mm">Diamètre du fil (mm)</label>
+                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;">
+                <span style="color:#666; font-size:11px;">mm</span>
+            </div>
+        </div>
+
+        <div class="control-row">
+            <label for="effect-relief" data-i18n="opt_eff_relief">Relief des fils</label>
+            <input type="checkbox" id="effect-relief">
+        </div>
+
+        <div class="control-row relief-strength-row" hidden>
+            <label for="relief-strength" data-i18n="lbl_relief_strength">Intensité du relief</label>
+            <span style="display:flex; align-items:center; gap:6px;">
+                <input type="range" id="relief-strength" min="0" max="200" step="10" value="100" style="width:110px;">
+                <output id="relief-strength-value" for="relief-strength" style="font-size:11px; color:#aaa; min-width:38px; text-align:right;">100 %</output>
+            </span>
+        </div>
+
+        <div class="control-row">
+            <label for="yarn-irregular" data-i18n="lbl_yarn" data-i18n-title="title_yarn" title="Légères variations de teinte d'un fil à l'autre, comme sur une vraie laine">Irrégularité de la laine</label>
+            <input type="checkbox" id="yarn-irregular">
+        </div>
+
+        <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
+            <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
+        </div>
+
+      </div>
+
+        </div>
+</details>
+
+      </div>
 
 <div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
 
