@@ -25,6 +25,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 * Rouvrir un fichier texte produit par l'export *Détails*, avec ses teintes exactes et ses réglages de rendu.
 * Ouvrir un lien partagé.
 * **Estimer un tartan depuis une photo.** Cadrez le tissu, comparez jusqu'à 10 lectures, donnez une étoile d'*or* à la bonne ou des étoiles d'*argent* à celles qui sont proches, et générez un intermédiaire à partir d'elles. L'image reste sur votre appareil. Les nombres de fils sont des proportions : une photo ne donne pas le nombre réel de fils. Cette fonction n'a pour l'instant été validée que sur des photos simulées.
+* **Inventer un tartan depuis n'importe quelle image.** Dans la même fenêtre, les couleurs d'une image deviennent la palette, et ce qu'on croise en la traversant donne les bandes. Les étoiles et les intermédiaires fonctionnent de la même façon.
 
 **Explorer**
 * Mood board de 10 à 100 motifs, avec épingles et variantes autour d'une tuile.

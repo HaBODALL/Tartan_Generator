@@ -528,6 +528,8 @@
     .estimate-paper { background: #222; border: 1px solid #555; color: #ddd; width: 760px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: 18px; border-radius: 8px; font-size: 13px; }
     .estimate-paper h2 { font-size: 17px; margin-bottom: 4px; }
     .estimate-hint { color: #999; font-size: 12px; margin-bottom: 10px; }
+    .estimate-mode { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 6px 0 8px; }
+    .estimate-mode label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
     .estimate-views { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: flex-start; }
     #estimate-source { max-width: 100%; cursor: crosshair; touch-action: none; border: 1px solid #555; }
     #estimate-result { width: 280px; height: 280px; max-width: 100%; border: 1px solid #555; }
@@ -743,7 +745,7 @@
           <button class="btn-secondary" id="btn-import-srt" data-i18n="btn_import" >IMPORTER</button>
           <button class="btn-secondary" id="btn-import-file" data-i18n="btn_import_file" data-i18n-title="title_import_file" title="Rouvrir un fichier texte exporté avec « Détails »">Fichier</button>
           <input type="file" id="import-file" accept=".txt,text/plain" hidden aria-hidden="true">
-          <button class="btn-secondary" id="btn-import-photo" data-i18n="btn_import_photo" data-i18n-title="title_import_photo" title="Estimer un tartan à partir d'une photo. L'image reste sur votre appareil.">Photo</button>
+          <button class="btn-secondary" id="btn-import-photo" data-i18n="btn_import_photo" data-i18n-title="title_import_photo" title="Estimer un tartan photographié, ou en inventer un à partir de n'importe quelle image. L'image reste sur votre appareil.">Photo</button>
           <input type="file" id="import-photo" accept="image/*" hidden aria-hidden="true">
       </div>
 
@@ -1033,8 +1035,12 @@
 
   <div id="estimate-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="estimate-title" hidden>
     <div class="estimate-paper">
-      <h2 id="estimate-title" data-i18n="estimate_title">Estimer un tartan depuis une photo</h2>
-      <p class="estimate-hint" data-i18n="estimate_hint">Tracez un rectangle sur la photo pour ne garder que le tissu. Pour un bon résultat : tissu à plat, bien éclairé, au moins deux motifs visibles.</p>
+      <h2 id="estimate-title" data-i18n="estimate_title">Un tartan depuis une image</h2>
+      <div class="estimate-mode" role="radiogroup" aria-labelledby="estimate-title">
+        <label><input type="radio" name="estimate-mode" id="estimate-mode-read" value="read" checked> <span data-i18n="estimate_mode_read">Estimer un tartan photographié</span></label>
+        <label><input type="radio" name="estimate-mode" id="estimate-mode-invent" value="invent"> <span data-i18n="estimate_mode_invent">Inventer un tartan depuis l'image</span></label>
+      </div>
+      <p class="estimate-hint" id="estimate-hint">Tracez un rectangle sur la photo pour ne garder que le tissu. Pour un bon résultat : tissu à plat, bien éclairé, au moins deux motifs visibles.</p>
       <div class="estimate-views">
         <canvas id="estimate-source"></canvas>
         <canvas id="estimate-result" width="280" height="280"></canvas>
@@ -1042,7 +1048,7 @@
       <p id="estimate-status" class="estimate-status" role="status" aria-live="polite"></p>
       <p class="estimate-hint" data-i18n="estimate_stars">Comparez jusqu'à 10 lectures. Étoile d'or : c'est le bon motif. Étoile d'argent : c'est proche ; les motifs argent servent à générer un intermédiaire.</p>
       <div id="estimate-proposals" class="estimate-proposals"></div>
-      <div class="control-row">
+      <div class="control-row" id="estimate-tolerance-row">
         <label for="estimate-tolerance" data-i18n="lbl_estimate_tolerance">Tolérance de couleur</label>
         <input type="range" id="estimate-tolerance" min="4" max="30" step="1" value="12">
       </div>

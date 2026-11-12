@@ -529,6 +529,45 @@ function runTests() {
             const alt = alternativeColor(sett[0].hex, sett);
             assertSilent(!sett.some(s => s.hex === alt.hex), 'an alternative color is a new color');
             console.info('✅ estimate proposals');
+        },
+        () => {
+            // Inventing a tartan from an image that is not a tartan
+            const paint = (w, h, colorAt) => {
+                const data = new Uint8ClampedArray(w * h * 4);
+                for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+                    const c = colorAt(x / w, y / h);
+                    data.set([c[0], c[1], c[2], 255], (y * w + x) * 4);
+                }
+                return { data, width: w, height: h };
+            };
+            const scene = paint(400, 300, (u, v) => {
+                if (Math.hypot(u - 0.7, v - 0.3) < 0.12) return [230, 40, 30];
+                if (v > 0.6) return [30, 130, 50];
+                return u < 0.5 ? [40, 110, 210] : [240, 240, 240];
+            });
+            const grid = imageToLabGrid(scene);
+            assertEqual(grid.w, 160, 'the image is reduced to a small grid');
+            assertEqual(grid.h, 120, 'the reduced grid keeps the proportions');
+            const groups = clusterColors(grid, 8);
+            assertSilent(groups.centers.length >= 4 && groups.centers.length <= 8, 'the main colors are found: ' + groups.centers.length);
+            assertEqual(groups.centers.reduce((a, c) => a + c.weight, 0), 160 * 120, 'every cell belongs to a color');
+            const line = Uint8Array.from([...new Array(40).fill(0), 1, ...new Array(40).fill(2), ...new Array(40).fill(0)]);
+            const runs = lineToRuns(line);
+            assertEqual(runs.map(r => r.label).join(), '0,2,0', 'a speck on a line is absorbed');
+            assertEqual(runs.reduce((a, r) => a + r.width, 0), 121, 'absorbing keeps the length');
+            const noisy = Uint8Array.from({ length: 200 }, (_, i) => Math.floor(i / 3) % 2);
+            assertSilent(lineToRuns(noisy, 6).length <= 6, 'a busy line is limited in runs');
+            const first = inventProposals(scene, { targetThreads: 240 });
+            assertEqual(first.length, ESTIMATE_MAX_PROPOSALS, 'an image gives a series of 10');
+            assertEqual(new Set(first.map(p => p.symmetric + p.stripes.map(s => s.hex + s.count).join())).size, first.length, 'invented tartans are all different');
+            assertSilent(first.every(p => p.stripes.length >= 2 && new Set(p.stripes.map(s => s.hex)).size >= 2), 'invented tartans have at least two colors');
+            assertSilent(first.every(p => new Set(p.stripes.map(s => s.hex)).size <= 8), 'invented tartans keep to 8 colors');
+            assertSilent(first.every(p => p.stripes.every(s => s.count >= 2 && s.count % 2 === 0)), 'invented tartans have even counts');
+            assertSilent(first.slice(0, 7).filter(p => p.symmetric).every(p => Math.abs(countSettThreads(p.stripes, true) - 240) <= 24), 'invented tartans reach the total');
+            const again = inventProposals(scene, { targetThreads: 240 });
+            assertEqual(JSON.stringify(again.map(p => p.stripes)), JSON.stringify(first.map(p => p.stripes)), 'the same image gives the same series');
+            assertEqual(inventProposals(paint(100, 100, () => [128, 128, 128])).length, 0, 'a plain image gives nothing');
+            console.info('✅ invent from an image');
         }
     ];
 

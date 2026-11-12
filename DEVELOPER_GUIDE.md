@@ -99,6 +99,7 @@ If the application shows a blank screen or a button does not work:
 | Readability | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Photo estimate | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
 | Proposals and stars | `estimateProposals`, `blendProposals`, `setProposalStar`, `refineProposals` |
+| Tartan from any image | `inventProposals`, `clusterColors`, `readImageLine`, `lineToRuns` |
 
 ## 7. Conventions
 
@@ -207,6 +208,7 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Lisibilité | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Estimation depuis une photo | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
 | Propositions et étoiles | `estimateProposals`, `blendProposals`, `setProposalStar`, `refineProposals` |
+| Tartan depuis une image quelconque | `inventProposals`, `clusterColors`, `readImageLine`, `lineToRuns` |
 
 ## 7. Conventions
 
