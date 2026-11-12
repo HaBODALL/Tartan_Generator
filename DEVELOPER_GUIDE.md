@@ -88,9 +88,10 @@ If the application shows a blank screen or a button does not work:
 |---|---|
 | Generation | `readGenerationParams`, `createStripes`, `recolorStripes` |
 | Rendering | `redrawTartan`, `buildThreadColors`, `fillTwillPixels`, `fillTwillRelief` |
-| View | `setZoom`, `zoomViewAt`, `panView`, `viewX` / `viewY` |
+| View | `setZoom`, `zoomViewAt`, `panView`, `resetView`, `viewX` / `viewY` |
+| Top bar menus | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener` |
 | Saving and history | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |
-| Loading a whole pattern | `applyLoadedPattern` (shared link, text file, photo) |
+| Loading a whole pattern | `applyLoadedPattern` (shared link, text file, image) |
 | Shared link | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |
 | Text import | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
@@ -197,9 +198,10 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 |---|---|
 | Génération | `readGenerationParams`, `createStripes`, `recolorStripes` |
 | Rendu | `redrawTartan`, `buildThreadColors`, `fillTwillPixels`, `fillTwillRelief` |
-| Vue | `setZoom`, `zoomViewAt`, `panView`, `viewX` / `viewY` |
+| Vue | `setZoom`, `zoomViewAt`, `panView`, `resetView`, `viewX` / `viewY` |
+| Menus de la barre du haut | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener` |
 | Sauvegarde et historique | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |
-| Charger un motif complet | `applyLoadedPattern` (lien, fichier texte, photo) |
+| Charger un motif complet | `applyLoadedPattern` (lien, fichier texte, image) |
 | Lien partagé | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |
 | Import texte | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
