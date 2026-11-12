@@ -151,6 +151,31 @@ function runTests() {
                 }
             }
             console.info('✅ fillTwillRelief keeps the twill');
+            // The cached blocks give exactly the pixels of a shade-by-shade fill, panned or not
+            const reference = (pixels, w, h, warp, isZ, k, weft, ox, oy) => {
+                const shifts = isZ ? [2, 1, 0, 3] : [2, 3, 0, 1], masks = getReliefMasks(k);
+                const phase = (x, y) => (x + ox - shifts[(y + oy) & 3]) & 3;
+                for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+                    const over = phase(x, y) < 2;
+                    const color = over ? weft[y] : warp[x];
+                    const type = over ? phase(x, y) : (phase(x, y - 1) < 2 ? 2 : 3);
+                    for (let py = 0; py < k; py++) for (let px = 0; px < k; px++) {
+                        const level = masks[type][py * k + px];
+                        pixels[(y * k + py) * w * k + x * k + px] = shadePixel(color, RELIEF_MIN + level * (RELIEF_MAX - RELIEF_MIN) / (RELIEF_LEVELS - 1));
+                    }
+                }
+            };
+            const many = Array.from({ length: 23 }, (_, i) => hexToPixel(['#C8002C', '#1870A4', '#101010', '#E8C000', '#FFFFFF'][(i * 7) % 5]));
+            for (const [w, h, k, ox, oy] of [[23, 17, 3, 0, 0], [17, 23, 5, 3, 1], [9, 11, 8, 2, 7]]) {
+                for (const isZ of [true, false]) {
+                    const warp = many.slice(0, w), weft = many.slice(23 - h).reverse();
+                    const fast = new Uint32Array(w * k * h * k), slow = new Uint32Array(fast.length);
+                    fillTwillRelief(fast, w, h, warp, isZ, k, weft, ox, oy);
+                    reference(slow, w, h, warp, isZ, k, weft, ox, oy);
+                    assertSilent(fast.every((v, i) => v === slow[i]), `relief blocks match the per-pixel fill (${w}x${h}, k=${k}, origin ${ox},${oy}, ${isZ ? 'Z' : 'S'})`);
+                }
+            }
+            console.info('✅ fillTwillRelief blocks match the per-pixel fill');
             const masks = getReliefMasks(8);
             const level = (m, px, py) => masks[m][py * 8 + px];
             assertSilent(level(0, 3, 4) > level(0, 3, 0), 'relief is lighter in the middle of a thread');
