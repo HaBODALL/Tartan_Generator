@@ -20,11 +20,11 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 * Choix de 8 couleurs au plus parmi les 137 nuances SRT.
 * Historique des 10 derniers motifs, et annulation.
 
-**Reprendre un motif**
+**Reprendre un motif** (menu *Nouveau* de la barre du haut)
 * Coller un code SRT (`R/72 B8 K12 ...`) ou charger un exemple.
 * Rouvrir un fichier texte produit par l'export *Détails*, avec ses teintes exactes et ses réglages de rendu.
 * Ouvrir un lien partagé.
-* **Estimer un tartan depuis une photo.** Cadrez le tissu, comparez jusqu'à 10 lectures, donnez une étoile d'*or* à la bonne ou des étoiles d'*argent* à celles qui sont proches, et générez un intermédiaire à partir d'elles. L'image reste sur votre appareil. Les nombres de fils sont des proportions : une photo ne donne pas le nombre réel de fils. Cette fonction n'a pour l'instant été validée que sur des photos simulées.
+* **Retrouver le tartan d'une image** (photo, scan ou dessin). Cadrez le tissu, comparez jusqu'à 10 lectures, donnez une étoile d'*or* à la bonne ou des étoiles d'*argent* à celles qui sont proches, et générez un intermédiaire à partir d'elles. L'image reste sur votre appareil. Les nombres de fils sont des proportions : une photo ne donne pas le nombre réel de fils. Cette fonction n'a pour l'instant été validée que sur des photos simulées.
 * **Inventer un tartan depuis n'importe quelle image.** Dans la même fenêtre, les couleurs d'une image deviennent la palette, et ce qu'on croise en la traversant donne les bandes. Les étoiles et les intermédiaires fonctionnent de la même façon.
 
 **Explorer**
@@ -35,15 +35,15 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 
 **Rendu**
 * Sergé 2/2, Z ou S, avec relief des fils et irrégularité de la laine.
-* Zoom aux boutons, au curseur, à la molette (autour du pointeur), aux touches `+` et `-` ou au pincement.
-* Déplacement du motif en le faisant glisser ou aux flèches ; un double-clic revient au début.
+* Zoom aux boutons posés sur le motif, au curseur, à la molette (autour du pointeur), aux touches `+` et `-` ou au pincement.
+* Déplacement du motif en le faisant glisser ou aux flèches ; un double-clic ou le bouton ⌖ revient au début.
 
-**Exporter et partager**
+**Exporter et partager** (menu *Exporter* et bouton *Copier le lien* de la barre du haut)
 * PNG de la vue, SVG d'un motif complet raccordable à la taille réelle, détails en texte (codes SRT et Ink/Stitch), ZIP ou PNG du mood board.
 * Fiche de tissage imprimable : ordre des fils et fil par couleur au m².
 * Lien qui rouvre exactement le motif, sans aucun serveur.
 
-**Clavier** : `Espace` ou `G` génèrent, `S` exporte tout, `P` exporte le PNG, `Ctrl+Z` annule, `+` et `-` zooment, les flèches déplacent, `Échap` ferme la planche ou la fenêtre.
+**Clavier** : `Espace` ou `G` génèrent, `S` exporte tout, `P` exporte le PNG, `Ctrl+Z` annule, `+` et `-` zooment, les flèches déplacent, `Échap` ferme un menu, la planche ou la fenêtre. Dans un menu, les flèches passent d'un choix à l'autre.
 
 ---
 

@@ -20,11 +20,11 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 * Choose up to 8 colors from the 137 SRT shades.
 * History of the last 10 patterns, and undo.
 
-**Bring a pattern in**
+**Bring a pattern in** (*New* menu in the top bar)
 * Paste an SRT threadcount (`R/72 B8 K12 ...`) or load one of the examples.
 * Reopen a text file written by the *Details* export, with its exact shades and rendering settings.
 * Open a shared link.
-* **Estimate a tartan from a photo.** Frame the cloth, compare up to 10 readings, give a *gold* star to the right one or *silver* stars to those that are close, and generate an intermediate from them. The image stays on your device. Thread counts are proportions, since a photo does not tell the real number of threads. This feature has only been validated on simulated photos so far.
+* **Read the tartan in an image** (photo, scan or drawing). Frame the cloth, compare up to 10 readings, give a *gold* star to the right one or *silver* stars to those that are close, and generate an intermediate from them. The image stays on your device. Thread counts are proportions, since a photo does not tell the real number of threads. This feature has only been validated on simulated photos so far.
 * **Invent a tartan from any image.** In the same window, the colors of a picture become the palette, and what a line across it meets gives the stripes. Stars and intermediates work the same way.
 
 **Explore**
@@ -35,15 +35,15 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 
 **Render**
 * 2/2 twill, Z or S, with thread relief and yarn irregularity.
-* Zoom with the buttons, the slider, the mouse wheel (around the pointer), the `+` and `-` keys or a pinch.
-* Move the pattern by dragging or with the arrow keys; a double click goes back to the start.
+* Zoom with the buttons on the pattern, the slider, the mouse wheel (around the pointer), the `+` and `-` keys or a pinch.
+* Move the pattern by dragging or with the arrow keys; a double click or the ⌖ button goes back to the start.
 
-**Export and share**
+**Export and share** (*Export* menu and *Copy link* button in the top bar)
 * PNG of the current view, SVG of one seamless repeat at real size, text details (SRT and Ink/Stitch codes), ZIP or PNG of the mood board.
 * Printable weaving sheet: thread order and yarn per color per square meter.
 * Link that reopens exactly the pattern, with no server involved.
 
-**Keyboard**: `Space` or `G` generate, `S` export all, `P` export PNG, `Ctrl+Z` undo, `+` and `-` zoom, arrows move, `Esc` closes the board or window.
+**Keyboard**: `Space` or `G` generate, `S` export all, `P` export PNG, `Ctrl+Z` undo, `+` and `-` zoom, arrows move, `Esc` closes a menu, the board or a window. In a menu, the arrow keys move between choices.
 
 ---
 

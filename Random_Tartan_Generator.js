@@ -217,7 +217,7 @@ const TRANSLATIONS = {
         chk_check_mode: "Damier",
         desc_check_mode: "Génère des bandes de largeurs égales",
         lbl_sett: "Densité (Sett cible)",
-        sec_zoom: "Zoom et Échelle",
+        sec_zoom: "Fil et rendu",
         lbl_thread_mm: "Diamètre du fil (mm)",
         lbl_zoom: "Zoom Visuel",
         lbl_width_cm: "Largeur motif",
@@ -258,7 +258,7 @@ const TRANSLATIONS = {
         hist_empty: "Les motifs précédents apparaîtront ici.",
         hist_restore: "Revenir à ce motif",
         btn_export_all: "Exporter tout",
-        btn_about: "ℹ️ À propos",
+        btn_about: "À propos",
         title_about: "À propos",
         txt_about_p1: "Random Tartan Generator est un outil open-source (CC BY-SA 4.0) permettant de créer des motifs de tartan. Il s'appuie sur le format du Scottish Register of Tartans (SRT).",
         txt_about_p2: "Vous pouvez l'utiliser pour la conception, ou exporter les motifs pour Ink/Stitch.",
@@ -310,7 +310,7 @@ const TRANSLATIONS = {
         msg_link_copied: "Lien du motif copié.",
         msg_link_manual: "Copiez ce lien :",
         msg_link_invalid: "Ce lien de motif est incomplet ou invalide.",
-        btn_import_file: "Fichier",
+        btn_import_file: "Rouvrir un fichier texte (.txt)",
         title_import_file: "Rouvrir un fichier texte exporté avec « Détails »",
         msg_import_file_err: "Ce fichier n'est pas un export de détails valide.",
         btn_weaving_sheet: "Fiche de tissage",
@@ -346,20 +346,20 @@ const TRANSLATIONS = {
         vision_deuter: "Deutéranopie (vert)",
         vision_tritan: "Tritanopie (bleu)",
         note_vision: "À l'écran seulement : les exports gardent les vraies couleurs.",
-        btn_import_photo: "Photo",
-        title_import_photo: "Estimer un tartan photographié, ou en inventer un à partir de n'importe quelle image. L'image reste sur votre appareil.",
+        btn_import_photo: "Depuis une image (dessin, photo ou autre)",
+        title_import_photo: "Retrouver le tartan d'une image, ou en inventer un à partir de n'importe quelle image. L'image reste sur votre appareil.",
         estimate_title: "Un tartan depuis une image",
-        estimate_hint: "Tracez un rectangle sur la photo pour ne garder que le tissu. Pour un bon résultat : tissu à plat, bien éclairé, au moins deux motifs visibles.",
+        estimate_hint: "Tracez un rectangle sur l'image pour ne garder que le tissu. Pour un bon résultat : tissu à plat, bien éclairé, au moins deux motifs visibles.",
         lbl_estimate_tolerance: "Tolérance de couleur",
         lbl_estimate_threads: "Fils par motif",
         lbl_estimate_code: "Code SRT estimé",
         btn_estimate_apply: "Utiliser ce motif",
         estimate_good: "Répétition et symétrie détectées. Les nombres de fils sont des proportions, à vérifier.",
-        estimate_fair: "Répétition détectée, sans symétrie : motif asymétrique, ou photo trop irrégulière.",
-        estimate_low: "Moins de deux motifs reconnus : le résultat ne décrit que ce qui se voit sur la photo.",
+        estimate_fair: "Répétition détectée, sans symétrie : motif asymétrique, ou image trop irrégulière.",
+        estimate_low: "Moins de deux motifs reconnus : le résultat ne décrit que ce qui se voit sur l'image.",
         estimate_none: "Aucune bande reconnue. Essayez de cadrer le tissu seul, ou changez la tolérance.",
         msg_photo_err: "Cette image n'a pas pu être lue.",
-        msg_estimate_done: "Motif estimé depuis la photo : vérifiez les couleurs et les proportions.",
+        msg_estimate_done: "Motif estimé depuis l'image : vérifiez les couleurs et les proportions.",
         estimate_stars: "Comparez jusqu'à 10 lectures. Étoile d'or : c'est le bon motif. Étoile d'argent : c'est proche ; les motifs argent servent à générer un intermédiaire.",
         estimate_refined: "Tour % : la première proposition est l'intermédiaire de vos étoiles d'argent.",
         star_gold: "Étoile d'or : c'est le bon motif",
@@ -380,8 +380,8 @@ const TRANSLATIONS = {
         proposal_color: "Couleur %",
         proposal_intermediate: "Intermédiaire",
         proposal_kept: "Votre choix précédent",
-        msg_estimate_gold: "Motif confirmé d'après la photo. Les nombres de fils restent des proportions.",
-        estimate_mode_read: "Estimer un tartan photographié",
+        msg_estimate_gold: "Motif confirmé d'après l'image. Les nombres de fils restent des proportions.",
+        estimate_mode_read: "Retrouver le tartan de l'image",
         estimate_mode_invent: "Inventer un tartan depuis l'image",
         invent_hint: "N'importe quelle image convient : ses couleurs deviennent la palette, et ce qu'on croise en la traversant donne les bandes. Tracez un rectangle pour n'en garder qu'une partie.",
         invent_status: "Motifs inventés à partir des couleurs de l'image.",
@@ -392,6 +392,19 @@ const TRANSLATIONS = {
         proposal_invent_areas: "Surfaces des couleurs",
         proposal_invent_colors: "% couleurs",
         msg_invent_done: "Tartan inventé à partir de l'image.",
+        nav_main: "Menus principaux",
+        menu_new: "Nouveau",
+        menu_new_random: "Motif aléatoire",
+        menu_new_srt: "Depuis un code SRT",
+        menu_new_example: "Depuis un exemple",
+        menu_export: "Exporter",
+        menu_export_png: "Image PNG (vue actuelle)",
+        menu_export_svg: "Vectoriel SVG (un motif raccordable)",
+        menu_export_txt: "Détails (.txt, à rouvrir)",
+        menu_export_sheet: "Fiche de tissage (à imprimer)",
+        menu_export_all: "Tout : PNG, SVG et détails",
+        btn_about_short: "À propos",
+        btn_reset_view: "Revenir au début du motif",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -408,7 +421,7 @@ const TRANSLATIONS = {
         chk_check_mode: "Checkers",
         desc_check_mode: "Generates stripes of equal widths",
         lbl_sett: "Density (Target Sett)",
-        sec_zoom: "Zoom & Scale",
+        sec_zoom: "Yarn & rendering",
         lbl_thread_mm: "Thread Diameter (mm)",
         lbl_zoom: "Visual Zoom",
         lbl_width_cm: "Pattern Width",
@@ -449,7 +462,7 @@ const TRANSLATIONS = {
         hist_empty: "Previous patterns will appear here.",
         hist_restore: "Go back to this pattern",
         btn_export_all: "Export All",
-        btn_about: "ℹ️ About",
+        btn_about: "About",
         title_about: "About",
         txt_about_p1: "Random Tartan Generator is an open-source tool (CC BY-SA 4.0) to create tartan patterns. It uses the Scottish Register of Tartans (SRT) format.",
         txt_about_p2: "You can use it for design, or export patterns for Ink/Stitch.",
@@ -501,7 +514,7 @@ const TRANSLATIONS = {
         msg_link_copied: "Pattern link copied.",
         msg_link_manual: "Copy this link:",
         msg_link_invalid: "This pattern link is incomplete or invalid.",
-        btn_import_file: "File",
+        btn_import_file: "Reopen a text file (.txt)",
         title_import_file: "Reopen a text file exported with \"Details\"",
         msg_import_file_err: "This file is not a valid details export.",
         btn_weaving_sheet: "Weaving sheet",
@@ -537,20 +550,20 @@ const TRANSLATIONS = {
         vision_deuter: "Deuteranopia (green)",
         vision_tritan: "Tritanopia (blue)",
         note_vision: "On screen only: exports keep the true colors.",
-        btn_import_photo: "Photo",
-        title_import_photo: "Estimate a photographed tartan, or invent one from any image. The image stays on your device.",
+        btn_import_photo: "From an image (drawing, photo or other)",
+        title_import_photo: "Read the tartan in an image, or invent one from any image. The image stays on your device.",
         estimate_title: "A tartan from an image",
-        estimate_hint: "Drag a rectangle on the photo to keep only the cloth. For a good result: flat cloth, even light, at least two repeats in view.",
+        estimate_hint: "Drag a rectangle on the image to keep only the cloth. For a good result: flat cloth, even light, at least two repeats in view.",
         lbl_estimate_tolerance: "Color tolerance",
         lbl_estimate_threads: "Threads per sett",
         lbl_estimate_code: "Estimated SRT code",
         btn_estimate_apply: "Use this pattern",
         estimate_good: "Repeat and symmetry found. Thread counts are proportions, to be checked.",
-        estimate_fair: "Repeat found, without symmetry: an asymmetric pattern, or an uneven photo.",
-        estimate_low: "Fewer than two repeats recognized: the result only describes what the photo shows.",
+        estimate_fair: "Repeat found, without symmetry: an asymmetric pattern, or an uneven image.",
+        estimate_low: "Fewer than two repeats recognized: the result only describes what the image shows.",
         estimate_none: "No stripes recognized. Try framing only the cloth, or change the tolerance.",
         msg_photo_err: "This image could not be read.",
-        msg_estimate_done: "Pattern estimated from the photo: check its colors and proportions.",
+        msg_estimate_done: "Pattern estimated from the image: check its colors and proportions.",
         estimate_stars: "Compare up to 10 readings. Gold star: this is the right pattern. Silver star: it is close; silver patterns are used to generate an intermediate.",
         estimate_refined: "Round %: the first proposal is the intermediate of your silver stars.",
         star_gold: "Gold star: this is the right pattern",
@@ -571,8 +584,8 @@ const TRANSLATIONS = {
         proposal_color: "Color %",
         proposal_intermediate: "Intermediate",
         proposal_kept: "Your previous choice",
-        msg_estimate_gold: "Pattern confirmed from the photo. Thread counts are still proportions.",
-        estimate_mode_read: "Estimate a photographed tartan",
+        msg_estimate_gold: "Pattern confirmed from the image. Thread counts are still proportions.",
+        estimate_mode_read: "Read the tartan in the image",
         estimate_mode_invent: "Invent a tartan from the image",
         invent_hint: "Any image will do: its colors become the palette, and what a line across it meets gives the stripes. Drag a rectangle to keep only a part of it.",
         invent_status: "Patterns invented from the colors of the image.",
@@ -583,6 +596,19 @@ const TRANSLATIONS = {
         proposal_invent_areas: "Color areas",
         proposal_invent_colors: "% colors",
         msg_invent_done: "Tartan invented from the image.",
+        nav_main: "Main menus",
+        menu_new: "New",
+        menu_new_random: "Random pattern",
+        menu_new_srt: "From an SRT code",
+        menu_new_example: "From an example",
+        menu_export: "Export",
+        menu_export_png: "PNG image (current view)",
+        menu_export_svg: "SVG vector (one seamless repeat)",
+        menu_export_txt: "Details (.txt, can be reopened)",
+        menu_export_sheet: "Weaving sheet (to print)",
+        menu_export_all: "All: PNG, SVG and details",
+        btn_about_short: "About",
+        btn_reset_view: "Back to the start of the pattern",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -875,6 +901,16 @@ function bindEvents() {
     if (domElements.btnEstimateBack) domElements.btnEstimateBack.addEventListener('click', previousProposals);
     bindEstimateSelection();
 
+    setupMenus();
+    const menuNewRandom = document.getElementById('menu-new-random');
+    if (menuNewRandom) menuNewRandom.addEventListener('click', () => handleGenerateClick());
+    const menuNewSrt = document.getElementById('menu-new-srt');
+    if (menuNewSrt) menuNewSrt.addEventListener('click', () => revealInPanel(domElements.importText));
+    const menuNewExample = document.getElementById('menu-new-example');
+    if (menuNewExample) menuNewExample.addEventListener('click', () => revealInPanel(domElements.srtExamples));
+    const btnResetView = document.getElementById('btn-reset-view');
+    if (btnResetView) btnResetView.addEventListener('click', resetView);
+
     const importFile = document.getElementById('import-file');
     const btnImportFile = document.getElementById('btn-import-file');
     if (importFile && btnImportFile) {
@@ -1102,6 +1138,14 @@ function bindEvents() {
     }
 }
 document.addEventListener('keydown', (e) => {
+    const menuButton = openMenuButton();
+    if (menuButton && e.key === 'Escape') {
+        e.preventDefault();
+        closeMenus();
+        menuButton.focus();
+        return;
+    }
+
     if (isEstimateOpen()) {
         if (e.key === 'Escape') {
             e.preventDefault();
@@ -1882,6 +1926,75 @@ function buildInkStitchCode(stripes, isSymmetric) {
 window.buildSRTCode = buildSRTCode;
 window.buildInkStitchCode = buildInkStitchCode;
 
+
+// Top bar menus: a button opens its list; a choice, a click elsewhere or Escape closes it
+function setupMenus() {
+    document.querySelectorAll('.menu-btn').forEach(btn => {
+        const list = document.getElementById(btn.getAttribute('aria-controls'));
+        if (!list) return;
+        const items = () => [...list.querySelectorAll('.menu-item')];
+        btn.addEventListener('click', () => {
+            const opening = list.hidden;
+            closeMenus();
+            if (opening) openMenu(btn);
+        });
+        btn.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowDown') return;
+            e.preventDefault();
+            closeMenus();
+            openMenu(btn);
+            items()[0].focus();
+        });
+        list.addEventListener('click', (e) => { if (e.target.closest('.menu-item')) closeMenus(); });
+        list.addEventListener('keydown', (e) => {
+            const all = items(), i = all.indexOf(document.activeElement);
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                all[(i + (e.key === 'ArrowDown' ? 1 : all.length - 1)) % all.length].focus();
+            } else if (e.key === 'Home' || e.key === 'End') {
+                e.preventDefault();
+                all[e.key === 'Home' ? 0 : all.length - 1].focus();
+            } else if (e.key === 'Tab') {
+                closeMenus();
+            }
+        });
+    });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeMenus(); });
+}
+
+function openMenu(btn) {
+    document.getElementById(btn.getAttribute('aria-controls')).hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+}
+
+function closeMenus() {
+    document.querySelectorAll('.menu-btn').forEach(btn => {
+        btn.setAttribute('aria-expanded', 'false');
+        const list = document.getElementById(btn.getAttribute('aria-controls'));
+        if (list) list.hidden = true;
+    });
+}
+
+function openMenuButton() {
+    return document.querySelector('.menu-btn[aria-expanded="true"]');
+}
+
+// Gives the focus back to what opened a window; a menu choice is hidden by then, so its menu button gets it
+function focusOpener(el) {
+    if (!el || !el.isConnected) return;
+    const menu = el.closest('.menu');
+    (menu ? menu.querySelector('.menu-btn') : el).focus();
+}
+
+// Shows a control of the side panel: opens the panel and its section, then gives it the focus
+function revealInPanel(el) {
+    if (!el) return;
+    if (domElements.sidebar && domElements.sidebar.classList.contains('collapsed')) toggleSidebar();
+    const section = el.closest('details');
+    if (section) section.open = true;
+    el.scrollIntoView({ block: 'nearest' });
+    el.focus();
+}
 
 // Toggle Sidebar
 function toggleSidebar() {
@@ -3548,7 +3661,7 @@ async function openEstimateFromFile(file) {
 function closeEstimate() {
     if (!isEstimateOpen()) return;
     domElements.estimateModal.hidden = true;
-    estimateState?.opener?.focus();
+    focusOpener(estimateState?.opener);
     estimateState = null;
 }
 
@@ -4203,7 +4316,7 @@ function openWeavingSheet() {
 function closeWeavingSheet() {
     if (!isWeavingSheetOpen()) return;
     domElements.sheetModal.hidden = true;
-    weavingSheetOpener?.focus();
+    focusOpener(weavingSheetOpener);
     weavingSheetOpener = null;
 }
 
