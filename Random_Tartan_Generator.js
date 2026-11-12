@@ -162,6 +162,9 @@ const ESTIMATE_MIRROR_MAX = 11;     // Mean color difference allowed between the
 const ESTIMATE_EDGE_WIDTH = 3;      // Narrower segments may be only the blur between two stripes
 const ESTIMATE_MAX_COLORS = 8;
 const ESTIMATE_MAX_PROPOSALS = 10;  // As many as the history keeps
+const INVENT_GRID_SIDE = 160;       // Longest side of the small grid an image is reduced to
+const INVENT_MAX_RUNS = 12;         // Most stripes read along a line of the image
+const INVENT_MERGE_DISTANCE = 10;   // Color groups closer than this are one color
 const ESTIMATE_BLEND_LENGTH = 480;  // Positions of a repeat when several proposals are averaged
 const ESTIMATE_DARK_FLOOR = 0.015;  // Under this linear level, differences are only noise
 let srtLabTable = null;
@@ -344,8 +347,8 @@ const TRANSLATIONS = {
         vision_tritan: "Tritanopie (bleu)",
         note_vision: "À l'écran seulement : les exports gardent les vraies couleurs.",
         btn_import_photo: "Photo",
-        title_import_photo: "Estimer un tartan à partir d'une photo. L'image reste sur votre appareil.",
-        estimate_title: "Estimer un tartan depuis une photo",
+        title_import_photo: "Estimer un tartan photographié, ou en inventer un à partir de n'importe quelle image. L'image reste sur votre appareil.",
+        estimate_title: "Un tartan depuis une image",
         estimate_hint: "Tracez un rectangle sur la photo pour ne garder que le tissu. Pour un bon résultat : tissu à plat, bien éclairé, au moins deux motifs visibles.",
         lbl_estimate_tolerance: "Tolérance de couleur",
         lbl_estimate_threads: "Fils par motif",
@@ -378,6 +381,17 @@ const TRANSLATIONS = {
         proposal_intermediate: "Intermédiaire",
         proposal_kept: "Votre choix précédent",
         msg_estimate_gold: "Motif confirmé d'après la photo. Les nombres de fils restent des proportions.",
+        estimate_mode_read: "Estimer un tartan photographié",
+        estimate_mode_invent: "Inventer un tartan depuis l'image",
+        invent_hint: "N'importe quelle image convient : ses couleurs deviennent la palette, et ce qu'on croise en la traversant donne les bandes. Tracez un rectangle pour n'en garder qu'une partie.",
+        invent_status: "Motifs inventés à partir des couleurs de l'image.",
+        invent_none: "Cette image n'a pas assez de couleurs différentes.",
+        proposal_invent_horizontal: "Ligne horizontale",
+        proposal_invent_vertical: "Ligne verticale",
+        proposal_invent_diagonal: "Ligne en diagonale",
+        proposal_invent_areas: "Surfaces des couleurs",
+        proposal_invent_colors: "% couleurs",
+        msg_invent_done: "Tartan inventé à partir de l'image.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -524,8 +538,8 @@ const TRANSLATIONS = {
         vision_tritan: "Tritanopia (blue)",
         note_vision: "On screen only: exports keep the true colors.",
         btn_import_photo: "Photo",
-        title_import_photo: "Estimate a tartan from a photo. The image stays on your device.",
-        estimate_title: "Estimate a tartan from a photo",
+        title_import_photo: "Estimate a photographed tartan, or invent one from any image. The image stays on your device.",
+        estimate_title: "A tartan from an image",
         estimate_hint: "Drag a rectangle on the photo to keep only the cloth. For a good result: flat cloth, even light, at least two repeats in view.",
         lbl_estimate_tolerance: "Color tolerance",
         lbl_estimate_threads: "Threads per sett",
@@ -558,6 +572,17 @@ const TRANSLATIONS = {
         proposal_intermediate: "Intermediate",
         proposal_kept: "Your previous choice",
         msg_estimate_gold: "Pattern confirmed from the photo. Thread counts are still proportions.",
+        estimate_mode_read: "Estimate a photographed tartan",
+        estimate_mode_invent: "Invent a tartan from the image",
+        invent_hint: "Any image will do: its colors become the palette, and what a line across it meets gives the stripes. Drag a rectangle to keep only a part of it.",
+        invent_status: "Patterns invented from the colors of the image.",
+        invent_none: "This image does not have enough different colors.",
+        proposal_invent_horizontal: "Horizontal line",
+        proposal_invent_vertical: "Vertical line",
+        proposal_invent_diagonal: "Diagonal line",
+        proposal_invent_areas: "Color areas",
+        proposal_invent_colors: "% colors",
+        msg_invent_done: "Tartan invented from the image.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -733,6 +758,10 @@ function cacheDomElements() {
     domElements.estimateModal = document.getElementById('estimate-modal');
     domElements.estimateSource = document.getElementById('estimate-source');
     domElements.estimateResult = document.getElementById('estimate-result');
+    domElements.estimateModeRead = document.getElementById('estimate-mode-read');
+    domElements.estimateModeInvent = document.getElementById('estimate-mode-invent');
+    domElements.estimateHint = document.getElementById('estimate-hint');
+    domElements.estimateToleranceRow = document.getElementById('estimate-tolerance-row');
     domElements.estimateProposals = document.getElementById('estimate-proposals');
     domElements.btnEstimateRefine = document.getElementById('btn-estimate-refine');
     domElements.btnEstimateBack = document.getElementById('btn-estimate-back');
@@ -838,6 +867,9 @@ function bindEvents() {
     if (domElements.btnEstimateCancel) domElements.btnEstimateCancel.addEventListener('click', closeEstimate);
     if (domElements.btnEstimateApply) domElements.btnEstimateApply.addEventListener('click', applyEstimate);
     if (domElements.estimateTolerance) domElements.estimateTolerance.addEventListener('change', runEstimate);
+    [domElements.estimateModeRead, domElements.estimateModeInvent].forEach(radio => {
+        if (radio) radio.addEventListener('change', runEstimate);
+    });
     if (domElements.estimateThreads) domElements.estimateThreads.addEventListener('change', rescaleProposals);
     if (domElements.btnEstimateRefine) domElements.btnEstimateRefine.addEventListener('click', refineProposals);
     if (domElements.btnEstimateBack) domElements.btnEstimateBack.addEventListener('click', previousProposals);
@@ -3251,6 +3283,216 @@ function rescaleStripes(stripes, symmetric, targetThreads) {
     return stripes.map(s => ({ ...s, count: Math.max(2, Math.round(s.count * factor / 2) * 2) }));
 }
 
+// --- Inventing a tartan from any image ---
+// No tartan to find here: the colors of the image become the palette, and the order and
+// width of the colors met along a line across it become the sett.
+
+// The image reduced to a small grid of Lab colors
+function imageToLabGrid(image, side = INVENT_GRID_SIDE) {
+    const { data, width, height } = image;
+    const scale = Math.min(1, side / Math.max(width, height));
+    const w = Math.max(1, Math.round(width * scale));
+    const h = Math.max(1, Math.round(height * scale));
+    const linear = new Float64Array(256);
+    for (let i = 0; i < 256; i++) linear[i] = srgbToLinear(i);
+
+    const sums = new Float64Array(w * h * 3);
+    const counts = new Uint32Array(w * h);
+    for (let y = 0; y < height; y++) {
+        const gy = Math.min(h - 1, Math.floor(y * scale));
+        for (let x = 0; x < width; x++) {
+            const cell = gy * w + Math.min(w - 1, Math.floor(x * scale));
+            const p = (y * width + x) * 4;
+            sums[cell * 3] += linear[data[p]];
+            sums[cell * 3 + 1] += linear[data[p + 1]];
+            sums[cell * 3 + 2] += linear[data[p + 2]];
+            counts[cell]++;
+        }
+    }
+    const lab = new Float64Array(w * h * 3);
+    for (let i = 0; i < w * h; i++) {
+        const n = Math.max(1, counts[i]);
+        lab.set(linearRgbToLab(sums[i * 3] / n, sums[i * 3 + 1] / n, sums[i * 3 + 2] / n), i * 3);
+    }
+    return { w, h, lab };
+}
+
+// Groups the cells into at most k colors (k-means, always the same result for an image)
+function clusterColors(grid, k, seed = 1) {
+    const { w, h, lab } = grid;
+    const n = w * h;
+    const rand = seededRandom(seed);
+    const squared = (i, center) => Math.pow(lab[i * 3] - center[0], 2) + Math.pow(lab[i * 3 + 1] - center[1], 2) + Math.pow(lab[i * 3 + 2] - center[2], 2);
+    const cellColor = i => [lab[i * 3], lab[i * 3 + 1], lab[i * 3 + 2]];
+
+    // Starting colors spread over the image, each far from the previous ones
+    let centers = [cellColor(Math.floor(rand() * n))];
+    const nearest = new Float64Array(n).fill(Infinity);
+    while (centers.length < k) {
+        let total = 0;
+        for (let i = 0; i < n; i++) {
+            nearest[i] = Math.min(nearest[i], squared(i, centers[centers.length - 1]));
+            total += nearest[i];
+        }
+        if (total < 1e-6) break;
+        let target = rand() * total, chosen = n - 1;
+        for (let i = 0; i < n; i++) {
+            target -= nearest[i];
+            if (target <= 0) {
+                chosen = i;
+                break;
+            }
+        }
+        centers.push(cellColor(chosen));
+    }
+
+    const labels = new Uint8Array(n);
+    const assign = () => {
+        for (let i = 0; i < n; i++) {
+            let best = 0, bestDistance = Infinity;
+            for (let c = 0; c < centers.length; c++) {
+                const d = squared(i, centers[c]);
+                if (d < bestDistance) {
+                    bestDistance = d;
+                    best = c;
+                }
+            }
+            labels[i] = best;
+        }
+    };
+    const update = () => {
+        const sums = centers.map(() => [0, 0, 0, 0]);
+        for (let i = 0; i < n; i++) {
+            const s = sums[labels[i]];
+            s[0] += lab[i * 3];
+            s[1] += lab[i * 3 + 1];
+            s[2] += lab[i * 3 + 2];
+            s[3]++;
+        }
+        centers = centers.map((center, c) => sums[c][3] > 0 ? [sums[c][0] / sums[c][3], sums[c][1] / sums[c][3], sums[c][2] / sums[c][3]] : center);
+        return sums.map(s => s[3]);
+    };
+    let weights = [];
+    for (let iteration = 0; iteration < 12; iteration++) {
+        assign();
+        weights = update();
+    }
+
+    // Groups that ended up alike, or empty, are merged away
+    const target = centers.map((_, c) => c);
+    for (let a = 0; a < centers.length; a++) {
+        for (let b = a + 1; b < centers.length; b++) {
+            if (target[b] === b && Math.hypot(centers[a][0] - centers[b][0], centers[a][1] - centers[b][1], centers[a][2] - centers[b][2]) < INVENT_MERGE_DISTANCE) target[b] = target[a];
+        }
+    }
+    const kept = [...new Set(target)].filter(c => weights[c] > 0 || target.some((t, i) => t === c && weights[i] > 0));
+    const renumber = new Map(kept.map((c, i) => [c, i]));
+    for (let i = 0; i < n; i++) labels[i] = renumber.get(target[labels[i]]);
+    const total = new Array(kept.length).fill(0);
+    target.forEach((t, c) => { if (renumber.has(t)) total[renumber.get(t)] += weights[c]; });
+    return { centers: kept.map((c, i) => ({ lab: centers[c], weight: total[i] })), labels };
+}
+
+// The main color of the cells around each point of a line across the grid
+function readImageLine(grid, labels, colorCount, from, to) {
+    const { w, h } = grid;
+    const length = Math.max(Math.abs(to[0] - from[0]), Math.abs(to[1] - from[1])) + 1;
+    const line = new Uint8Array(length);
+    const counts = new Uint32Array(colorCount);
+    for (let i = 0; i < length; i++) {
+        const t = length > 1 ? i / (length - 1) : 0;
+        const cx = Math.round(from[0] + (to[0] - from[0]) * t);
+        const cy = Math.round(from[1] + (to[1] - from[1]) * t);
+        counts.fill(0);
+        for (let y = Math.max(0, cy - 2); y <= Math.min(h - 1, cy + 2); y++) {
+            for (let x = Math.max(0, cx - 2); x <= Math.min(w - 1, cx + 2); x++) counts[labels[y * w + x]]++;
+        }
+        let best = 0;
+        for (let c = 1; c < colorCount; c++) if (counts[c] > counts[best]) best = c;
+        line[i] = best;
+    }
+    return line;
+}
+
+// Runs of one color along a line, with the narrowest ones absorbed by a neighbor
+function lineToRuns(line, maxRuns = INVENT_MAX_RUNS) {
+    const merge = runs => runs.reduce((out, run) => {
+        const last = out[out.length - 1];
+        if (last && last.label === run.label) last.width += run.width;
+        else out.push({ ...run });
+        return out;
+    }, []);
+    let runs = merge(Array.from(line, label => ({ label, width: 1 })));
+    const minWidth = Math.max(2, line.length / 50);
+    while (runs.length > 1) {
+        let at = 0;
+        for (let i = 1; i < runs.length; i++) if (runs[i].width < runs[at].width) at = i;
+        if (runs.length <= maxRuns && runs[at].width >= minWidth) break;
+        const before = runs[at - 1], after = runs[at + 1];
+        const neighbor = !before ? after : !after ? before : (before.width >= after.width ? before : after);
+        neighbor.width += runs[at].width;
+        runs.splice(at, 1);
+        runs = merge(runs);
+    }
+    return runs;
+}
+
+// Up to 10 tartans made from one image
+function inventProposals(image, { targetThreads = 240 } = {}) {
+    const grid = imageToLabGrid(image);
+    const list = createProposalList();
+    const { w, h } = grid;
+    const right = w - 1, bottom = h - 1, middleX = Math.floor(w / 2), middleY = Math.floor(h / 2);
+    const lines = {
+        horizontal: [[0, middleY], [right, middleY]],
+        vertical: [[middleX, 0], [middleX, bottom]],
+        diagonal: [[0, 0], [right, bottom]],
+        otherDiagonal: [[right, 0], [0, bottom]],
+        upper: [[0, Math.floor(h / 3)], [right, Math.floor(h / 3)]],
+        side: [[Math.floor(w / 3), 0], [Math.floor(w / 3), bottom]]
+    };
+    const clusterings = new Map();
+    const clustered = k => {
+        if (!clusterings.has(k)) clusterings.set(k, clusterColors(grid, k));
+        return clusterings.get(k);
+    };
+    const addSegments = (segments, symmetric, caption) => {
+        if (segments.length >= 2) list.add(segmentsToStripes(segments, symmetric, targetThreads), symmetric, caption);
+    };
+    const addLine = (k, name, caption, symmetric = true) => {
+        const { centers, labels } = clustered(k);
+        if (centers.length < 2) return;
+        const runs = lineToRuns(readImageLine(grid, labels, centers.length, lines[name][0], lines[name][1]));
+        addSegments(runs.map(run => ({ width: run.width, lab: centers[run.label].lab })), symmetric, caption);
+    };
+    // Every color of the image, dark and light in turn, as wide as the room it takes
+    const addAreas = (k, caption) => {
+        const { centers } = clustered(k);
+        const sorted = [...centers].sort((a, b) => a.lab[0] - b.lab[0]);
+        const alternating = sorted.map((_, i) => sorted[i % 2 === 0 ? i / 2 : sorted.length - 1 - (i - 1) / 2]);
+        addSegments(alternating.map(c => ({ width: Math.sqrt(c.weight), lab: c.lab })), true, caption);
+    };
+
+    addLine(5, 'horizontal', ['invent_horizontal']);
+    addLine(5, 'vertical', ['invent_vertical']);
+    addLine(5, 'diagonal', ['invent_diagonal']);
+    addAreas(5, ['invent_areas']);
+    addLine(3, 'horizontal', ['invent_colors', 3]);
+    addLine(4, 'vertical', ['invent_colors', 4]);
+    addLine(8, 'horizontal', ['invent_colors', 8]);
+    addLine(5, 'horizontal', ['asymmetric'], false);
+    addLine(6, 'otherDiagonal', ['invent_diagonal']);
+    addLine(5, 'upper', ['invent_horizontal']);
+    addLine(5, 'side', ['invent_vertical']);
+    addAreas(8, ['invent_areas']);
+    if (list.length > 0) addVariants(list, list[0]);
+    return list;
+}
+
+function isInventMode() {
+    return !!domElements.estimateModeInvent?.checked;
+}
+
 let estimateState = null; // { photo, region, proposals, selected, result, rounds, opener }
 
 function isEstimateOpen() {
@@ -3284,6 +3526,7 @@ async function openEstimateFromFile(file) {
     if (domElements.estimateThreads) {
         domElements.estimateThreads.value = parseInt(domElements.sett?.value, 10) || 240;
     }
+    if (domElements.estimateModeRead) domElements.estimateModeRead.checked = true;
     domElements.estimateModal.hidden = false;
     domElements.btnEstimateCancel?.focus();
     drawEstimateSource();
@@ -3331,7 +3574,9 @@ function runEstimate() {
     const area = region || { x: 0, y: 0, w: photo.width, h: photo.height };
     const image = photo.getContext('2d', { willReadFrequently: true }).getImageData(area.x, area.y, area.w, area.h);
     estimateState.rounds = [];
-    showProposals(estimateProposals(image, { tolerance: readEstimateTolerance(), targetThreads: readEstimateThreads() }));
+    showProposals(isInventMode()
+        ? inventProposals(image, { targetThreads: readEstimateThreads() })
+        : estimateProposals(image, { tolerance: readEstimateTolerance(), targetThreads: readEstimateThreads() }));
 }
 
 function readEstimateTolerance() {
@@ -3357,9 +3602,12 @@ function selectProposal(index) {
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     if (result) renderPatternCanvas(canvas, { stripes: result.stripes, symmetric: result.symmetric }, 'fit');
     domElements.estimateCode.value = result ? buildSRTCode(result.stripes, result.symmetric) : '';
-    if (!result) domElements.estimateStatus.textContent = t.estimate_none;
+    const invent = isInventMode();
+    if (domElements.estimateHint) domElements.estimateHint.textContent = invent ? t.invent_hint : t.estimate_hint;
+    if (domElements.estimateToleranceRow) domElements.estimateToleranceRow.hidden = invent;
+    if (!result) domElements.estimateStatus.textContent = invent ? t.invent_none : t.estimate_none;
     else if (estimateState.rounds.length > 0) domElements.estimateStatus.textContent = t.estimate_refined.replace('%', estimateState.rounds.length + 1);
-    else domElements.estimateStatus.textContent = t['estimate_' + result.confidence];
+    else domElements.estimateStatus.textContent = invent ? t.invent_status : t['estimate_' + result.confidence];
     renderProposalGrid();
 }
 
@@ -3449,9 +3697,10 @@ function applyEstimate() {
     const gold = goldProposal();
     const result = gold || estimateState?.result;
     if (!result) return;
+    const invented = isInventMode();
     closeEstimate();
     applyLoadedPattern({ stripes: result.stripes, symmetric: result.symmetric });
-    showAppMessage(gold ? 'msg_estimate_gold' : 'msg_estimate_done');
+    showAppMessage(invented ? 'msg_invent_done' : gold ? 'msg_estimate_gold' : 'msg_estimate_done');
 }
 
 // Drag on the photo to keep only the cloth. Too small a drag goes back to the whole photo.

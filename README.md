@@ -25,6 +25,7 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 * Reopen a text file written by the *Details* export, with its exact shades and rendering settings.
 * Open a shared link.
 * **Estimate a tartan from a photo.** Frame the cloth, compare up to 10 readings, give a *gold* star to the right one or *silver* stars to those that are close, and generate an intermediate from them. The image stays on your device. Thread counts are proportions, since a photo does not tell the real number of threads. This feature has only been validated on simulated photos so far.
+* **Invent a tartan from any image.** In the same window, the colors of a picture become the palette, and what a line across it meets gives the stripes. Stars and intermediates work the same way.
 
 **Explore**
 * Mood board of 10 to 100 patterns, with pins and variants around a tile.
