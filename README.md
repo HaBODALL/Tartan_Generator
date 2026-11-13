@@ -18,16 +18,16 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 * Generate random tartans from constraints: number of stripes, stripe width, sett, symmetric or asymmetric, check mode.
 * Keep the colors or the structure while generating.
 * Choose up to 8 colors from the 137 SRT shades.
-* History of the last 10 patterns in a strip under the pattern, and undo.
+* History of the last 50 patterns in a strip under the pattern, and undo.
 
-**Bring a pattern in** (*New* menu in the top bar)
+**Bring a pattern in** (*Import* menu in the top bar; *New pattern* creates one)
 * Type or paste an SRT threadcount (`R/72 B8 K12 ...`) in the bar under the pattern, which also shows the code of the current pattern: `Enter` applies, `Esc` puts the code back. Colors already there keep their shade. Or load one of the examples.
 * Reopen a text file written by the *Details* export, with its exact shades and rendering settings.
 * Open a shared link.
 * **Read the tartan in an image** (photo, scan or drawing). Frame the cloth, compare up to 10 readings, give a *gold* star to the right one or *silver* stars to those that are close, and generate an intermediate from them. The image stays on your device. Thread counts are proportions, since a photo does not tell the real number of threads. This feature has only been validated on simulated photos so far.
 * **Invent a tartan from any image.** In the same window, the colors of a picture become the palette, and what a line across it meets gives the stripes. Stars and intermediates work the same way.
 
-**Explore**
+**Explore** (*Board* mode, next to *Studio* in the top bar)
 * Mood board of 10 to 100 patterns, with pins and variants around a tile.
 * Criteria mode: a grid whose columns and rows each vary one setting (colors, stripes, maximum width, sett, symmetry).
 * Scarf, Cushion and Kilt views on the pattern, to scale from the thread size; the settings stay usable meanwhile.
@@ -38,7 +38,7 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 * Zoom with the buttons on the pattern, the slider, the mouse wheel (around the pointer), the `+` and `-` keys or a pinch.
 * Move the pattern by dragging or with the arrow keys; a double click or the ⌖ button goes back to the start.
 
-**Export and share** (*Export* menu and *Copy link* button in the top bar)
+**Save and share** (*Save / share* menu in the top bar)
 * PNG of the current view, SVG of one seamless repeat at real size, text details (SRT and Ink/Stitch codes), ZIP or PNG of the mood board.
 * Printable weaving sheet: thread order and yarn per color per square meter.
 * Link that reopens exactly the pattern, with no server involved.
