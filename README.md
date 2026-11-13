@@ -15,7 +15,7 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 ## ✨ Features
 
 **Create**
-* Generate random tartans from constraints: number of stripes, stripe width, sett, symmetric or asymmetric, check mode.
+* Generate random tartans from constraints: number of stripes, stripe width (raising the minimum past the maximum raises the maximum, and the other way round), threads per repeat, symmetric or asymmetric, check mode (every stripe the same width, drawn between the two limits).
 * Keep the colors or the structure while generating.
 * Choose up to 8 colors from the 137 SRT shades.
 * History of the last 50 patterns in a strip under the pattern, and undo.
@@ -30,10 +30,11 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 **Explore** (*Board* mode, next to *Studio* in the top bar)
 * Mood board of 10 to 100 patterns, with pins and variants around a tile.
 * Criteria mode: a grid whose columns and rows each vary one setting (colors, stripes, maximum width, sett, symmetry).
-* Scarf, Cushion and Kilt views on the pattern, to scale from the thread size; the settings stay usable meanwhile.
+* Scarf, Cushion and Kilt views on the pattern, to scale from the density; the settings stay usable meanwhile.
 * Color readability: warning on neighboring stripes that are hard to tell apart, and color blindness simulation (on screen only).
 
 **Render**
+* Density in threads per cm (Wool 9, Merino 12, Cotton 14, or any other); the size of one thread in mm follows.
 * 2/2 twill, Z or S, with thread relief and yarn irregularity.
 * Zoom with the buttons on the pattern, the slider, the mouse wheel (around the pointer), the `+` and `-` keys or a pinch.
 * Move the pattern by dragging or with the arrow keys; a double click or the ⌖ button goes back to the start.

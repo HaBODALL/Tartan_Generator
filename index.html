@@ -91,6 +91,15 @@
     .tab-panel[hidden] { display: none; }
     .sidebar.collapsed .panel-top { display: none; }
 
+    /* Values: a unit next to its field, notes under a field, the value obtained next to the one asked */
+    .field-with-unit { display: inline-flex; align-items: center; gap: 6px; }
+    .field-unit { color: #bbb; font-size: 12px; }
+    .field-note { margin: 2px 0 6px; font-size: 12px; color: #aaa; text-align: right; }
+    .field-total { margin-top: 10px; font-size: 13px; color: #ccc; }
+    .value-strong { color: #fff; font-weight: 600; }
+    .field-actual { color: #bbb; font-size: 12px; }
+    #in-density { width: 64px; }
+
     /* Atelier / Planche */
     .mode-switch { display: flex; margin-left: 18px; background: #1e1e1e; border: 1px solid #444; border-radius: 6px; padding: 2px; gap: 2px; flex-shrink: 0; }
     .mode-btn { background: transparent; color: #aaa; border: none; border-radius: 4px; padding: 5px 12px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
@@ -245,6 +254,7 @@
       .canvas-column {
         width: 100%;
         height: 50%;
+        height: round(down, 50%, 1px); /* half of an odd height would blur the pattern */
         flex: none;
       }
       /* Prefixed: the base rules come later in the sheet */
@@ -294,10 +304,10 @@
 
       /* The mood board needs room: it takes most of the height while open */
       .app-main:has(.sidebar.collapsed) .canvas-column { height: 100%; }
-      .app-main:has(#patchwork-board:not([hidden])) .canvas-column { height: 75%; }
+      .app-main:has(#patchwork-board:not([hidden])) .canvas-column { height: 75%; height: round(down, 75%, 1px); }
       .app-main:has(#patchwork-board:not([hidden])) .sidebar { height: 25%; }
       .app-main:has(#patchwork-board:not([hidden])) .btn-toggle-ui { display: none; }
-      .app-main:has(#preview-board:not([hidden])) .canvas-column { height: 75%; }
+      .app-main:has(#preview-board:not([hidden])) .canvas-column { height: 75%; height: round(down, 75%, 1px); }
       .app-main:has(#preview-board:not([hidden])) .sidebar { height: 25%; }
       .app-main:has(#preview-board:not([hidden])) .btn-toggle-ui { display: none; }
     }
@@ -406,7 +416,8 @@
         color: #fff;
         border-radius: 2px;
         text-align: center;
-        font-family: monospace;
+        font-family: inherit;
+        font-variant-numeric: tabular-nums;
     }
 
     input[type=number]:focus {
@@ -420,7 +431,7 @@
     .stripe-color { width: 18px; height: 18px; border-radius: 2px; margin-right: 5px; border: 1px solid #555; }
     .stripe-select { flex-grow: 1; background: #333; color: #ddd; border: none; font-size: 11px; padding: 2px; cursor: pointer;}
     .stripe-input { width: 40px !important; margin-left: 5px; border-left: 1px solid #444;}
-    .btn-del { background: none; border: none; color: #555; cursor: pointer; font-size: 14px; margin-left: 5px; padding: 0 5px;}
+    .btn-del { background: none; border: none; color: #999; cursor: pointer; font-size: 14px; margin-left: 5px; padding: 0 5px;}
     .btn-del:hover { color: #e74c3c; }
 
     .btn-add { width: 100%; background: #222; color: #888; border: 1px dashed #444; padding: 5px; font-size: 11px; cursor: pointer; margin-top: 5px; }
@@ -503,7 +514,7 @@
     .srt-bar .import-input[aria-invalid="true"] { border-color: #e74c3c; }
     .srt-bar-btn { background: #222; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 5px 9px; font-size: 12px; cursor: pointer; white-space: nowrap; }
     .srt-bar-btn:hover { background: #333; color: #fff; }
-    .srt-bar-size { color: #888; font-size: 11px; font-family: monospace; white-space: nowrap; }
+    .srt-bar-size { color: #aaa; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .copy-toast { position: absolute; right: 10px; top: -26px; background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; opacity: 0; pointer-events: none; transition: opacity 0.3s; font-weight: bold; }
     .copy-toast.show { opacity: 1; }
 
@@ -516,7 +527,7 @@
     .view-switch-label { color: #888; font-size: 11px; padding: 0 6px 0 4px; }
     .view-btn { background: transparent; color: #bbb; border: none; border-radius: 4px; padding: 4px 9px; font-size: 12px; cursor: pointer; }
     .view-btn:hover { background: #333; color: #fff; }
-    .view-btn[aria-pressed="true"] { background: #e74c3c; color: #fff; }
+    .view-btn[aria-pressed="true"] { background: #c0392b; color: #fff; }
     #canvas-container:has(#patchwork-board:not([hidden])) .view-switch { display: none; }
     .preview-board { padding-top: 52px; }
 
@@ -871,7 +882,7 @@
             <label for="zoom-slider" class="sr-only" data-i18n="lbl_zoom_slider">Zoom (curseur)</label>
             <input type="range" id="zoom-slider" min="0" max="1000" step="1" value="437" data-i18n-title="title_zoom" title="Molette sur le motif ou touches + et − pour zoomer. Glisser ou flèches pour déplacer, double-clic pour revenir au début">
             <button type="button" class="zoom-btn" id="btn-zoom-in" data-i18n-title="btn_zoom_in" data-i18n-label="btn_zoom_in" title="Zoomer" aria-label="Zoomer">+</button>
-            <input type="number" id="in-zoom" value="2.0" step="0.1" min="0.5" max="12">
+            <span class="field-with-unit"><input type="number" id="in-zoom" value="2.0" step="0.1" min="0.5" max="12"><span class="field-unit" aria-hidden="true">×</span></span>
             <button type="button" class="zoom-btn" id="btn-reset-view" data-i18n-title="btn_reset_view" data-i18n-label="btn_reset_view" title="Revenir au début du motif" aria-label="Revenir au début du motif">⌖</button>
         </div>
         <button id="btn-toggle-ui" class="btn-toggle-ui" aria-label="Afficher/Masquer le panneau" title="Afficher/Masquer le panneau" data-i18n-title="title_toggle_ui" data-i18n-label="title_toggle_ui">▶</button>
@@ -972,20 +983,20 @@
              <label class="checkbox-lock" for="check-sym" style="font-size:15px;">
                  <input type="checkbox" id="check-sym" checked> <span data-i18n="chk_symmetry">Symétrie</span>
              </label>
-             <label class="checkbox-lock" for="check-mode-check" style="font-size:15px; color:#888;">
+             <label class="checkbox-lock" for="check-mode-check" style="font-size:15px;">
                  <input type="checkbox" id="check-mode-check" >
                  <span data-i18n="chk_check_mode"> Damier</span>
-                 <span class="info-icon" data-i18n-title="desc_check_mode" title="Génère des bandes de largeurs égales" style="margin-left: 5px; cursor: help; font-size: 12px; color: #555;">ⓘ</span>
+                 <span class="info-icon" data-i18n-title="desc_check_mode" title="Génère des bandes de largeurs égales" style="margin-left: 5px; cursor: help; font-size: 12px; color: #aaa;">ⓘ</span>
              </label>
         </div>
 
         <div class="control-row" style="justify-content: flex-start; gap: 15px;">
-            <label id="lbl-weave-dir" data-i18n="lbl_weave_dir">Sens du tissage</label>
+            <label id="lbl-weave-dir" data-i18n="lbl_weave_dir" data-i18n-title="title_weave_dir" title="Le sens des diagonales du sergé">Diagonale du sergé</label>
             <div class="checkbox-lock" style="font-size:15px;">
-                <input type="radio" id="weave-z" name="weave-dir" value="Z" checked aria-labelledby="lbl-weave-dir"> <label for="weave-z" style="cursor:pointer;">Twist Z</label>
+                <input type="radio" id="weave-z" name="weave-dir" value="Z" checked aria-labelledby="lbl-weave-dir"> <label for="weave-z" style="cursor:pointer;">Z <span aria-hidden="true">╱</span></label>
             </div>
             <div class="checkbox-lock" style="font-size:15px;">
-                <input type="radio" id="weave-s" name="weave-dir" value="S" aria-labelledby="lbl-weave-dir"> <label for="weave-s" style="cursor:pointer;">Twist S</label>
+                <input type="radio" id="weave-s" name="weave-dir" value="S" aria-labelledby="lbl-weave-dir"> <label for="weave-s" style="cursor:pointer;">S <span aria-hidden="true">╲</span></label>
             </div>
         </div>
 
@@ -993,27 +1004,27 @@
 
         <!-- Nombre de bandes -->
         <div class="control-row">
-            <label for="in-stripes" data-i18n="lbl_stripes">Nombre de bandes (Cible)</label>
+            <label for="in-stripes" data-i18n="lbl_stripes">Nombre de bandes</label>
             <div style="display:flex; align-items:center; gap:10px;">
                 <input type="number" id="in-stripes" value="6" min="2" max="20" style="width:60px;" >
-                <span id="stripes-actual" style="color:#888; font-size:11px;"></span>
+                <span id="stripes-actual" class="field-actual"></span>
             </div>
         </div>
         <div class="control-row">
-            <label id="lbl-limits" data-i18n="lbl_limits">Limites de fils par bande (Min/Max)</label>
+            <label id="lbl-limits" data-i18n="lbl_limits">Fils par bande (min. et max.)</label>
             <div style="display:flex; gap:10px;">
               <label for="in-minwidth" class="sr-only">Minimum fils par bande</label>
-              <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum">
+              <input type="number" id="in-minwidth" value="4" min="2" max="124" step="2" style="width:50px;" title="Minimum">
               <label for="in-maxwidth" class="sr-only">Maximum fils par bande</label>
-              <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum">
+              <input type="number" id="in-maxwidth" value="64" min="2" max="124" step="2" style="width:50px;" title="Maximum">
             </div>
         </div>
         <!-- Sett / Densité -->
         <div class="control-row">
-            <label for="in-sett" data-i18n="lbl_sett">Densité (Sett)</label>
+            <label for="in-sett" data-i18n="lbl_sett" data-i18n-title="title_sett" title="Le nombre de fils d'un motif complet, avant qu'il se répète">Fils par motif</label>
             <div style="display:flex; align-items:center; gap:10px;">
                 <input type="number" id="in-sett" value="260" min="150" max="300" step="2" style="width:70px;" >
-                <span id="sett-actual" style="color:#888; font-size:11px;"></span>
+                <span id="sett-actual" class="field-actual"></span>
             </div>
         </div>
       </div>
@@ -1062,19 +1073,23 @@
       <div class="control-group">
 
         <div class="control-row">
-            <label for="thread-type" data-i18n="lbl_thread_type">Type de fil</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <select id="thread-type" >
-                    <option value="custom" data-i18n="opt_custom">Personnalisé</option>
-                    <option value="0.69" data-i18n="opt_merino">Mérinos</option>
-                    <option value="0.83" data-i18n="opt_cotton">Coton</option>
-                    <option value="1.11" data-i18n="opt_wool">Laine</option>
-                </select>
-                <label for="in-threadmm" class="sr-only" data-i18n="lbl_thread_mm">Diamètre du fil (mm)</label>
-                <input type="number" id="in-threadmm" value="0.30" step="0.01" min="0.10" max="2.00" style="width:70px;">
-                <span style="color:#666; font-size:11px;">mm</span>
-            </div>
+            <label for="thread-type" data-i18n="lbl_thread_type">Fil</label>
+            <select id="thread-type">
+                <option value="9" data-i18n="opt_wool">Laine (9 fils/cm)</option>
+                <option value="12" data-i18n="opt_merino">Mérinos (12 fils/cm)</option>
+                <option value="14" data-i18n="opt_cotton">Coton (14 fils/cm)</option>
+                <option value="custom" data-i18n="opt_custom">Autre densité</option>
+            </select>
         </div>
+        <div class="control-row">
+            <label for="in-density" data-i18n="lbl_density">Densité</label>
+            <span class="field-with-unit">
+                <input type="number" id="in-density" value="9" step="0.5" min="4" max="40">
+                <span class="field-unit" data-i18n="unit_density">fils/cm</span>
+            </span>
+        </div>
+        <p class="field-note" id="thread-mm-note" aria-live="polite"></p>
+        <input type="hidden" id="in-threadmm" value="1.11">
 
         <div class="control-row">
             <label for="effect-relief" data-i18n="opt_eff_relief">Relief des fils</label>
@@ -1094,9 +1109,9 @@
             <input type="checkbox" id="yarn-irregular">
         </div>
 
-        <div style="text-align:right; font-size:11px; color:#888; margin-top:7px; font-family:monospace;">
-            <span data-i18n="lbl_width_cm">Largeur motif</span> : <span id="real-width" style="color:#e74c3c; font-weight:bold;">?</span>
-        </div>
+        <p class="field-note field-total">
+            <span data-i18n="lbl_width_cm">Largeur d'un motif</span> : <span id="real-width" class="value-strong">?</span>
+        </p>
 
       </div>
 
@@ -1162,7 +1177,7 @@
           <button type="button" class="btn-generate btn-board-new" id="btn-patchwork-new" data-i18n="btn_patch_new">Nouveau lot</button>
       </div>
 
-<div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>
+<div style="margin-top:20px; text-align:center; font-size:12px; color:#999;">ID Gen: <span id="gen-id">0</span></div>
 
     </div>
   </div>

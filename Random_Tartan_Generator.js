@@ -208,20 +208,20 @@ const TRANSLATIONS = {
         btn_import: "✓ Valider",
         opt_load_example: "-- Charger un exemple --",
         btn_generate: "GÉNÉRER",
-        chk_keep_colors: "Conserver Couleurs",
-        chk_keep_struct: "Conserver Structure",
-        sec_structure: "Structure du Motif",
+        chk_keep_colors: "Garder les couleurs",
+        chk_keep_struct: "Garder la structure",
+        sec_structure: "Structure du motif",
         chk_symmetry: "Symétrie",
-        lbl_stripes: "Nombres de bandes (Cible)",
-        lbl_limits: "Limites de fils par bande (Min/Max)",
+        lbl_stripes: "Nombre de bandes",
+        lbl_limits: "Fils par bande (min. et max.)",
         chk_check_mode: "Damier",
         desc_check_mode: "Génère des bandes de largeurs égales",
-        lbl_sett: "Densité (Sett cible)",
+        lbl_sett: "Fils par motif",
         sec_zoom: "Fil et rendu",
-        lbl_thread_mm: "Diamètre du fil (mm)",
-        lbl_zoom: "Zoom Visuel",
-        lbl_width_cm: "Largeur motif",
-        sec_palette: "Palette de couleurs sélectionnées (Max 8)",
+        lbl_thread_mm: "Taille d'un fil (mm)",
+        lbl_zoom: "Zoom",
+        lbl_width_cm: "Largeur d'un motif",
+        sec_palette: "Couleurs (8 au plus)",
         sec_srt: "Code SRT du Tartan",
         sec_export: "Export",
         btn_details: "Détails",
@@ -234,11 +234,11 @@ const TRANSLATIONS = {
         srt_help_title: "Qu'est-ce que le code SRT ?",
         srt_help_text: "Le format SRT (Scottish Register of Tartans) est la notation standard pour décrire un tartan.\n\nChaque couleur est définie par une lettre (ou plusieurs) suivie du nombre de fils.\n\nExemple : K4 R32\n- 'K' = Noir, 4 fils\n- 'R' = Rouge, 32 fils\n\nPour que le motif soit valide, le code doit contenir au minimum 2 couleurs différentes.",
         ph_import_short: "Coller ici (ex: K4 R32)...",
-        lbl_add_nuance: "AJOUTER UNE NUANCE",
-        lbl_mod_nuance: "MODIFIER LA NUANCE",
-        btn_cancel: "ANNULER",
+        lbl_add_nuance: "Ajouter une nuance",
+        lbl_mod_nuance: "Modifier la nuance",
+        btn_cancel: "Annuler",
         loading: "TISSAGE EN COURS...",
-        lbl_thread_type: "Type de fil",
+        lbl_thread_type: "Fil",
         btn_zoom_out: "Dézoomer",
         btn_zoom_in: "Zoomer",
         lbl_zoom_slider: "Zoom (curseur)",
@@ -247,11 +247,11 @@ const TRANSLATIONS = {
         lbl_relief_strength: "Intensité du relief",
         lbl_yarn: "Irrégularité de la laine",
         title_yarn: "Légères variations de teinte d'un fil à l'autre, comme sur une vraie laine",
-        opt_wool: "Laine",
-        opt_merino: "Mérinos",
-        opt_cotton: "Coton",
-        opt_custom: "Personnalisé",
-        lbl_weave_dir: "Sens du tissage",
+        opt_wool: "Laine (9 fils/cm)",
+        opt_merino: "Mérinos (12 fils/cm)",
+        opt_cotton: "Coton (14 fils/cm)",
+        opt_custom: "Autre densité",
+        lbl_weave_dir: "Diagonale du sergé",
         btn_undo: "Annuler",
         title_undo: "Annuler ({n} étapes disponibles)",
         sec_history: "Historique (50 motifs max)",
@@ -320,7 +320,7 @@ const TRANSLATIONS = {
         sheet_srt: "Code SRT",
         sheet_threads: "Fils par motif",
         sheet_width: "Largeur du motif",
-        sheet_thread: "Diamètre du fil",
+        sheet_thread: "Densité",
         sheet_weave: "Armure",
         sheet_twill: "Sergé 2/2",
         sheet_structure: "Structure",
@@ -431,6 +431,15 @@ const TRANSLATIONS = {
         menu_import: "Importer",
         menu_export_more: " / partager",
         menu_share_link: "🔗 Copier le lien du motif",
+        lbl_density: "Densité",
+        unit_density: "fils/cm",
+        note_thread_mm: "soit % mm par fil",
+        actual_value: "obtenu : %",
+        title_sett: "Le nombre de fils d'un motif complet, avant qu'il se répète",
+        title_weave_dir: "Le sens des diagonales du sergé",
+        sheet_density: "%d fils/cm (%m mm par fil)",
+        title_remove_color: "Retirer de la palette",
+        label_remove_color: "Retirer la couleur %",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -438,20 +447,20 @@ const TRANSLATIONS = {
         btn_import: "✓ Apply",
         opt_load_example: "-- Load Example --",
         btn_generate: "GENERATE",
-        chk_keep_colors: "Keep Colors",
-        chk_keep_struct: "Keep Structure",
-        sec_structure: "Pattern Structure",
+        chk_keep_colors: "Keep the colors",
+        chk_keep_struct: "Keep the structure",
+        sec_structure: "Pattern structure",
         chk_symmetry: "Symmetry",
-        lbl_stripes: "Number of Stripes (Target)",
-        lbl_limits: "Thread Limits per Stripe (Min/Max)",
+        lbl_stripes: "Number of stripes",
+        lbl_limits: "Threads per stripe (min. and max.)",
         chk_check_mode: "Checkers",
         desc_check_mode: "Generates stripes of equal widths",
-        lbl_sett: "Density (Target Sett)",
+        lbl_sett: "Threads per repeat",
         sec_zoom: "Yarn & rendering",
-        lbl_thread_mm: "Thread Diameter (mm)",
-        lbl_zoom: "Visual Zoom",
-        lbl_width_cm: "Pattern Width",
-        sec_palette: "Selected Color Palette (Max 8)",
+        lbl_thread_mm: "Size of one thread (mm)",
+        lbl_zoom: "Zoom",
+        lbl_width_cm: "Width of one repeat",
+        sec_palette: "Colors (8 at most)",
         sec_srt: "Tartan SRT Code",
         sec_export: "Export",
         btn_details: "Details",
@@ -464,11 +473,11 @@ const TRANSLATIONS = {
         srt_help_title: "What is an SRT Code?",
         srt_help_text: "The SRT (Scottish Register of Tartans) format is the standard notation for describing a tartan.\n\nEach color is defined by a letter (or multiple letters) followed by the number of threads.\n\nExample: K4 R32\n- 'K' = Black, 4 threads\n- 'R' = Red, 32 threads\n\nTo be a valid pattern, the code must contain at least 2 different colors.",
         ph_import_short: "Paste here (ex: K4 R32)...",
-        lbl_add_nuance: "ADD SHADE",
-        lbl_mod_nuance: "MODIFY SHADE",
-        btn_cancel: "CANCEL",
+        lbl_add_nuance: "Add a shade",
+        lbl_mod_nuance: "Change the shade",
+        btn_cancel: "Cancel",
         loading: "WEAVING IN PROGRESS...",
-        lbl_thread_type: "Thread type",
+        lbl_thread_type: "Yarn",
         btn_zoom_out: "Zoom out",
         btn_zoom_in: "Zoom in",
         lbl_zoom_slider: "Zoom (slider)",
@@ -477,11 +486,11 @@ const TRANSLATIONS = {
         lbl_relief_strength: "Relief strength",
         lbl_yarn: "Yarn irregularity",
         title_yarn: "Slight shade variations from thread to thread, as in real wool",
-        opt_wool: "Wool",
-        opt_merino: "Merino",
-        opt_cotton: "Cotton",
-        opt_custom: "Custom",
-        lbl_weave_dir: "Weave direction",
+        opt_wool: "Wool (9 threads/cm)",
+        opt_merino: "Merino (12 threads/cm)",
+        opt_cotton: "Cotton (14 threads/cm)",
+        opt_custom: "Other density",
+        lbl_weave_dir: "Twill direction",
         btn_undo: "Undo",
         title_undo: "Undo ({n} steps available)",
         sec_history: "History (50 patterns max)",
@@ -526,7 +535,7 @@ const TRANSLATIONS = {
         axis_colors: "Number of colors",
         axis_stripes: "Number of stripes",
         axis_maxWidth: "Maximum stripe width",
-        axis_sett: "Threads per sett",
+        axis_sett: "Threads per repeat",
         axis_symmetric: "Symmetry",
         crit_colors: "% colors",
         crit_stripes: "% stripes",
@@ -548,9 +557,9 @@ const TRANSLATIONS = {
         btn_print: "Print",
         sheet_title: "Weaving sheet",
         sheet_srt: "SRT code",
-        sheet_threads: "Threads per sett",
-        sheet_width: "Sett width",
-        sheet_thread: "Thread diameter",
+        sheet_threads: "Threads per repeat",
+        sheet_width: "Width of one repeat",
+        sheet_thread: "Density",
         sheet_weave: "Weave",
         sheet_twill: "2/2 twill",
         sheet_structure: "Structure",
@@ -661,6 +670,15 @@ const TRANSLATIONS = {
         menu_import: "Import",
         menu_export_more: " / share",
         menu_share_link: "🔗 Copy the link to this pattern",
+        lbl_density: "Density",
+        unit_density: "threads/cm",
+        note_thread_mm: "that is % mm per thread",
+        actual_value: "got: %",
+        title_sett: "The number of threads in one full repeat, before it starts again",
+        title_weave_dir: "The direction of the twill lines",
+        sheet_density: "%d threads/cm (%m mm per thread)",
+        title_remove_color: "Remove from palette",
+        label_remove_color: "Remove color %",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -695,13 +713,13 @@ function saveState() {
         maxWidth: domElements.maxWidth?.value || 64,
         targetStripes: domElements.targetStripes?.value || 6,
         sett: domElements.sett?.value || 260,
-        threadMm: domElements.threadMm?.value || 0.30,
+        threadMm: domElements.threadMm?.value || 1.11,
         zoom: domElements.zoom?.value || 2.0,
         weaveZ: domElements.weaveZ?.checked ?? true,
         effectType: getEffectType(),
         reliefStrength: readReliefStrength(),
         yarnIrregular: domElements.yarnIrregular?.checked || false,
-        threadType: domElements.threadType?.value || 'custom',
+        threadType: domElements.threadType?.value || '9',
         history: historyStack
     };
     try {
@@ -782,6 +800,8 @@ function cacheDomElements() {
     domElements.sym = document.getElementById('check-sym');
     domElements.weaveZ = document.querySelector('input[name="weave-dir"][value="Z"]');
     domElements.threadMm = document.getElementById('in-threadmm');
+    domElements.density = document.getElementById('in-density');
+    domElements.threadMmNote = document.getElementById('thread-mm-note');
     domElements.realWidth = document.getElementById('real-width');
     domElements.threadCount = document.getElementById('thread-count');
     domElements.sett = document.getElementById('in-sett');
@@ -903,6 +923,9 @@ function bindEvents() {
 
     inputsToWatch.forEach(id => {
         let el = document.getElementById(id);
+        if (el && (id === 'in-minwidth' || id === 'in-maxwidth')) {
+            el.addEventListener('change', () => linkWidthBounds(id === 'in-maxwidth' ? 'max' : 'min'));
+        }
         if(el) {
             // 'change' waits for the end of typing: "260" is not read as "2", then "26"
             el.addEventListener('change', () => window.handleGenerateClick(true));
@@ -1049,6 +1072,21 @@ function bindEvents() {
         redrawTartan();
         scheduleSaveState();
     });
+    // The weaver counts threads per cm; the thread size in mm follows
+    const inDensity = domElements.density;
+    if (inDensity) {
+        inDensity.addEventListener('input', () => {
+            const perCm = parseFloat(inDensity.value);
+            if (!(perCm >= 1 && perCm <= 100)) return;
+            if (domElements.threadType) {
+                const preset = [...domElements.threadType.options].find(o => o.value !== 'custom' && parseFloat(o.value) === perCm);
+                domElements.threadType.value = preset ? preset.value : 'custom';
+            }
+            inThreadMm.value = threadMmFromDensity(perCm);
+            inThreadMm.dispatchEvent(new Event('input'));
+        });
+        inDensity.addEventListener('change', () => updateScaleInfo());
+    }
 
     const inZoom = domElements.zoom;
     if (inZoom) inZoom.addEventListener('input', () => { syncZoomSlider(); updateZoom(); });
@@ -1359,6 +1397,7 @@ function setLanguage(lang) {
     renderAppMessage();
     updateReadabilityUI();
     updateScaleInfo(); // The size of a repeat in the SRT bar
+    updateActualValues();
     const langItem = document.getElementById('menu-lang');
     if (langItem) {
         langItem.textContent = lang === 'fr' ? 'English' : 'Français';
@@ -1544,12 +1583,7 @@ function updateActualStripes() {
 
     if (display) {
         if (actual !== target) {
-            display.textContent = '';
-            let span = document.createElement('span');
-            span.style.color = '#e74c3c';
-            span.textContent = actual;
-            display.appendChild(document.createTextNode('→ '));
-            display.appendChild(span);
+            display.textContent = TRANSLATIONS[currentLang].actual_value.replace('%', actual);
         } else {
             display.textContent = '';  // Hide if equal
         }
@@ -1573,35 +1607,36 @@ function updateActualSett() {
     let targetSett = parseInt(domElements.sett?.value) || 260;
 
     if (actualSett !== targetSett) {
-        display.textContent = '';
-        let span = document.createElement('span');
-        span.style.color = '#e74c3c';
-        span.textContent = actualSett;
-        display.appendChild(document.createTextNode('→ '));
-        display.appendChild(span);
+        display.textContent = TRANSLATIONS[currentLang].actual_value.replace('%', actualSett);
     } else {
         display.textContent = '';
     }
 }
 
 // === THREAD TYPE SELECTOR ===
+// Threads per cm and the size of one thread in mm are the same measure
+function threadMmFromDensity(perCm) {
+    return String(Math.round(10 / perCm * 1000) / 1000);
+}
+
+function densityFromThreadMm(mm) {
+    return Math.round(10 / mm * 10) / 10;
+}
+
+// A yarn picks its density; "Autre densité" leaves the field as it is
 function applyThreadTypeUI() {
     const select = domElements.threadType;
     const input = domElements.threadMm;
-
-    if (select.value === 'custom') {
-        // Custom mode: enable field
-        input.disabled = false;
-        input.style.opacity = '1';
-        input.style.cursor = 'text';
-    } else {
-        // Preset mode: disable and set value
-        input.disabled = true;
-        input.style.opacity = '0.6';
-        input.style.cursor = 'not-allowed';
-        input.value = select.value;
-    }
+    if (!select || !input) return;
+    if (select.value !== 'custom') input.value = threadMmFromDensity(parseFloat(select.value));
+    else if (document.activeElement === select) domElements.density?.focus();
 }
+
+// Numbers as the reader writes them: 7,1 in French, 7.1 in English
+function formatNumber(value, digits = 1) {
+    return Number(value).toLocaleString(currentLang === 'fr' ? 'fr-FR' : 'en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+window.formatNumber = formatNumber;
 
 function updateThreadDiameter() {
     applyThreadTypeUI();
@@ -1863,11 +1898,11 @@ function updateUserPaletteUI() {
 
         let delBtn = document.createElement('div');
         delBtn.textContent = "\u00D7";
-        delBtn.style.cssText = "color:#666; font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
-        delBtn.title = "Remove from palette";
+        delBtn.style.cssText = "color:#aaa; font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
+        delBtn.title = TRANSLATIONS[currentLang].title_remove_color;
         delBtn.setAttribute('role', 'button');
         delBtn.setAttribute('tabindex', '0');
-        delBtn.setAttribute('aria-label', `Remove color ${formatColorLabel(p)}`);
+        delBtn.setAttribute('aria-label', TRANSLATIONS[currentLang].label_remove_color.replace('%', formatColorLabel(p)));
         delBtn.onmouseenter = () => delBtn.style.color = "red";
         delBtn.onmouseleave = () => delBtn.style.color = "#666";
 
@@ -2181,37 +2216,38 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
     saveState();
 }
 
+// Even widths from 2 to 124, the minimum never above the maximum. The bound just changed
+// wins and pushes the other one: a minimum raised past the maximum raises the maximum,
+// a maximum lowered under the minimum lowers the minimum. An empty field keeps its last value.
+const WIDTH_LIMIT_MIN = 2, WIDTH_LIMIT_MAX = 124;
+let lastWidthBounds = { minW: 4, maxW: 64 };
+function linkWidthBounds(changed = 'min') {
+    const even = (field, fallback) => {
+        const v = parseInt(field?.value);
+        if (!Number.isFinite(v)) return fallback;
+        return Math.max(WIDTH_LIMIT_MIN, Math.min(WIDTH_LIMIT_MAX, v % 2 ? v + 1 : v));
+    };
+    let minW = even(domElements.minWidth, lastWidthBounds.minW);
+    let maxW = even(domElements.maxWidth, lastWidthBounds.maxW);
+    if (minW > maxW) {
+        if (changed === 'max') minW = maxW;
+        else maxW = minW;
+    }
+    if (domElements.minWidth) domElements.minWidth.value = minW;
+    if (domElements.maxWidth) domElements.maxWidth.value = maxW;
+    lastWidthBounds = { minW, maxW };
+    return lastWidthBounds;
+}
+
 // Reads and normalizes the structure settings. Returns errorKey when they cannot produce a pattern.
 function readGenerationParams() {
-    let minW = parseInt(domElements.minWidth?.value) || 2;
-    let maxW = parseInt(domElements.maxWidth?.value) || 124;
+    let { minW, maxW } = linkWidthBounds();
     let targetStripes = parseInt(domElements.targetStripes?.value) || 12;
     let targetSett = parseInt(domElements.sett?.value) || 260;
     let noticeKey = null;
 
-    // Option "Check Mode" (Equal widths)
+    // Damier: every stripe takes one width, drawn between the two bounds
     let isCheckMode = domElements.checkMode?.checked || false;
-
-    // Automatic correction: Min/Max must be even
-    if (minW % 2 !== 0) minW++;
-    if (maxW % 2 !== 0) maxW++;
-    if (minW < 2) minW = 2;
-    if (maxW > 124) maxW = 124;
-    if (minW === maxW && !isCheckMode) {
-        isCheckMode = true;
-        if (domElements.checkMode) domElements.checkMode.checked = true;
-    }
-
-    if (isCheckMode && minW !== maxW) {
-        noticeKey = 'msg_err_check_mode_forced';
-        let lower = Math.min(minW, maxW);
-        minW = lower;
-        maxW = lower;
-        if (domElements.minWidth) domElements.minWidth.value = lower;
-        if (domElements.maxWidth) domElements.maxWidth.value = maxW;
-    } else if (minW > maxW) {
-        minW = maxW;
-    }
 
     const errorKey = targetStripes * minW > targetSett ? 'msg_err_sett_too_low' : null;
     return { minW, maxW, targetStripes, targetSett, isCheckMode, noticeKey, errorKey };
@@ -2241,12 +2277,13 @@ function recolorStripes(stripes, palette) {
 // New stripes from normalized settings (see readGenerationParams).
 function createStripes(params, palette, rand = Math.random) {
     const { minW, maxW, targetStripes, targetSett, isCheckMode } = params;
-    const randomEvenWidth = () => {
+    const randomEvenWidth = (upper = maxW) => {
         const minPair = minW / 2;
-        const maxPair = maxW / 2;
+        const maxPair = Math.max(minPair, upper / 2);
         return (Math.floor(rand() * (maxPair - minPair + 1)) + minPair) * 2;
     };
-    const fixedCheckWidth = isCheckMode ? randomEvenWidth() : 0;
+    // Damier: one width for every stripe, small enough for at least two whole stripes
+    const fixedCheckWidth = isCheckMode ? randomEvenWidth(Math.min(maxW, Math.floor(targetSett / 4) * 2)) : 0;
 
     const stripes = [];
     let previous = null;
@@ -2261,6 +2298,7 @@ function createStripes(params, palette, rand = Math.random) {
 
         // Adjust if sett is exceeded
         if (totalThreads + width > targetSett) {
+            if (isCheckMode) break; // A cut stripe would break the Damier
             width = targetSett - totalThreads;
             if (width % 2 !== 0) width--; // Keep even
             if (width < minW) break; // Too small, stop
@@ -2624,11 +2662,17 @@ function updateScaleInfo(totalThreadsOverride) {
     let sizeCm = (totalThreads * threadMm) / 10;
 
     let el = domElements.realWidth;
-    if(el) el.innerText = sizeCm.toFixed(1) + " cm";
+    if(el) el.textContent = formatNumber(sizeCm) + " cm";
     if (domElements.srtBarSize) {
         domElements.srtBarSize.textContent = TRANSLATIONS[currentLang].srt_bar_size
-            .replace('%c', sizeCm.toFixed(1).replace('.', currentLang === 'fr' ? ',' : '.'))
+            .replace('%c', formatNumber(sizeCm))
             .replace('%n', totalThreads);
+    }
+    // The density field and its note follow the thread size, unless someone is typing in it
+    const perCm = densityFromThreadMm(threadMm);
+    if (domElements.density && document.activeElement !== domElements.density) domElements.density.value = perCm;
+    if (domElements.threadMmNote) {
+        domElements.threadMmNote.textContent = TRANSLATIONS[currentLang].note_thread_mm.replace('%', formatNumber(threadMm, 2));
     }
 
     let elCount = domElements.threadCount;
@@ -4317,7 +4361,7 @@ function renderObjectPreview() {
     const barY = top + px(o.h) + px(o.fringe) + Math.round(labelPx * 1.2);
     ctx.fillRect(x, barY, px(10), Math.max(2, Math.round(2 * density)));
     ctx.fillText('10 cm', x, barY - 3);
-    ctx.fillText(t.preview_repeat.replace('%', widthCm.toFixed(1)), x, barY + labelPx);
+    ctx.fillText(t.preview_repeat.replace('%', formatNumber(widthCm)), x, barY + labelPx);
     canvas.setAttribute('aria-label', `${t['preview_' + view]} : ${t.preview_title}`);
 }
 
@@ -4425,8 +4469,8 @@ function openWeavingSheet() {
     [
         [t.sheet_srt, buildSRTCode(tartanStripes, isSymmetric)],
         [t.sheet_threads, String(data.totalThreads)],
-        [t.sheet_width, `${data.widthCm.toFixed(1)} cm`],
-        [t.sheet_thread, `${threadMm} mm`],
+        [t.sheet_width, `${formatNumber(data.widthCm)} cm`],
+        [t.sheet_thread, t.sheet_density.replace('%d', formatNumber(densityFromThreadMm(threadMm))).replace('%m', formatNumber(threadMm, 2))],
         [t.sheet_weave, `${t.sheet_twill} ${twill}`],
         [t.sheet_structure, isSymmetric ? t.crit_sym : t.crit_asym]
     ].forEach(([term, value]) => facts.append(sheetElement('dt', term), sheetElement('dd', value)));
@@ -4460,7 +4504,7 @@ function openWeavingSheet() {
         const color = palette.find(p => p.hex.toUpperCase() === c.hex.toUpperCase());
         name.append(chip, document.createTextNode(formatColorLabel(color)));
         row.insertCell().textContent = String(c.threads);
-        row.insertCell().textContent = c.percent.toFixed(1);
+        row.insertCell().textContent = formatNumber(c.percent);
         row.insertCell().textContent = Math.round(c.meters).toLocaleString(currentLang);
     });
     body.appendChild(table);
@@ -4897,7 +4941,7 @@ function applyCriterion(tile, axis, value) {
     else if (axis === 'sett') tile.params.targetSett = value;
     else if (axis === 'maxWidth') {
         tile.params.maxW = value;
-        if (tile.params.isCheckMode) tile.params.minW = value;
+        if (tile.params.minW > value) tile.params.minW = value;
     }
 }
 

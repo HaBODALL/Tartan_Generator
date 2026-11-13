@@ -15,7 +15,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 ## ✨ Fonctionnalités
 
 **Créer**
-* Génération aléatoire sous contraintes : nombre de bandes, largeur des bandes, sett, symétrique ou asymétrique, mode damier.
+* Génération aléatoire sous contraintes : nombre de bandes, largeur des bandes (monter le minimum au-delà du maximum monte le maximum, et inversement), fils par motif, symétrique ou asymétrique, mode damier (toutes les bandes de la même largeur, tirée entre les deux limites).
 * Conservation des couleurs ou de la structure pendant la génération.
 * Choix de 8 couleurs au plus parmi les 137 nuances SRT.
 * Historique des 50 derniers motifs en bande sous le motif, et annulation.
@@ -30,10 +30,11 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 **Explorer** (mode *Planche*, à côté d'*Atelier* dans la barre du haut)
 * Mood board de 10 à 100 motifs, avec épingles et variantes autour d'une tuile.
 * Mode par critères : une grille dont les colonnes et les lignes font varier chacune un réglage (couleurs, bandes, largeur max, sett, symétrie).
-* Vues Écharpe, Coussin et Kilt sur le motif, à l'échelle d'après la taille du fil ; les réglages restent utilisables pendant ce temps.
+* Vues Écharpe, Coussin et Kilt sur le motif, à l'échelle d'après la densité ; les réglages restent utilisables pendant ce temps.
 * Lisibilité des couleurs : alerte sur les bandes voisines difficiles à distinguer, et simulation du daltonisme (à l'écran seulement).
 
 **Rendu**
+* Densité en fils par cm (Laine 9, Mérinos 12, Coton 14, ou une autre) ; la taille d'un fil en mm s'en déduit.
 * Sergé 2/2, Z ou S, avec relief des fils et irrégularité de la laine.
 * Zoom aux boutons posés sur le motif, au curseur, à la molette (autour du pointeur), aux touches `+` et `-` ou au pincement.
 * Déplacement du motif en le faisant glisser ou aux flèches ; un double-clic ou le bouton ⌖ revient au début.
