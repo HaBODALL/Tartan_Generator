@@ -681,6 +681,33 @@
     #canvas-container > canvas { touch-action: none; cursor: grab; }
     #canvas-container > canvas.panning { cursor: grabbing; }
     .preview-stage { flex: 1; min-height: 0; overflow: hidden; }
+    /* Product views: the piece, and what the weaver needs beside it */
+    .preview-layout { flex: 1; min-height: 0; display: flex; gap: 12px; }
+    .preview-layout .preview-stage { min-width: 0; }
+    #preview-canvas { cursor: crosshair; touch-action: none; }
+    .piece-panel { width: 300px; flex-shrink: 0; overflow-y: auto; background: #151515; border: 1px solid #2a2a2a; border-radius: 6px; padding: 12px; color: #ddd; font-size: 13px; }
+    .piece-title { margin: 0 0 10px; font-size: 16px; color: #fff; }
+    .piece-panel h3 { font-size: 13px; margin: 16px 0 6px; color: #fff; }
+    .piece-fields { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; }
+    .piece-fields label { color: #ccc; }
+    .piece-fields select { width: 100%; }
+    .piece-row { display: contents; }
+    .piece-row[hidden] { display: none; }
+    .piece-facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 14px 0 0; }
+    .piece-facts dt { color: #aaa; }
+    .piece-facts dd { margin: 0; color: #fff; font-variant-numeric: tabular-nums; }
+    .piece-yarn { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    .piece-yarn th { color: #aaa; font-weight: 600; text-align: right; padding: 2px 4px; }
+    .piece-yarn td { text-align: right; padding: 2px 4px; color: #eee; }
+    .piece-yarn th:first-child, .piece-yarn td:first-child { text-align: left; }
+    .piece-yarn tfoot td { border-top: 1px solid #444; font-weight: 600; color: #fff; }
+    .piece-chip { display: inline-block; width: 12px; height: 12px; border: 1px solid #777; border-radius: 2px; vertical-align: -2px; margin-right: 6px; }
+    .piece-note { color: #aaa; font-size: 12px; margin: 6px 0 0; line-height: 1.4; }
+    #piece-loupe { width: 144px; height: 144px; display: block; border: 1px solid #555; border-radius: 4px; }
+    @media (max-width: 768px) {
+      .preview-layout { flex-direction: column; gap: 8px; }
+      .piece-panel { width: auto; max-height: 45%; }
+    }
     .preview-stage canvas { display: block; }
     .sheet-paper { background: #fff; color: #111; width: 680px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: 24px; border-radius: 6px; font-size: 13px; }
     .sheet-paper h2 { font-size: 20px; margin-bottom: 2px; color: #111; }
@@ -890,11 +917,46 @@
             <span class="view-switch-label" data-i18n="view_label" aria-hidden="true">Vue</span>
             <button type="button" class="view-btn" data-view="cloth" aria-pressed="true" data-i18n="view_cloth">Tissu</button>
             <button type="button" class="view-btn" data-view="scarf" aria-pressed="false" data-i18n="preview_scarf">Écharpe</button>
-            <button type="button" class="view-btn" data-view="cushion" aria-pressed="false" data-i18n="preview_cushion">Coussin</button>
-            <button type="button" class="view-btn" data-view="kilt" aria-pressed="false" data-i18n="preview_kilt">Kilt</button>
+            <button type="button" class="view-btn" data-view="yardage" aria-pressed="false" data-i18n="preview_yardage">Métrage</button>
+            <button type="button" class="view-btn" data-view="sample" aria-pressed="false" data-i18n="preview_sample">Échantillon</button>
         </div>
         <div id="preview-board" class="patchwork-board preview-board" hidden>
-            <div class="preview-stage"><canvas id="preview-canvas" role="img"></canvas></div>
+            <div class="preview-layout">
+                <div class="preview-stage"><canvas id="preview-canvas" role="img"></canvas></div>
+                <aside class="piece-panel" aria-labelledby="piece-title">
+                    <h2 class="piece-title" id="piece-title">Écharpe</h2>
+                    <div class="piece-fields">
+                        <label for="piece-width" data-i18n="piece_width">Largeur</label>
+                        <span class="field-with-unit"><input type="number" id="piece-width" min="5" max="300" step="1"><span class="field-unit">cm</span></span>
+                        <label for="piece-length" data-i18n="piece_length">Longueur</label>
+                        <span class="field-with-unit"><input type="number" id="piece-length" min="5" max="1000" step="1"><span class="field-unit">cm</span></span>
+                        <div class="piece-row" id="piece-fringe-row">
+                            <label for="piece-fringe" data-i18n="piece_fringe">Franges</label>
+                            <select id="piece-fringe" class="patchwork-select">
+                                <option value="0" data-i18n="fringe_none">Sans</option>
+                                <option value="3" data-i18n="fringe_free">3 cm libres</option>
+                                <option value="10" data-i18n="fringe_twisted">10 cm torsadées</option>
+                            </select>
+                        </div>
+                        <label for="piece-place" data-i18n="piece_place" data-i18n-title="title_piece_place" title="Centré : le milieu de la pièce tombe sur le milieu d'une bande pivot. Depuis la lisière : le motif commence au bord.">Motif</label>
+                        <select id="piece-place" class="patchwork-select">
+                            <option value="centre" data-i18n="place_centre">Centré</option>
+                            <option value="edge" data-i18n="place_edge">Depuis la lisière</option>
+                        </select>
+                    </div>
+                    <dl class="piece-facts" id="piece-facts"></dl>
+                    <h3 data-i18n="yarn_title">Fil par couleur</h3>
+                    <table class="piece-yarn" id="piece-yarn">
+                        <thead><tr><th scope="col" data-i18n="yarn_color">Couleur</th><th scope="col" data-i18n="yarn_warp">Chaîne</th><th scope="col" data-i18n="yarn_weft">Trame</th><th scope="col" data-i18n="yarn_total">Total</th></tr></thead>
+                        <tbody></tbody>
+                        <tfoot></tfoot>
+                    </table>
+                    <p class="piece-note" data-i18n="yarn_note">En mètres, franges comprises, sans la perte au métier (nouage, embuvage, essais) : ajoutez la marge de votre atelier.</p>
+                    <h3 data-i18n="loupe_title">Loupe : le vrai tissage</h3>
+                    <canvas id="piece-loupe" role="img" data-i18n-label="loupe_label" aria-label="Le sergé fil à fil, à l'endroit choisi sur la pièce"></canvas>
+                    <p class="piece-note" data-i18n="loupe_note">Survolez ou touchez la pièce pour déplacer la loupe.</p>
+                </aside>
+            </div>
         </div>
         <div id="patchwork-board" class="patchwork-board" role="dialog" aria-labelledby="patchwork-title" hidden>
             <div class="patchwork-bar">

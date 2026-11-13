@@ -331,10 +331,8 @@ const TRANSLATIONS = {
         sheet_col_yarn: "Mètres par m² de tissu",
         sheet_note: "Quantités théoriques pour la chaîne et la trame réunies, sans l'embuvage ni les chutes : prévoyez une marge.",
         btn_preview_objects: "Aperçu sur objets",
-        preview_title: "Le motif à l'échelle, d'après la taille du fil",
+        preview_title: "La pièce à l'échelle, d'après la densité",
         preview_scarf: "Écharpe",
-        preview_cushion: "Coussin",
-        preview_kilt: "Kilt",
         preview_repeat: "Un motif : % cm",
         sec_readability: "Lisibilité des couleurs",
         read_ok: "Toutes les bandes voisines se distinguent bien.",
@@ -440,6 +438,40 @@ const TRANSLATIONS = {
         sheet_density: "%d fils/cm (%m mm par fil)",
         title_remove_color: "Retirer de la palette",
         label_remove_color: "Retirer la couleur %",
+        preview_yardage: "Métrage",
+        preview_sample: "Échantillon",
+        piece_width: "Largeur",
+        piece_length: "Longueur",
+        piece_fringe: "Franges",
+        fringe_none: "Sans",
+        fringe_free: "3 cm libres",
+        fringe_twisted: "10 cm torsadées",
+        piece_place: "Motif",
+        title_piece_place: "Centré : le milieu de la pièce tombe sur le milieu d'une bande pivot. Depuis la lisière : le motif commence au bord.",
+        place_centre: "Centré",
+        place_edge: "Depuis la lisière",
+        fact_size: "Dimensions",
+        fact_fringe: " + franges de % cm aux deux bouts",
+        fact_warp: "Chaîne",
+        fact_warp_value: "%n fils à %d fils/cm",
+        fact_weft: "Trame",
+        fact_weft_value: "%n duites",
+        fact_repeats: "Motifs dans la largeur",
+        fact_repeats_value: "%r (un motif = %c cm)",
+        fact_left: "Lisière gauche",
+        fact_right: "Lisière droite",
+        fact_edge_value: "%s, %n fils sur %t",
+        fact_edge_whole: "%s, bande entière (%n fils)",
+        yarn_title: "Fil par couleur",
+        yarn_color: "Couleur",
+        yarn_warp: "Chaîne",
+        yarn_weft: "Trame",
+        yarn_total: "Total",
+        yarn_sum: "Total",
+        yarn_note: "En mètres, franges comprises, sans la perte au métier (nouage, embuvage, essais) : ajoutez la marge de votre atelier.",
+        loupe_title: "Loupe : le vrai tissage",
+        loupe_label: "Le sergé fil à fil, à l'endroit choisi sur la pièce",
+        loupe_note: "Survolez ou touchez la pièce pour déplacer la loupe.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -570,10 +602,8 @@ const TRANSLATIONS = {
         sheet_col_yarn: "Meters per m² of cloth",
         sheet_note: "Theoretical amounts for warp and weft together, without take-up or waste: allow a margin.",
         btn_preview_objects: "Preview on objects",
-        preview_title: "The pattern to scale, from the thread size",
+        preview_title: "The piece to scale, from the density",
         preview_scarf: "Scarf",
-        preview_cushion: "Cushion",
-        preview_kilt: "Kilt",
         preview_repeat: "One repeat: % cm",
         sec_readability: "Color readability",
         read_ok: "All neighboring stripes are easy to tell apart.",
@@ -679,6 +709,40 @@ const TRANSLATIONS = {
         sheet_density: "%d threads/cm (%m mm per thread)",
         title_remove_color: "Remove from palette",
         label_remove_color: "Remove color %",
+        preview_yardage: "Yardage",
+        preview_sample: "Sample",
+        piece_width: "Width",
+        piece_length: "Length",
+        piece_fringe: "Fringes",
+        fringe_none: "None",
+        fringe_free: "3 cm loose",
+        fringe_twisted: "10 cm twisted",
+        piece_place: "Pattern",
+        title_piece_place: "Centred: the middle of the piece falls on the middle of a pivot stripe. From the selvedge: the repeat starts at the edge.",
+        place_centre: "Centred",
+        place_edge: "From the selvedge",
+        fact_size: "Size",
+        fact_fringe: " + % cm fringes at both ends",
+        fact_warp: "Warp",
+        fact_warp_value: "%n ends at %d per cm",
+        fact_weft: "Weft",
+        fact_weft_value: "%n picks",
+        fact_repeats: "Repeats across",
+        fact_repeats_value: "%r (one repeat = %c cm)",
+        fact_left: "Left selvedge",
+        fact_right: "Right selvedge",
+        fact_edge_value: "%s, %n threads of %t",
+        fact_edge_whole: "%s, whole stripe (%n threads)",
+        yarn_title: "Yarn per colour",
+        yarn_color: "Colour",
+        yarn_warp: "Warp",
+        yarn_weft: "Weft",
+        yarn_total: "Total",
+        yarn_sum: "Total",
+        yarn_note: "In metres, fringes included, without loom waste (tying on, take-up, samples): add your workshop margin.",
+        loupe_title: "Magnifier: the real weave",
+        loupe_label: "The twill thread by thread, at the chosen spot of the piece",
+        loupe_note: "Hover over or tap the piece to move the magnifier.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -1172,6 +1236,7 @@ function bindEvents() {
         });
     }
     document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => setObjectView(btn.dataset.view)));
+    bindPiecePanel();
     watchPreviewStage();
     if (domElements.btnWeavingSheet) domElements.btnWeavingSheet.addEventListener('click', openWeavingSheet);
     if (domElements.btnSheetPrint) domElements.btnSheetPrint.addEventListener('click', () => window.print());
@@ -2562,12 +2627,15 @@ function getTileScale(effectType, zoom) {
 let weaveTileCanvas = null;
 let panPointer = null; // Pointer dragging the pattern
 let objectView = 'scarf';
-// Size of each object in cm; the scarf has fringes at both ends
+// The pieces a hand-weaving workshop makes, in cm. Sizes can be changed in the view;
+// only the scarf has fringes (3 cm loose or 10 cm twisted).
 const OBJECT_VIEWS = {
-    scarf: { w: 30, h: 180, fringe: 6 },
-    cushion: { w: 45, h: 45, fringe: 0 },
-    kilt: { w: 60, h: 60, fringe: 0 },
+    scarf: { w: 30, h: 180, fringe: 10, fringes: true },
+    yardage: { w: 70, h: 100, fringe: 0, fringes: false },
+    sample: { w: 30, h: 30, fringe: 0, fringes: false },
 };
+let piecePlacement = 'centre'; // 'centre': a pivot in the middle of the piece; 'edge': the repeat starts at the selvedge
+let pieceLayout = null;        // Where the piece was drawn, for the magnifier
 let previewStageSize = '';
 let previewLayoutTimer = 0;
 
@@ -4192,7 +4260,7 @@ function linearToSrgb(value) {
 }
 
 // Linear RGB of each pixel along a run of `pixels` pixels, wrapping around the sequence.
-function averageSettColors(sequence, threadsPerPixel, pixels) {
+function averageSettColors(sequence, threadsPerPixel, pixels, start = 0) {
     const n = sequence.length;
     const ends = new Float64Array(n);
     const colors = new Float64Array(n * 3);
@@ -4223,9 +4291,9 @@ function averageSettColors(sequence, threadsPerPixel, pixels) {
 
     const result = new Float64Array(pixels * 3);
     let before = [0, 0, 0], after = [0, 0, 0];
-    integral(0, before);
+    integral(start, before);
     for (let p = 0; p < pixels; p++) {
-        integral((p + 1) * threadsPerPixel, after);
+        integral(start + (p + 1) * threadsPerPixel, after);
         for (let c = 0; c < 3; c++) result[p * 3 + c] = (after[c] - before[c]) / threadsPerPixel;
         [before, after] = [after, before];
     }
@@ -4237,14 +4305,14 @@ function isPreviewOpen() {
 }
 
 // A rectangle of cloth at the given scale, ready to be clipped to a shape.
-function makeClothCanvas(sequence, threadsPerPixel, w, h) {
+function makeClothCanvas(sequence, threadsPerPixel, w, h, warpStart = 0, weftStart = 0) {
     const cloth = document.createElement('canvas');
     cloth.width = w;
     cloth.height = h;
     const ctx = cloth.getContext('2d');
     const image = ctx.createImageData(w, h);
-    const warp = averageSettColors(sequence, threadsPerPixel, w);
-    const weft = averageSettColors(sequence, threadsPerPixel, h);
+    const warp = averageSettColors(sequence, threadsPerPixel, w, warpStart);
+    const weft = averageSettColors(sequence, threadsPerPixel, h, weftStart);
     let offset = 0;
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
@@ -4256,12 +4324,14 @@ function makeClothCanvas(sequence, threadsPerPixel, w, h) {
     return { cloth, warp };
 }
 
-function drawScarf(ctx, make, x, y, w, h, fringe) {
+function drawScarf(ctx, make, x, y, w, h, fringe, twisted) {
     const { cloth, warp } = make(w, h);
     ctx.drawImage(cloth, x, y);
-    // Fringes: the warp threads running out of the cloth
-    const step = Math.max(2, Math.round(w / 40));
-    ctx.lineWidth = Math.max(1, step / 2);
+    if (fringe <= 0) return;
+    // Fringes: the warp threads running out of the cloth; twisted ones gather into fewer, thicker cords
+    const step = Math.max(2, Math.round(w / (twisted ? 18 : 40)));
+    ctx.lineWidth = Math.max(1, twisted ? step * 0.55 : step / 2);
+    ctx.lineCap = 'round';
     for (let px = Math.floor(step / 2); px < w; px += step) {
         ctx.strokeStyle = `rgb(${linearToSrgb(warp[px * 3])},${linearToSrgb(warp[px * 3 + 1])},${linearToSrgb(warp[px * 3 + 2])})`;
         ctx.beginPath();
@@ -4270,55 +4340,67 @@ function drawScarf(ctx, make, x, y, w, h, fringe) {
         ctx.moveTo(x + px, y + h);
         ctx.lineTo(x + px, y + h + fringe);
         ctx.stroke();
+        if (twisted) {
+            // A knot where each cord ends
+            ctx.fillStyle = ctx.strokeStyle;
+            const r = ctx.lineWidth * 0.8;
+            ctx.fillRect(x + px - r, y - fringe - r, r * 2, r * 2);
+            ctx.fillRect(x + px - r, y + h + fringe - r, r * 2, r * 2);
+        }
     }
 }
 
-function drawCushion(ctx, make, x, y, size) {
-    const pinch = size * 0.05;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.quadraticCurveTo(x + size / 2, y + pinch, x + size, y);
-    ctx.quadraticCurveTo(x + size - pinch, y + size / 2, x + size, y + size);
-    ctx.quadraticCurveTo(x + size / 2, y + size - pinch, x, y + size);
-    ctx.quadraticCurveTo(x + pinch, y + size / 2, x, y);
-    ctx.closePath();
-    ctx.clip();
-    ctx.drawImage(make(size, size).cloth, x, y);
-    const shade = ctx.createRadialGradient(x + size * 0.45, y + size * 0.4, size * 0.1, x + size / 2, y + size / 2, size * 0.75);
-    shade.addColorStop(0, 'rgba(255,255,255,0.12)');
-    shade.addColorStop(1, 'rgba(0,0,0,0.42)');
-    ctx.fillStyle = shade;
-    ctx.fillRect(x, y, size, size);
-    ctx.restore();
+// Walks the thread sequence from a position, a stripe (or part of one) at a time
+function walkSequence(sequence, start, count, visit) {
+    const total = sequence.reduce((sum, s) => sum + s.count, 0);
+    let pos = ((start % total) + total) % total;
+    let i = 0;
+    while (pos >= sequence[i].count) { pos -= sequence[i].count; i++; }
+    let left = count;
+    while (left > 0) {
+        const take = Math.min(sequence[i].count - pos, left);
+        visit(sequence[i], take, pos);
+        left -= take;
+        pos = 0;
+        i = (i + 1) % sequence.length;
+    }
 }
 
-function drawKilt(ctx, make, x, y, w, h) {
-    const waist = h * 0.07;
-    const inset = w * 0.08;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(x + inset, y);
-    ctx.lineTo(x + w - inset, y);
-    ctx.lineTo(x + w, y + h);
-    ctx.lineTo(x, y + h);
-    ctx.closePath();
-    ctx.clip();
-    ctx.drawImage(make(w, h).cloth, x, y);
-    // Flat apron on the left, pleats on the right
-    const pleats = 9;
-    const start = x + w * 0.42;
-    const pleat = (x + w - start) / pleats;
-    for (let i = 0; i < pleats; i++) {
-        const shade = ctx.createLinearGradient(start + i * pleat, 0, start + (i + 1) * pleat, 0);
-        shade.addColorStop(0, 'rgba(255,255,255,0.14)');
-        shade.addColorStop(1, 'rgba(0,0,0,0.42)');
-        ctx.fillStyle = shade;
-        ctx.fillRect(start + i * pleat, y + waist, pleat, h - waist);
-    }
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(x, y, w, waist);
-    ctx.restore();
+// Centred: the middle of the piece falls on the middle of the first stripe, a pivot of a symmetric sett
+function centredStart(sequence, threads) {
+    return Math.round(sequence[0].count / 2 - threads / 2);
+}
+
+// Everything the weaver needs about one piece: threads, selvedges, yarn per colour
+function buildPieceData(stripes, isSymmetric, threadMm, piece, placement) {
+    const { sequence, totalThreads } = buildWeavingSheetData(stripes, isSymmetric, threadMm);
+    const perCm = 10 / threadMm;
+    const ends = Math.max(1, Math.round(piece.w * perCm));
+    const picks = Math.max(1, Math.round(piece.h * perCm));
+    const warpStart = placement === 'centre' ? centredStart(sequence, ends) : 0;
+    const weftStart = placement === 'centre' ? centredStart(sequence, picks) : 0;
+    const fringe = piece.fringes ? piece.fringe : 0;
+    const colors = new Map();
+    const color = (s) => {
+        if (!colors.has(s.hex)) colors.set(s.hex, { hex: s.hex, code: s.code, ends: 0, picks: 0 });
+        return colors.get(s.hex);
+    };
+    const edges = [];
+    walkSequence(sequence, warpStart, ends, (s, take, pos) => {
+        color(s).ends += take;
+        edges.push({ stripe: s, threads: take, whole: pos === 0 && take === s.count });
+    });
+    walkSequence(sequence, weftStart, picks, (s, take) => { color(s).picks += take; });
+    // Each warp end runs the length of the piece plus its fringes; each pick crosses the width
+    const warpLength = (piece.h + 2 * fringe) / 100, weftLength = piece.w / 100;
+    const yarn = [...colors.values()].map(c => ({ ...c, warpM: c.ends * warpLength, weftM: c.picks * weftLength }));
+    return {
+        sequence, totalThreads, perCm, ends, picks, warpStart, weftStart, fringe, yarn,
+        repeats: ends / totalThreads,
+        repeatCm: totalThreads / perCm,
+        left: edges[0],
+        right: edges[edges.length - 1],
+    };
 }
 
 function renderObjectPreview() {
@@ -4337,32 +4419,174 @@ function renderObjectPreview() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const threadMm = parseFloat(domElements.threadMm?.value) || 1.11;
     const isSymmetric = domElements.sym?.checked || false;
-    const { sequence, widthCm } = buildWeavingSheetData(tartanStripes, isSymmetric, threadMm);
-
-    // One object, as large as the stage allows, with a 10 cm bar and the size of a repeat under it
     const view = OBJECT_VIEWS[objectView] ? objectView : 'scarf';
     const o = OBJECT_VIEWS[view];
+    const data = buildPieceData(tartanStripes, isSymmetric, threadMm, o, piecePlacement);
+
+    // The piece, as large as the stage allows, with a 10 cm bar and its size under it
     const labelPx = 22 * density;
     const margin = 16 * density;
-    const scale = Math.min((canvas.width - margin * 2) / o.w, (canvas.height - labelPx * 3 - margin) / (o.h + o.fringe * 2));
-    const threadsPerPixel = 10 / threadMm / scale;
-    const make = (w, h) => makeClothCanvas(sequence, threadsPerPixel, w, h);
+    const scale = Math.min((canvas.width - margin * 2) / o.w, (canvas.height - labelPx * 3 - margin) / (o.h + data.fringe * 2));
+    const threadsPerPixel = data.perCm / scale;
+    const make = (w, h) => makeClothCanvas(data.sequence, threadsPerPixel, w, h, data.warpStart, data.weftStart);
     const px = cm => Math.max(1, Math.round(cm * scale));
 
     const x = Math.round((canvas.width - px(o.w)) / 2);
-    const top = Math.round(labelPx + px(o.fringe));
-    if (view === 'scarf') drawScarf(ctx, make, x, top, px(o.w), px(o.h), px(o.fringe));
-    else if (view === 'cushion') drawCushion(ctx, make, x, top, px(o.w));
-    else drawKilt(ctx, make, x, top, px(o.w), px(o.h));
+    const top = Math.round(labelPx + px(data.fringe));
+    drawScarf(ctx, make, x, top, px(o.w), px(o.h), px(data.fringe), data.fringe >= 10);
+    pieceLayout = { x, y: top, w: px(o.w), h: px(o.h), ends: data.ends, picks: data.picks, warpStart: data.warpStart, weftStart: data.weftStart };
 
     ctx.font = `${Math.round(12 * density)}px sans-serif`;
     ctx.textBaseline = 'bottom';
     ctx.fillStyle = '#ccc';
-    const barY = top + px(o.h) + px(o.fringe) + Math.round(labelPx * 1.2);
+    const barY = top + px(o.h) + px(data.fringe) + Math.round(labelPx * 1.2);
     ctx.fillRect(x, barY, px(10), Math.max(2, Math.round(2 * density)));
     ctx.fillText('10 cm', x, barY - 3);
-    ctx.fillText(t.preview_repeat.replace('%', formatNumber(widthCm)), x, barY + labelPx);
+    ctx.fillText(`${formatNumber(o.w, 0)} × ${formatNumber(o.h, 0)} cm`, x, barY + labelPx);
     canvas.setAttribute('aria-label', `${t['preview_' + view]} : ${t.preview_title}`);
+    updatePiecePanel(view, data);
+    drawLoupe(data.ends / 2, data.picks / 2);
+}
+
+// The panel beside the piece: its size, its threads, its selvedges and the yarn it takes
+function updatePiecePanel(view, data) {
+    const t = TRANSLATIONS[currentLang];
+    const o = OBJECT_VIEWS[view];
+    const title = document.getElementById('piece-title');
+    if (title) title.textContent = t['preview_' + view];
+    for (const [id, value] of [['piece-width', o.w], ['piece-length', o.h]]) {
+        const field = document.getElementById(id);
+        if (field && document.activeElement !== field) field.value = value;
+    }
+    const fringeRow = document.getElementById('piece-fringe-row');
+    if (fringeRow) fringeRow.hidden = !o.fringes;
+    const fringe = document.getElementById('piece-fringe');
+    if (fringe) fringe.value = String(o.fringe);
+    const place = document.getElementById('piece-place');
+    if (place) place.value = piecePlacement;
+
+    const name = (s) => {
+        const color = userPalette.find(p => p.hex.toUpperCase() === s.hex.toUpperCase());
+        return color ? formatColorLabel(color) : s.code;
+    };
+    const facts = document.getElementById('piece-facts');
+    if (facts) {
+        const edge = (e) => e.whole
+            ? t.fact_edge_whole.replace('%s', name(e.stripe)).replace('%n', e.threads)
+            : t.fact_edge_value.replace('%s', name(e.stripe)).replace('%n', e.threads).replace('%t', e.stripe.count);
+        const size = `${formatNumber(o.w, 0)} × ${formatNumber(o.h, 0)} cm` + (data.fringe ? t.fact_fringe.replace('%', formatNumber(data.fringe, 0)) : '');
+        facts.replaceChildren();
+        [
+            [t.fact_size, size],
+            [t.fact_warp, t.fact_warp_value.replace('%n', formatNumber(data.ends, 0)).replace('%d', formatNumber(data.perCm, 1))],
+            [t.fact_weft, t.fact_weft_value.replace('%n', formatNumber(data.picks, 0))],
+            [t.fact_repeats, t.fact_repeats_value.replace('%r', formatNumber(data.repeats, 1)).replace('%c', formatNumber(data.repeatCm, 1))],
+            [t.fact_left, edge(data.left)],
+            [t.fact_right, edge(data.right)],
+        ].forEach(([term, value]) => {
+            const dt = document.createElement('dt'); dt.textContent = term;
+            const dd = document.createElement('dd'); dd.textContent = value;
+            facts.append(dt, dd);
+        });
+    }
+    const table = document.getElementById('piece-yarn');
+    if (table) {
+        const meters = m => formatNumber(m, m < 10 ? 1 : 0);
+        const body = table.tBodies[0];
+        body.replaceChildren();
+        let warp = 0, weft = 0;
+        data.yarn.forEach(c => {
+            const row = body.insertRow();
+            const cell = row.insertCell();
+            const chip = document.createElement('span');
+            chip.className = 'piece-chip';
+            chip.style.background = c.hex;
+            cell.append(chip, document.createTextNode(name(c)));
+            row.insertCell().textContent = meters(c.warpM);
+            row.insertCell().textContent = meters(c.weftM);
+            row.insertCell().textContent = meters(c.warpM + c.weftM) + ' m';
+            warp += c.warpM; weft += c.weftM;
+        });
+        const foot = table.tFoot;
+        foot.replaceChildren();
+        const row = foot.insertRow();
+        row.insertCell().textContent = t.yarn_sum;
+        row.insertCell().textContent = meters(warp);
+        row.insertCell().textContent = meters(weft);
+        row.insertCell().textContent = meters(warp + weft) + ' m';
+    }
+}
+
+// The magnifier: the real 2/2 twill, thread by thread, around a point of the piece
+const LOUPE_THREADS = 24, LOUPE_PX = 6;
+function drawLoupe(threadX, threadY) {
+    const canvas = document.getElementById('piece-loupe');
+    if (!canvas || !pieceLayout || tartanStripes.length === 0) return;
+    const isSymmetric = domElements.sym?.checked || false;
+    const total = countSettThreads(tartanStripes, isSymmetric);
+    const n = LOUPE_THREADS;
+    const x0 = Math.round(threadX - n / 2), y0 = Math.round(threadY - n / 2);
+    const wrap = v => ((v % total) + total) % total;
+    const warp = buildThreadColors(tartanStripes, isSymmetric, n, wrap(pieceLayout.warpStart + x0));
+    const weft = buildThreadColors(tartanStripes, isSymmetric, n, wrap(pieceLayout.weftStart + y0));
+    const tile = document.createElement('canvas');
+    tile.width = n;
+    tile.height = n;
+    const tctx = tile.getContext('2d');
+    const image = tctx.createImageData(n, n);
+    fillTwillPixels(new Uint32Array(image.data.buffer), n, n, warp, domElements.weaveZ?.checked ?? true, weft, x0, y0);
+    tctx.putImageData(image, 0, 0);
+    const density = window.devicePixelRatio || 1;
+    canvas.width = Math.round(n * LOUPE_PX * density);
+    canvas.height = Math.round(n * LOUPE_PX * density);
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tile, 0, 0, canvas.width, canvas.height);
+    canvas.dataset.at = `${Math.round(threadX)},${Math.round(threadY)}`;
+}
+
+// Pointer over the piece moves the magnifier
+function loupeFromPointer(e) {
+    const canvas = domElements.previewCanvas;
+    if (!canvas || !pieceLayout) return;
+    const rect = canvas.getBoundingClientRect();
+    const density = canvas.width / Math.max(1, rect.width);
+    const px = (e.clientX - rect.left) * density - pieceLayout.x;
+    const py = (e.clientY - rect.top) * density - pieceLayout.y;
+    if (px < 0 || py < 0 || px > pieceLayout.w || py > pieceLayout.h) return;
+    drawLoupe(px / pieceLayout.w * pieceLayout.ends, py / pieceLayout.h * pieceLayout.picks);
+}
+
+// Size, fringes and placement typed in the panel
+function bindPiecePanel() {
+    const number = (id, key, min, max) => {
+        const field = document.getElementById(id);
+        if (!field) return;
+        field.addEventListener('input', () => {
+            const v = parseFloat(field.value);
+            const o = OBJECT_VIEWS[objectView];
+            if (!o || !(v >= min && v <= max)) return;
+            o[key] = v;
+            renderObjectPreview();
+        });
+        field.addEventListener('change', () => renderObjectPreview());
+    };
+    number('piece-width', 'w', 5, 300);
+    number('piece-length', 'h', 5, 1000);
+    document.getElementById('piece-fringe')?.addEventListener('change', (e) => {
+        const o = OBJECT_VIEWS[objectView];
+        if (o?.fringes) o.fringe = parseFloat(e.target.value) || 0;
+        renderObjectPreview();
+    });
+    document.getElementById('piece-place')?.addEventListener('change', (e) => {
+        piecePlacement = e.target.value === 'edge' ? 'edge' : 'centre';
+        renderObjectPreview();
+    });
+    const canvas = domElements.previewCanvas;
+    if (canvas) {
+        canvas.addEventListener('pointermove', loupeFromPointer);
+        canvas.addEventListener('pointerdown', loupeFromPointer);
+    }
 }
 
 // The canvas shows the cloth, or one object made of it: a view, not a window, so the settings stay usable

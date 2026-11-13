@@ -30,7 +30,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 **Explorer** (mode *Planche*, à côté d'*Atelier* dans la barre du haut)
 * Mood board de 10 à 100 motifs, avec épingles et variantes autour d'une tuile.
 * Mode par critères : une grille dont les colonnes et les lignes font varier chacune un réglage (couleurs, bandes, largeur max, sett, symétrie).
-* Vues Écharpe, Coussin et Kilt sur le motif, à l'échelle d'après la densité ; les réglages restent utilisables pendant ce temps.
+* **Vues produit** sur le motif : Écharpe (30 × 180 cm, franges de 3 cm libres ou 10 cm torsadées), Métrage (70 cm de large) et Échantillon (30 × 30 cm), à l'échelle d'après la densité ; les dimensions se changent. À côté de la pièce : fils de chaîne et duites, motifs dans la largeur, ce que coupe chaque lisière, motif centré ou depuis la lisière, fil par couleur en mètres (chaîne et trame, franges comprises, sans la perte au métier), et une loupe sur le vrai sergé. Les réglages restent utilisables pendant ce temps.
 * Lisibilité des couleurs : alerte sur les bandes voisines difficiles à distinguer, et simulation du daltonisme (à l'écran seulement).
 
 **Rendu**
