@@ -41,7 +41,7 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 
 **Save and share** (*Save / share* menu in the top bar)
 * PNG of the current view, SVG of one seamless repeat at real size, text details (SRT and Ink/Stitch codes), ZIP or PNG of the mood board.
-* Printable weaving sheet: thread order and yarn per color per square meter.
+* **Prepare the weaving**: a printable sheet for the chosen piece (from the product view or the *Save / share* menu). Piece and size, warp length per end, the warping plan from selvedge to selvedge with a running total, the weft, and the yarn per colour in metres. The weaver can enter her loom waste per warp end, a margin and the metres per kilo of each yarn to get the weight; these figures stay on her device.
 * Link that reopens exactly the pattern, with no server involved.
 
 **Keyboard**: `Space` or `G` generate, `S` export all, `P` export PNG, `Ctrl+Z` undo, `+` and `-` zoom, arrows move, `Esc` closes a menu, the board or a window. In a menu, the arrow keys move between choices.

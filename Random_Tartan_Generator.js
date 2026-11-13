@@ -314,7 +314,7 @@ const TRANSLATIONS = {
         title_import_file: "Rouvrir un fichier texte exporté avec « Détails »",
         msg_import_file_err: "Ce fichier n'est pas un export de détails valide.",
         btn_weaving_sheet: "Fiche de tissage",
-        title_weaving_sheet: "Une fiche imprimable : ordre des fils et quantité de fil par couleur",
+        title_weaving_sheet: "Une fiche imprimable pour la pièce choisie : plan d'ourdissage, trame et fil par couleur",
         btn_print: "Imprimer",
         sheet_title: "Fiche de tissage",
         sheet_srt: "Code SRT",
@@ -325,7 +325,7 @@ const TRANSLATIONS = {
         sheet_twill: "Sergé 2/2",
         sheet_structure: "Structure",
         sheet_order: "Ordre des fils sur un motif",
-        sheet_colors: "Fil par couleur",
+        sheet_colors: "Fil par couleur pour la pièce",
         sheet_color: "Couleur",
         sheet_col_threads: "Fils",
         sheet_col_yarn: "Mètres par m² de tissu",
@@ -399,7 +399,7 @@ const TRANSLATIONS = {
         menu_export_png: "Image PNG (vue actuelle)",
         menu_export_svg: "Vectoriel SVG (un motif raccordable)",
         menu_export_txt: "Détails (.txt, à rouvrir)",
-        menu_export_sheet: "Fiche de tissage (à imprimer)",
+        menu_export_sheet: "Préparer le tissage (fiche à imprimer)",
         menu_export_all: "Tout : PNG, SVG et détails",
         btn_about_short: "À propos",
         btn_reset_view: "Revenir au début du motif",
@@ -472,6 +472,24 @@ const TRANSLATIONS = {
         loupe_title: "Loupe : le vrai tissage",
         loupe_label: "Le sergé fil à fil, à l'endroit choisi sur la pièce",
         loupe_note: "Survolez ou touchez la pièce pour déplacer la loupe.",
+        btn_piece_sheet: "Préparer le tissage",
+        sheet_piece: "La pièce",
+        sheet_piece_kind: "Pièce",
+        sheet_loss: "Perte au métier (cm par fil de chaîne)",
+        sheet_margin: "Marge (%)",
+        sheet_warp_length: "Longueur de chaîne",
+        sheet_warp_length_value: "%c cm par fil, franges et perte comprises",
+        sheet_warp_plan: "Plan d'ourdissage",
+        sheet_warp_plan_note: "De la lisière gauche à la lisière droite, les bandes voisines de même couleur réunies.",
+        sheet_col_upto: "Cumul",
+        sheet_weft: "Trame",
+        sheet_weft_value: "Même ordre que la chaîne : %n duites, soit %r motifs. Commencer par %s duites.",
+        sheet_col_total: "Total",
+        sheet_col_perkg: "m/kg",
+        sheet_col_grams: "Poids",
+        sheet_perkg_label: "Métrage au kilo du fil %",
+        sheet_yarn_note_without: "En mètres, franges comprises. Ajoutez la perte au métier et une marge ci-dessus pour les inclure ; le métrage au kilo de chaque fil donne le poids.",
+        sheet_yarn_note_with: "En mètres, franges comprises, avec %l cm de perte par fil de chaîne et %m % de marge.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -585,7 +603,7 @@ const TRANSLATIONS = {
         title_import_file: "Reopen a text file exported with \"Details\"",
         msg_import_file_err: "This file is not a valid details export.",
         btn_weaving_sheet: "Weaving sheet",
-        title_weaving_sheet: "A printable sheet: thread order and yarn per color",
+        title_weaving_sheet: "A printable sheet for the chosen piece: warping plan, weft and yarn per colour",
         btn_print: "Print",
         sheet_title: "Weaving sheet",
         sheet_srt: "SRT code",
@@ -596,7 +614,7 @@ const TRANSLATIONS = {
         sheet_twill: "2/2 twill",
         sheet_structure: "Structure",
         sheet_order: "Thread order for one sett",
-        sheet_colors: "Yarn per color",
+        sheet_colors: "Yarn per colour for the piece",
         sheet_color: "Color",
         sheet_col_threads: "Threads",
         sheet_col_yarn: "Meters per m² of cloth",
@@ -670,7 +688,7 @@ const TRANSLATIONS = {
         menu_export_png: "PNG image (current view)",
         menu_export_svg: "SVG vector (one seamless repeat)",
         menu_export_txt: "Details (.txt, can be reopened)",
-        menu_export_sheet: "Weaving sheet (to print)",
+        menu_export_sheet: "Prepare the weaving (sheet to print)",
         menu_export_all: "All: PNG, SVG and details",
         btn_about_short: "About",
         btn_reset_view: "Back to the start of the pattern",
@@ -743,6 +761,24 @@ const TRANSLATIONS = {
         loupe_title: "Magnifier: the real weave",
         loupe_label: "The twill thread by thread, at the chosen spot of the piece",
         loupe_note: "Hover over or tap the piece to move the magnifier.",
+        btn_piece_sheet: "Prepare the weaving",
+        sheet_piece: "The piece",
+        sheet_piece_kind: "Piece",
+        sheet_loss: "Loom waste (cm per warp end)",
+        sheet_margin: "Margin (%)",
+        sheet_warp_length: "Warp length",
+        sheet_warp_length_value: "%c cm per end, fringes and waste included",
+        sheet_warp_plan: "Warping plan",
+        sheet_warp_plan_note: "From the left selvedge to the right one, neighbouring stripes of one colour merged.",
+        sheet_col_upto: "Running total",
+        sheet_weft: "Weft",
+        sheet_weft_value: "Same order as the warp: %n picks, that is %r repeats. Start with %s picks.",
+        sheet_col_total: "Total",
+        sheet_col_perkg: "m/kg",
+        sheet_col_grams: "Weight",
+        sheet_perkg_label: "Metres per kilo of the % yarn",
+        sheet_yarn_note_without: "In metres, fringes included. Enter the loom waste and a margin above to include them; the metres per kilo of each yarn give the weight.",
+        sheet_yarn_note_with: "In metres, fringes included, with %l cm of waste per warp end and a %m % margin.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -1237,6 +1273,7 @@ function bindEvents() {
     }
     document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => setObjectView(btn.dataset.view)));
     bindPiecePanel();
+    document.getElementById('btn-piece-sheet')?.addEventListener('click', openWeavingSheet);
     watchPreviewStage();
     if (domElements.btnWeavingSheet) domElements.btnWeavingSheet.addEventListener('click', openWeavingSheet);
     if (domElements.btnSheetPrint) domElements.btnSheetPrint.addEventListener('click', () => window.print());
@@ -4669,13 +4706,80 @@ function sheetElement(tag, text, className) {
     return el;
 }
 
+// The weaver's own figures, kept on this device: loom waste per warp end, margin, metres per kilo
+const WEAVING_PREFS_KEY = 'tartanWeavingPrefs';
+let weavingPrefs = { loss: 0, margin: 0, perKg: {} };
+function loadWeavingPrefs() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(WEAVING_PREFS_KEY) || 'null');
+        if (saved && typeof saved === 'object') {
+            weavingPrefs = {
+                loss: Number.isFinite(saved.loss) && saved.loss >= 0 ? saved.loss : 0,
+                margin: Number.isFinite(saved.margin) && saved.margin >= 0 ? saved.margin : 0,
+                perKg: saved.perKg && typeof saved.perKg === 'object' ? saved.perKg : {},
+            };
+        }
+    } catch (e) { /* Private mode or blocked storage: the sheet still works */ }
+}
+function saveWeavingPrefs() {
+    try { localStorage.setItem(WEAVING_PREFS_KEY, JSON.stringify(weavingPrefs)); } catch (e) { /* see above */ }
+}
+
+// Warp ends from the left selvedge to the right one, a stripe at a time, neighbours of one colour merged
+function buildWarpPlan(sequence, start, ends) {
+    const runs = [];
+    walkSequence(sequence, start, ends, (s, take) => {
+        const last = runs[runs.length - 1];
+        if (last && last.hex === s.hex) last.count += take;
+        else runs.push({ code: s.code, hex: s.hex, count: take });
+    });
+    let total = 0;
+    runs.forEach(r => { total += r.count; r.upTo = total; });
+    return runs;
+}
+
+// Yarn for the piece, with the loss and margin the weaver entered
+function pieceYarnWithPrefs(data, piece) {
+    const loss = weavingPrefs.loss / 100;
+    const margin = 1 + weavingPrefs.margin / 100;
+    return data.yarn.map(c => {
+        const warpM = c.warpM + c.ends * loss;
+        const totalM = (warpM + c.weftM) * margin;
+        const perKg = parseFloat(weavingPrefs.perKg[c.hex.toUpperCase()]);
+        return { ...c, warpM, totalM, grams: perKg > 0 ? totalM / perKg * 1000 : null };
+    });
+}
+
+function sheetField(id, labelKey, control) {
+    const t = TRANSLATIONS[currentLang];
+    const wrap = sheetElement('div', undefined, 'sheet-field');
+    const label = sheetElement('label', t[labelKey]);
+    label.htmlFor = id;
+    control.id = id;
+    wrap.append(label, control);
+    return wrap;
+}
+function sheetNumber(value, min, max, step) {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = min; input.max = max; input.step = step;
+    input.value = value;
+    return input;
+}
+function sheetSelect(options, value) {
+    const select = document.createElement('select');
+    options.forEach(([v, text]) => { const o = document.createElement('option'); o.value = v; o.textContent = text; select.appendChild(o); });
+    select.value = value;
+    return select;
+}
+
 function openWeavingSheet() {
     if (tartanStripes.length === 0 || !domElements.sheetBody) return;
+    loadWeavingPrefs();
     const t = TRANSLATIONS[currentLang];
     const isSymmetric = domElements.sym?.checked || false;
     const threadMm = parseFloat(domElements.threadMm?.value) || 1.11;
     const data = buildWeavingSheetData(tartanStripes, isSymmetric, threadMm);
-    const palette = paletteFromStripes(tartanStripes);
     const body = domElements.sheetBody;
     body.textContent = '';
 
@@ -4715,28 +4819,161 @@ function openWeavingSheet() {
     body.appendChild(sheetElement('h3', t.sheet_order));
     body.appendChild(sheetElement('p', data.sequence.map(s => `${s.code} ${s.count}`).join(' · '), 'sheet-order'));
 
-    body.appendChild(sheetElement('h3', t.sheet_colors));
-    const table = sheetElement('table', undefined, 'sheet-table');
-    const headRow = table.createTHead().insertRow();
-    [t.sheet_color, t.sheet_col_threads, '%', t.sheet_col_yarn].forEach(label => headRow.appendChild(sheetElement('th', label)));
-    const rows = table.createTBody();
-    data.colors.forEach(c => {
-        const row = rows.insertRow();
-        const name = row.insertCell();
-        const chip = sheetElement('span', undefined, 'sheet-chip');
-        chip.style.background = c.hex;
-        const color = palette.find(p => p.hex.toUpperCase() === c.hex.toUpperCase());
-        name.append(chip, document.createTextNode(formatColorLabel(color)));
-        row.insertCell().textContent = String(c.threads);
-        row.insertCell().textContent = formatNumber(c.percent);
-        row.insertCell().textContent = Math.round(c.meters).toLocaleString(currentLang);
+    // The piece: chosen here or in the product view, the same sizes in both
+    if (!OBJECT_VIEWS[objectView]) objectView = 'scarf';
+    body.appendChild(sheetElement('h3', t.sheet_piece));
+    const form = sheetElement('div', undefined, 'sheet-form');
+    const piece = sheetSelect(Object.keys(OBJECT_VIEWS).map(v => [v, t['preview_' + v]]), objectView);
+    const width = sheetNumber(OBJECT_VIEWS[objectView].w, 5, 300, 1);
+    const length = sheetNumber(OBJECT_VIEWS[objectView].h, 5, 1000, 1);
+    const fringe = sheetSelect([['0', t.fringe_none], ['3', t.fringe_free], ['10', t.fringe_twisted]], String(OBJECT_VIEWS[objectView].fringe));
+    const place = sheetSelect([['centre', t.place_centre], ['edge', t.place_edge]], piecePlacement);
+    const loss = sheetNumber(weavingPrefs.loss, 0, 500, 1);
+    const margin = sheetNumber(weavingPrefs.margin, 0, 100, 1);
+    const fringeField = sheetField('sheet-fringe', 'piece_fringe', fringe);
+    form.append(
+        sheetField('sheet-piece', 'sheet_piece_kind', piece),
+        sheetField('sheet-width', 'piece_width', width),
+        sheetField('sheet-length', 'piece_length', length),
+        fringeField,
+        sheetField('sheet-place', 'piece_place', place),
+        sheetField('sheet-loss', 'sheet_loss', loss),
+        sheetField('sheet-margin', 'sheet_margin', margin),
+    );
+    body.appendChild(form);
+    const pieceInfo = sheetElement('div');
+    body.appendChild(pieceInfo);
+
+    const refresh = () => {
+        const o = OBJECT_VIEWS[objectView];
+        fringeField.hidden = !o.fringes;
+        renderSheetPiece(pieceInfo, o);
+        if (isPreviewOpen()) renderObjectPreview();
+    };
+    piece.addEventListener('change', () => {
+        objectView = piece.value;
+        const o = OBJECT_VIEWS[objectView];
+        width.value = o.w; length.value = o.h; fringe.value = String(o.fringe);
+        syncViewSwitch();
+        refresh();
     });
-    body.appendChild(table);
-    body.appendChild(sheetElement('p', t.sheet_note, 'sheet-note'));
+    const number = (field, apply, min, max) => field.addEventListener('input', () => {
+        const v = parseFloat(field.value);
+        if (v >= min && v <= max) { apply(v); refresh(); }
+    });
+    number(width, v => { OBJECT_VIEWS[objectView].w = v; }, 5, 300);
+    number(length, v => { OBJECT_VIEWS[objectView].h = v; }, 5, 1000);
+    number(loss, v => { weavingPrefs.loss = v; saveWeavingPrefs(); }, 0, 500);
+    number(margin, v => { weavingPrefs.margin = v; saveWeavingPrefs(); }, 0, 100);
+    fringe.addEventListener('change', () => { if (OBJECT_VIEWS[objectView].fringes) OBJECT_VIEWS[objectView].fringe = parseFloat(fringe.value) || 0; refresh(); });
+    place.addEventListener('change', () => { piecePlacement = place.value === 'edge' ? 'edge' : 'centre'; refresh(); });
+    refresh();
 
     weavingSheetOpener = document.activeElement;
     domElements.sheetModal.hidden = false;
     domElements.btnSheetPrint?.focus();
+}
+
+// The part of the sheet that follows the piece: its facts, the warping plan, the weft, the yarn
+function renderSheetPiece(container, o) {
+    const t = TRANSLATIONS[currentLang];
+    const isSymmetric = domElements.sym?.checked || false;
+    const threadMm = parseFloat(domElements.threadMm?.value) || 1.11;
+    const data = buildPieceData(tartanStripes, isSymmetric, threadMm, o, piecePlacement);
+    const palette = paletteFromStripes(tartanStripes);
+    const name = (c) => {
+        const color = palette.find(p => p.hex.toUpperCase() === c.hex.toUpperCase());
+        return color ? formatColorLabel(color) : c.code;
+    };
+    const chip = (hex) => { const el = sheetElement('span', undefined, 'sheet-chip'); el.style.background = hex; return el; };
+    container.textContent = '';
+
+    const warpCm = o.h + 2 * data.fringe + weavingPrefs.loss;
+    const facts = sheetElement('dl', undefined, 'sheet-facts sheet-piece-facts');
+    [
+        [t.fact_size, `${formatNumber(o.w, 0)} × ${formatNumber(o.h, 0)} cm` + (data.fringe ? t.fact_fringe.replace('%', formatNumber(data.fringe, 0)) : '')],
+        [t.fact_warp, t.fact_warp_value.replace('%n', formatNumber(data.ends, 0)).replace('%d', formatNumber(data.perCm, 1))],
+        [t.sheet_warp_length, t.sheet_warp_length_value.replace('%c', formatNumber(warpCm, 0))],
+        [t.fact_weft, t.fact_weft_value.replace('%n', formatNumber(data.picks, 0))],
+        [t.fact_repeats, t.fact_repeats_value.replace('%r', formatNumber(data.repeats, 1)).replace('%c', formatNumber(data.repeatCm, 1))],
+    ].forEach(([term, value]) => facts.append(sheetElement('dt', term), sheetElement('dd', value)));
+    container.appendChild(facts);
+
+    // Warping plan
+    container.appendChild(sheetElement('h3', t.sheet_warp_plan));
+    container.appendChild(sheetElement('p', t.sheet_warp_plan_note, 'sheet-note'));
+    const plan = sheetElement('table', undefined, 'sheet-table sheet-plan');
+    const planHead = plan.createTHead().insertRow();
+    ['#', t.sheet_color, t.sheet_col_threads, t.sheet_col_upto].forEach(label => planHead.appendChild(sheetElement('th', label)));
+    const planBody = plan.createTBody();
+    buildWarpPlan(data.sequence, data.warpStart, data.ends).forEach((r, i) => {
+        const row = planBody.insertRow();
+        row.insertCell().textContent = String(i + 1);
+        const cell = row.insertCell();
+        cell.append(chip(r.hex), document.createTextNode(name(r)));
+        row.insertCell().textContent = String(r.count);
+        row.insertCell().textContent = formatNumber(r.upTo, 0);
+    });
+    container.appendChild(plan);
+
+    // Weft: the same order, from where the piece starts
+    const firstPicks = buildWarpPlan(data.sequence, data.weftStart, Math.min(data.picks, data.totalThreads))[0];
+    container.appendChild(sheetElement('h3', t.sheet_weft));
+    container.appendChild(sheetElement('p', t.sheet_weft_value
+        .replace('%n', formatNumber(data.picks, 0))
+        .replace('%r', formatNumber(data.picks / data.totalThreads, 1))
+        .replace('%s', `${name(firstPicks)}, ${firstPicks.count}`)));
+
+    // Yarn per colour
+    container.appendChild(sheetElement('h3', t.sheet_colors));
+    const yarn = pieceYarnWithPrefs(data, o);
+    const table = sheetElement('table', undefined, 'sheet-table sheet-yarn');
+    const headRow = table.createTHead().insertRow();
+    [t.sheet_color, t.yarn_warp, t.yarn_weft, t.sheet_col_total, t.sheet_col_perkg, t.sheet_col_grams].forEach(label => headRow.appendChild(sheetElement('th', label)));
+    const rows = table.createTBody();
+    const meters = m => formatNumber(m, m < 10 ? 1 : 0);
+    const totals = { warp: 0, weft: 0, total: 0, grams: 0, allGrams: true };
+    const gramsText = g => g === null ? '—' : formatNumber(g, 0) + ' g';
+    const footCells = [];
+    const updateGramsTotal = () => {
+        footCells[5].textContent = totals.allGrams ? gramsText(totals.grams) : '—';
+    };
+    yarn.forEach(c => {
+        const row = rows.insertRow();
+        const cell = row.insertCell();
+        cell.append(chip(c.hex), document.createTextNode(name(c)));
+        row.insertCell().textContent = meters(c.warpM);
+        row.insertCell().textContent = meters(c.weftM);
+        row.insertCell().textContent = meters(c.totalM) + ' m';
+        const perKg = sheetNumber(weavingPrefs.perKg[c.hex.toUpperCase()] ?? '', 1, 100000, 1);
+        perKg.className = 'sheet-perkg';
+        perKg.setAttribute('aria-label', t.sheet_perkg_label.replace('%', name(c)));
+        row.insertCell().appendChild(perKg);
+        const gramsCell = row.insertCell();
+        gramsCell.textContent = gramsText(c.grams);
+        perKg.addEventListener('input', () => {
+            const v = parseFloat(perKg.value);
+            if (v > 0) weavingPrefs.perKg[c.hex.toUpperCase()] = v;
+            else delete weavingPrefs.perKg[c.hex.toUpperCase()];
+            saveWeavingPrefs();
+            c.grams = v > 0 ? c.totalM / v * 1000 : null;
+            gramsCell.textContent = gramsText(c.grams);
+            totals.grams = yarn.reduce((s, y) => s + (y.grams || 0), 0);
+            totals.allGrams = yarn.every(y => y.grams !== null);
+            updateGramsTotal();
+        });
+        totals.warp += c.warpM; totals.weft += c.weftM; totals.total += c.totalM;
+        totals.grams += c.grams || 0;
+        if (c.grams === null) totals.allGrams = false;
+    });
+    const foot = table.createTFoot().insertRow();
+    [t.yarn_sum, meters(totals.warp), meters(totals.weft), meters(totals.total) + ' m', '', ''].forEach(text => footCells.push(Object.assign(foot.insertCell(), { textContent: text })));
+    updateGramsTotal();
+    container.appendChild(table);
+    const note = weavingPrefs.loss || weavingPrefs.margin
+        ? t.sheet_yarn_note_with.replace('%l', formatNumber(weavingPrefs.loss, 0)).replace('%m', formatNumber(weavingPrefs.margin, 0))
+        : t.sheet_yarn_note_without;
+    container.appendChild(sheetElement('p', note, 'sheet-note'));
 }
 
 function closeWeavingSheet() {

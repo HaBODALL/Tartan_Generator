@@ -41,7 +41,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 
 **Enregistrer et partager** (menu *Enregistrer / partager* de la barre du haut)
 * PNG de la vue, SVG d'un motif complet raccordable à la taille réelle, détails en texte (codes SRT et Ink/Stitch), ZIP ou PNG du mood board.
-* Fiche de tissage imprimable : ordre des fils et fil par couleur au m².
+* **Préparer le tissage** : une fiche imprimable pour la pièce choisie (depuis la vue produit ou le menu *Enregistrer / partager*). Pièce et dimensions, longueur de chaîne par fil, plan d'ourdissage d'une lisière à l'autre avec le cumul, la trame, et le fil par couleur en mètres. La tisserande peut saisir sa perte au métier par fil de chaîne, une marge et le métrage au kilo de chaque fil pour obtenir le poids ; ces valeurs restent sur son appareil.
 * Lien qui rouvre exactement le motif, sans aucun serveur.
 
 **Clavier** : `Espace` ou `G` génèrent, `S` exporte tout, `P` exporte le PNG, `Ctrl+Z` annule, `+` et `-` zooment, les flèches déplacent, `Échap` ferme un menu, la planche ou la fenêtre. Dans un menu, les flèches passent d'un choix à l'autre.

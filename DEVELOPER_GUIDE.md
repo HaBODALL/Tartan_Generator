@@ -97,7 +97,7 @@ If the application shows a blank screen or a button does not work:
 | Shared link | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |
 | Text import | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
-| Weaving sheet | `buildWeavingSheetData`, `openWeavingSheet` |
+| Weaving sheet | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
 | Product views | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
 | SRT bar | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Readability | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
@@ -210,7 +210,7 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Lien partagé | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |
 | Import texte | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
-| Fiche de tissage | `buildWeavingSheetData`, `openWeavingSheet` |
+| Fiche de tissage | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
 | Vues produit | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
 | Barre SRT | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Lisibilité | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
