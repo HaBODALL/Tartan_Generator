@@ -126,7 +126,7 @@ let generationID = 0;
 
 // HISTORY (UNDO)
 let historyStack = [];       // Stack of previous states
-const MAX_HISTORY = 10;      // Max number of states kept
+const MAX_HISTORY = 50;      // Max number of states kept (about 1 kB each in localStorage)
 let committedSettings = null; // Structure settings of the current pattern
 let appMessage = null;       // Message shown in the sidebar: { key, isError }
 
@@ -254,7 +254,7 @@ const TRANSLATIONS = {
         lbl_weave_dir: "Sens du tissage",
         btn_undo: "Annuler",
         title_undo: "Annuler ({n} étapes disponibles)",
-        sec_history: "Historique (10 motifs max)",
+        sec_history: "Historique (50 motifs max)",
         hist_empty: "Les motifs précédents apparaîtront ici.",
         hist_restore: "Revenir à ce motif",
         btn_export_all: "Exporter tout",
@@ -310,7 +310,7 @@ const TRANSLATIONS = {
         msg_link_copied: "Lien du motif copié.",
         msg_link_manual: "Copiez ce lien :",
         msg_link_invalid: "Ce lien de motif est incomplet ou invalide.",
-        btn_import_file: "Rouvrir un fichier texte (.txt)",
+        btn_import_file: "Un fichier texte (.txt)",
         title_import_file: "Rouvrir un fichier texte exporté avec « Détails »",
         msg_import_file_err: "Ce fichier n'est pas un export de détails valide.",
         btn_weaving_sheet: "Fiche de tissage",
@@ -346,8 +346,8 @@ const TRANSLATIONS = {
         vision_deuter: "Deutéranopie (vert)",
         vision_tritan: "Tritanopie (bleu)",
         note_vision: "À l'écran seulement : les exports gardent les vraies couleurs.",
-        btn_import_photo: "Depuis une image (dessin, photo ou autre)",
-        title_import_photo: "Retrouver le tartan d'une image, ou en inventer un à partir de n'importe quelle image. L'image reste sur votre appareil.",
+        btn_import_photo: "Une photo de tartan",
+        title_import_photo: "Retrouver le compte de fils d'un tartan photographié ou scanné. L'image reste sur votre appareil.",
         estimate_title: "Un tartan depuis une image",
         estimate_hint: "Tracez un rectangle sur l'image pour ne garder que le tissu. Pour un bon résultat : tissu à plat, bien éclairé, au moins deux motifs visibles.",
         lbl_estimate_tolerance: "Tolérance de couleur",
@@ -395,9 +395,9 @@ const TRANSLATIONS = {
         nav_main: "Menus principaux",
         menu_new: "Nouveau",
         menu_new_random: "Motif aléatoire",
-        menu_new_srt: "Depuis un code SRT",
-        menu_new_example: "Depuis un exemple",
-        menu_export: "Exporter",
+        menu_new_srt: "Un code SRT",
+        menu_new_example: "Un tartan connu (exemples)",
+        menu_export: "Enregistrer",
         menu_export_png: "Image PNG (vue actuelle)",
         menu_export_svg: "Vectoriel SVG (un motif raccordable)",
         menu_export_txt: "Détails (.txt, à rouvrir)",
@@ -425,6 +425,12 @@ const TRANSLATIONS = {
         menu_board_png: "Planche en PNG",
         menu_board_zip: "Planche en ZIP (une image par tuile)",
         menu_more: "Plus",
+        menu_new_more: " motif",
+        menu_new_image: "À partir d'une image (dessin, photo ou autre)",
+        title_new_image: "Les couleurs et les formes d'une image deviennent un tartan. L'image reste sur votre appareil.",
+        menu_import: "Importer",
+        menu_export_more: " / partager",
+        menu_share_link: "🔗 Copier le lien du motif",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -478,7 +484,7 @@ const TRANSLATIONS = {
         lbl_weave_dir: "Weave direction",
         btn_undo: "Undo",
         title_undo: "Undo ({n} steps available)",
-        sec_history: "History (10 patterns max)",
+        sec_history: "History (50 patterns max)",
         hist_empty: "Previous patterns will appear here.",
         hist_restore: "Go back to this pattern",
         btn_export_all: "Export All",
@@ -534,7 +540,7 @@ const TRANSLATIONS = {
         msg_link_copied: "Pattern link copied.",
         msg_link_manual: "Copy this link:",
         msg_link_invalid: "This pattern link is incomplete or invalid.",
-        btn_import_file: "Reopen a text file (.txt)",
+        btn_import_file: "A text file (.txt)",
         title_import_file: "Reopen a text file exported with \"Details\"",
         msg_import_file_err: "This file is not a valid details export.",
         btn_weaving_sheet: "Weaving sheet",
@@ -570,8 +576,8 @@ const TRANSLATIONS = {
         vision_deuter: "Deuteranopia (green)",
         vision_tritan: "Tritanopia (blue)",
         note_vision: "On screen only: exports keep the true colors.",
-        btn_import_photo: "From an image (drawing, photo or other)",
-        title_import_photo: "Read the tartan in an image, or invent one from any image. The image stays on your device.",
+        btn_import_photo: "A photo of a tartan",
+        title_import_photo: "Read the thread count of a photographed or scanned tartan. The image stays on your device.",
         estimate_title: "A tartan from an image",
         estimate_hint: "Drag a rectangle on the image to keep only the cloth. For a good result: flat cloth, even light, at least two repeats in view.",
         lbl_estimate_tolerance: "Color tolerance",
@@ -619,9 +625,9 @@ const TRANSLATIONS = {
         nav_main: "Main menus",
         menu_new: "New",
         menu_new_random: "Random pattern",
-        menu_new_srt: "From an SRT code",
-        menu_new_example: "From an example",
-        menu_export: "Export",
+        menu_new_srt: "An SRT code",
+        menu_new_example: "A known tartan (examples)",
+        menu_export: "Save",
         menu_export_png: "PNG image (current view)",
         menu_export_svg: "SVG vector (one seamless repeat)",
         menu_export_txt: "Details (.txt, can be reopened)",
@@ -649,6 +655,12 @@ const TRANSLATIONS = {
         menu_board_png: "Board as PNG",
         menu_board_zip: "Board as ZIP (one image per tile)",
         menu_more: "More",
+        menu_new_more: " pattern",
+        menu_new_image: "From an image (drawing, photo or other)",
+        title_new_image: "The colors and shapes of an image become a tartan. The image stays on your device.",
+        menu_import: "Import",
+        menu_export_more: " / share",
+        menu_share_link: "🔗 Copy the link to this pattern",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -939,9 +951,10 @@ function bindEvents() {
     const importPhoto = document.getElementById('import-photo');
     const btnImportPhoto = document.getElementById('btn-import-photo');
     if (importPhoto && btnImportPhoto) {
-        btnImportPhoto.addEventListener('click', () => importPhoto.click());
+        btnImportPhoto.addEventListener('click', () => { pendingImageMode = 'read'; importPhoto.click(); });
+        document.getElementById('menu-new-image')?.addEventListener('click', () => { pendingImageMode = 'invent'; importPhoto.click(); });
         importPhoto.addEventListener('change', () => {
-            openEstimateFromFile(importPhoto.files[0]);
+            openEstimateFromFile(importPhoto.files[0], pendingImageMode);
             importPhoto.value = ''; // The same photo can be chosen again
         });
     }
@@ -1003,13 +1016,12 @@ function bindEvents() {
         domElements.btnPatchworkClose.focus();
     });
     // ⋯ menu (phones): the link, À propos and the other language
-    document.getElementById('menu-share-link')?.addEventListener('click', copySharedLink);
     document.getElementById('menu-about')?.addEventListener('click', () => openAboutModal());
     document.getElementById('menu-lang')?.addEventListener('click', () => setLanguage(currentLang === 'fr' ? 'en' : 'fr'));
     // A new pattern is made in the Atelier: leave the board first
-    document.getElementById('menu-new')?.addEventListener('click', (e) => {
+    ['menu-new', 'menu-import'].forEach(id => document.getElementById(id)?.addEventListener('click', (e) => {
         if (e.target.closest('.menu-item') && isPatchworkOpen()) closePatchworkBoard();
-    }, true);
+    }, true));
     if (domElements.patchworkScale) domElements.patchworkScale.addEventListener('change', renderPatchworkBoard);
     [domElements.patchworkMode, domElements.patchworkAxisX, domElements.patchworkAxisY].forEach(el => {
         if (el) el.addEventListener('change', updatePatchworkModeUI);
@@ -2017,7 +2029,12 @@ function setupMenus() {
             openMenu(btn);
             items()[0].focus();
         });
-        list.addEventListener('click', (e) => { if (e.target.closest('.menu-item')) closeMenus(); });
+        list.addEventListener('click', (e) => {
+            if (!e.target.closest('.menu-item')) return;
+            const stayed = list.contains(document.activeElement) || document.activeElement === document.body;
+            closeMenus();
+            if (stayed) btn.focus();
+        });
         list.addEventListener('keydown', (e) => {
             const all = items(), i = all.indexOf(document.activeElement);
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -3748,7 +3765,10 @@ function isEstimateOpen() {
     return !!domElements.estimateModal && !domElements.estimateModal.hidden;
 }
 
-async function openEstimateFromFile(file) {
+// Importer > photo de tartan reads a tartan; Nouveau motif > image invents one
+let pendingImageMode = 'read';
+
+async function openEstimateFromFile(file, mode = 'read') {
     if (!file) return;
     let bitmap = null;
     if (file.size <= 40000000) {
@@ -3775,7 +3795,9 @@ async function openEstimateFromFile(file) {
     if (domElements.estimateThreads) {
         domElements.estimateThreads.value = parseInt(domElements.sett?.value, 10) || 240;
     }
-    if (domElements.estimateModeRead) domElements.estimateModeRead.checked = true;
+    const invent = mode === 'invent' && domElements.estimateModeInvent;
+    if (invent) domElements.estimateModeInvent.checked = true;
+    else if (domElements.estimateModeRead) domElements.estimateModeRead.checked = true;
     domElements.estimateModal.hidden = false;
     domElements.btnEstimateCancel?.focus();
     drawEstimateSource();

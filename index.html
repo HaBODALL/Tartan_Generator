@@ -47,7 +47,8 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 16px;
-      z-index: 100;
+      position: relative;
+      z-index: 1000; /* Its menus open over the tools drawn on the pattern */
       box-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
 
@@ -96,6 +97,8 @@
     .mode-btn:hover { color: #fff; }
     .mode-btn[aria-pressed="true"] { background: #333; color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
     .narrow-only { display: none; }
+    /* Long labels shorten on medium screens, so the bar keeps one line */
+    @media (max-width: 1180px) { .wide-only { display: none; } }
     .menu-list.align-right { left: auto; right: 0; }
     body:not(.board-mode) .board-only, body.board-mode .studio-only { display: none; }
     .board-panel { display: none; }
@@ -244,13 +247,14 @@
         height: 50%;
         flex: none;
       }
-      .srt-bar { height: 40px; padding: 0 8px; gap: 4px; }
-      .srt-bar-size { display: none; }
-      .history-strip { height: 48px; padding: 4px 8px; }
-      .history-strip-label { display: none; }
-      .history-thumb { width: 36px; height: 36px; }
-      .view-btn { padding: 4px 7px; }
-      .view-switch-label { display: none; }
+      /* Prefixed: the base rules come later in the sheet */
+      .canvas-column .srt-bar { height: 40px; padding: 0 8px; gap: 4px; }
+      .canvas-column .srt-bar-size { display: none; }
+      .canvas-column .history-strip { height: 48px; padding: 4px 8px; }
+      .canvas-column .history-strip-label { display: none; }
+      .canvas-column .history-thumb { width: 36px; height: 36px; }
+      .canvas-column .view-btn { padding: 4px 7px; }
+      .canvas-column .view-switch-label { display: none; }
 
       .sidebar {
         width: 100%;
@@ -272,7 +276,7 @@
         bottom: 10px;
         right: 10px;
       }
-      .view-switch { top: 8px; left: 8px; }
+      .canvas-column .view-switch { top: 8px; left: 8px; }
       .btn-toggle-ui.collapsed {
         transform: rotate(-90deg);
       }
@@ -306,6 +310,8 @@
       .mode-switch { margin-left: 0; }
       .mode-btn { padding: 5px 10px; font-size: 15px; }
       .header-menus { margin-left: auto; }
+      .menu-caret { display: none; }
+      .menu-btn { padding: 5px 7px; }
       .menu { position: static; }
       .menu-list, .menu-list.align-right { position: fixed; top: 52px; left: 8px; right: 8px; min-width: 0; max-width: none; }
       /* Générer and the tabs stay under the thumb, at the bottom of the panel */
@@ -796,18 +802,25 @@
     </div>
     <nav class="header-menus" data-i18n-label="nav_main" aria-label="Menus principaux">
       <div class="menu">
-        <button type="button" class="menu-btn" id="btn-menu-new" aria-expanded="false" aria-controls="menu-new"><span data-i18n="menu_new">Nouveau</span> <span aria-hidden="true">▾</span></button>
+        <button type="button" class="menu-btn" id="btn-menu-new" aria-expanded="false" aria-controls="menu-new"><span data-i18n="menu_new">Nouveau</span><span class="wide-only" data-i18n="menu_new_more"> motif</span><span class="menu-caret" aria-hidden="true"> ▾</span></button>
         <div class="menu-list" id="menu-new" hidden>
           <button type="button" class="menu-item" id="menu-new-random" data-i18n="menu_new_random">Motif aléatoire</button>
-          <button type="button" class="menu-item" id="menu-new-srt" data-i18n="menu_new_srt">Depuis un code SRT</button>
-          <button type="button" class="menu-item" id="menu-new-example" data-i18n="menu_new_example">Depuis un exemple</button>
-          <button type="button" class="menu-item" id="btn-import-photo" data-i18n="btn_import_photo" data-i18n-title="title_import_photo" title="Retrouver le tartan d'une image, ou en inventer un à partir de n'importe quelle image. L'image reste sur votre appareil.">Depuis une image (dessin, photo ou autre)</button>
-          <button type="button" class="menu-item" id="btn-import-file" data-i18n="btn_import_file" data-i18n-title="title_import_file" title="Rouvrir un fichier texte exporté avec « Détails »">Rouvrir un fichier texte (.txt)</button>
+          <button type="button" class="menu-item" id="menu-new-image" data-i18n="menu_new_image" data-i18n-title="title_new_image" title="Les couleurs et les formes d'une image deviennent un tartan. L'image reste sur votre appareil.">À partir d'une image (dessin, photo ou autre)</button>
         </div>
       </div>
       <div class="menu">
-        <button type="button" class="menu-btn" id="btn-menu-export" aria-expanded="false" aria-controls="menu-export"><span data-i18n="menu_export">Exporter</span> <span aria-hidden="true">▾</span></button>
+        <button type="button" class="menu-btn" id="btn-menu-import" aria-expanded="false" aria-controls="menu-import"><span data-i18n="menu_import">Importer</span><span class="menu-caret" aria-hidden="true"> ▾</span></button>
+        <div class="menu-list" id="menu-import" hidden>
+          <button type="button" class="menu-item" id="menu-new-srt" data-i18n="menu_new_srt">Un code SRT</button>
+          <button type="button" class="menu-item" id="menu-new-example" data-i18n="menu_new_example">Un tartan connu (exemples)</button>
+          <button type="button" class="menu-item" id="btn-import-photo" data-i18n="btn_import_photo" data-i18n-title="title_import_photo" title="Retrouver le compte de fils d'un tartan photographié ou scanné. L'image reste sur votre appareil.">Une photo de tartan</button>
+          <button type="button" class="menu-item" id="btn-import-file" data-i18n="btn_import_file" data-i18n-title="title_import_file" title="Rouvrir un fichier texte enregistré avec « Détails »">Un fichier texte (.txt)</button>
+        </div>
+      </div>
+      <div class="menu">
+        <button type="button" class="menu-btn" id="btn-menu-export" aria-expanded="false" aria-controls="menu-export"><span data-i18n="menu_export">Enregistrer</span><span class="wide-only" data-i18n="menu_export_more"> / partager</span><span class="menu-caret" aria-hidden="true"> ▾</span></button>
         <div class="menu-list" id="menu-export" hidden>
+          <button type="button" class="menu-item studio-only" id="btn-share-link" data-i18n="menu_share_link" data-i18n-title="title_share_link" title="Un lien qui rouvre exactement ce motif">🔗 Copier le lien du motif</button>
           <button type="button" class="menu-item board-only" id="btn-patchwork-png" data-i18n="menu_board_png">Planche en PNG</button>
           <button type="button" class="menu-item board-only" id="btn-generate-patchwork-zip" data-i18n="menu_board_zip">Planche en ZIP (une image par tuile)</button>
           <button type="button" class="menu-item studio-only" id="btn-export-png" data-i18n="menu_export_png">Image PNG (vue actuelle)</button>
@@ -820,12 +833,10 @@
       <div class="menu narrow-only">
         <button type="button" class="menu-btn" id="btn-menu-more" aria-expanded="false" aria-controls="menu-more" data-i18n-label="menu_more" aria-label="Plus"><span aria-hidden="true">⋯</span></button>
         <div class="menu-list align-right" id="menu-more" hidden>
-          <button type="button" class="menu-item" id="menu-share-link" data-i18n="btn_share_link">Copier le lien</button>
           <button type="button" class="menu-item" id="menu-about" data-i18n="btn_about_short">À propos</button>
           <button type="button" class="menu-item" id="menu-lang" lang="en">English</button>
         </div>
       </div>
-      <button type="button" class="header-btn narrow-hide" id="btn-share-link" data-i18n-title="title_share_link" title="Un lien qui rouvre exactement ce motif"><span aria-hidden="true">🔗</span> <span class="narrow-hide" data-i18n="btn_share_link">Copier le lien</span></button>
     </nav>
     <button class="btn-about-header narrow-hide" id="btn-about" data-i18n-label="btn_about" aria-label="À propos"><span aria-hidden="true">ℹ️</span> <span class="narrow-hide" data-i18n="btn_about_short">À propos</span></button>
     <div class="lang-switch narrow-hide">
@@ -896,7 +907,7 @@
     <!-- History: the last patterns, most recent first -->
     <div class="history-strip">
         <span class="history-strip-label" data-i18n="strip_history">Historique</span>
-        <div id="history-list" class="history-list" role="group" data-i18n-label="sec_history" aria-label="Historique (10 motifs max)"></div>
+        <div id="history-list" class="history-list" role="group" data-i18n-label="sec_history" aria-label="Historique (50 motifs max)"></div>
     </div>
     </div>
 
