@@ -90,6 +90,21 @@
     .tab-panel[hidden] { display: none; }
     .sidebar.collapsed .panel-top { display: none; }
 
+    /* Atelier / Planche */
+    .mode-switch { display: flex; margin-left: 18px; background: #1e1e1e; border: 1px solid #444; border-radius: 6px; padding: 2px; gap: 2px; flex-shrink: 0; }
+    .mode-btn { background: transparent; color: #aaa; border: none; border-radius: 4px; padding: 5px 12px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .mode-btn:hover { color: #fff; }
+    .mode-btn[aria-pressed="true"] { background: #333; color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+    .narrow-only { display: none; }
+    .menu-list.align-right { left: auto; right: 0; }
+    body:not(.board-mode) .board-only, body.board-mode .studio-only { display: none; }
+    .board-panel { display: none; }
+    body.board-mode .board-panel { display: block; }
+    body.board-mode .panel-top, body.board-mode .tab-panel { display: none; }
+    .board-panel-title { margin-top: 0; }
+    .board-note { font-size: 11px; color: #888; margin: 8px 0 12px; }
+    .btn-board-new { width: 100%; }
+
     /* Zoom tools on the canvas */
     .canvas-tools { position: absolute; left: 10px; bottom: 10px; z-index: 200; display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.65); border: 1px solid #333; border-radius: 6px; padding: 4px; }
     .canvas-tools #zoom-slider { width: 100px; }
@@ -285,6 +300,23 @@
     /* Phones: the menus keep the room, the title and button labels give way */
     @media (max-width: 600px) {
       .header-title { display: none; }
+      .narrow-only { display: inline; }
+      div.narrow-only { display: block; }
+      .narrow-hide, .btn-about-header.narrow-hide, .lang-switch.narrow-hide, .header-btn.narrow-hide { display: none; }
+      .mode-switch { margin-left: 0; }
+      .mode-btn { padding: 5px 10px; font-size: 15px; }
+      .header-menus { margin-left: auto; }
+      .menu { position: static; }
+      .menu-list, .menu-list.align-right { position: fixed; top: 52px; left: 8px; right: 8px; min-width: 0; max-width: none; }
+      /* Générer and the tabs stay under the thumb, at the bottom of the panel */
+      .sidebar { display: flex; flex-direction: column; padding-bottom: 0; }
+      .sidebar > * { flex-shrink: 0; }
+      .panel-top { order: 10; position: sticky; top: auto; bottom: 0; margin: 12px -16px 0; padding: 8px 16px 10px; box-shadow: 0 -6px 10px -8px rgba(0,0,0,0.9); display: flex; flex-direction: column; }
+      .panel-top .panel-tabs { order: -1; margin: -8px -16px 8px; border-bottom: none; border-top: 1px solid #333; }
+      .panel-top .panel-tab { border-bottom: none; border-top: 2px solid transparent; }
+      .panel-top .panel-tab[aria-selected="true"] { border-top-color: #e74c3c; }
+      .panel-top .generate-row { margin-bottom: 6px; }
+      .panel-top .locks-container { margin-bottom: 0; }
       .header-menus { margin-left: 0; gap: 5px; }
       .narrow-hide { display: none; }
       .app-header { gap: 5px; }
@@ -758,6 +790,10 @@
       <h1>Random Tartan Generator</h1>
       <span class="version-badge">v1.2.4</span>
     </div>
+    <div class="mode-switch" role="group" data-i18n-label="mode_label" aria-label="Mode">
+      <button type="button" class="mode-btn" id="btn-patchwork-close" aria-pressed="true" data-i18n-title="title_mode_studio" title="Un motif à la fois, avec tous ses réglages"><span aria-hidden="true" class="narrow-only">✎</span><span class="narrow-hide" data-i18n="mode_studio">Atelier</span><span class="sr-only narrow-only" data-i18n="mode_studio">Atelier</span></button>
+      <button type="button" class="mode-btn" id="btn-generate-patchwork" aria-pressed="false" data-i18n-title="title_mode_board" title="Une planche de motifs à comparer"><span aria-hidden="true" class="narrow-only">▦</span><span class="narrow-hide" data-i18n="mode_board">Planche</span><span class="sr-only narrow-only" data-i18n="mode_board">Planche</span></button>
+    </div>
     <nav class="header-menus" data-i18n-label="nav_main" aria-label="Menus principaux">
       <div class="menu">
         <button type="button" class="menu-btn" id="btn-menu-new" aria-expanded="false" aria-controls="menu-new"><span data-i18n="menu_new">Nouveau</span> <span aria-hidden="true">▾</span></button>
@@ -772,17 +808,27 @@
       <div class="menu">
         <button type="button" class="menu-btn" id="btn-menu-export" aria-expanded="false" aria-controls="menu-export"><span data-i18n="menu_export">Exporter</span> <span aria-hidden="true">▾</span></button>
         <div class="menu-list" id="menu-export" hidden>
-          <button type="button" class="menu-item" id="btn-export-png" data-i18n="menu_export_png">Image PNG (vue actuelle)</button>
-          <button type="button" class="menu-item" id="btn-export-svg" data-i18n="menu_export_svg" data-i18n-title="title_export_svg" title="Un motif complet en vectoriel, raccordable, à la taille réelle du tissu">Vectoriel SVG (un motif raccordable)</button>
-          <button type="button" class="menu-item" id="btn-export-txt" data-i18n="menu_export_txt">Détails (.txt, à rouvrir)</button>
-          <button type="button" class="menu-item" id="btn-weaving-sheet" data-i18n="menu_export_sheet" data-i18n-title="title_weaving_sheet" title="Une fiche imprimable : ordre des fils et quantité de fil par couleur">Fiche de tissage (à imprimer)</button>
-          <button type="button" class="menu-item" id="btn-export-all" data-i18n="menu_export_all">Tout : PNG, SVG et détails</button>
+          <button type="button" class="menu-item board-only" id="btn-patchwork-png" data-i18n="menu_board_png">Planche en PNG</button>
+          <button type="button" class="menu-item board-only" id="btn-generate-patchwork-zip" data-i18n="menu_board_zip">Planche en ZIP (une image par tuile)</button>
+          <button type="button" class="menu-item studio-only" id="btn-export-png" data-i18n="menu_export_png">Image PNG (vue actuelle)</button>
+          <button type="button" class="menu-item studio-only" id="btn-export-svg" data-i18n="menu_export_svg" data-i18n-title="title_export_svg" title="Un motif complet en vectoriel, raccordable, à la taille réelle du tissu">Vectoriel SVG (un motif raccordable)</button>
+          <button type="button" class="menu-item studio-only" id="btn-export-txt" data-i18n="menu_export_txt">Détails (.txt, à rouvrir)</button>
+          <button type="button" class="menu-item studio-only" id="btn-weaving-sheet" data-i18n="menu_export_sheet" data-i18n-title="title_weaving_sheet" title="Une fiche imprimable : ordre des fils et quantité de fil par couleur">Fiche de tissage (à imprimer)</button>
+          <button type="button" class="menu-item studio-only" id="btn-export-all" data-i18n="menu_export_all">Tout : PNG, SVG et détails</button>
         </div>
       </div>
-      <button type="button" class="header-btn" id="btn-share-link" data-i18n-title="title_share_link" title="Un lien qui rouvre exactement ce motif"><span aria-hidden="true">🔗</span> <span class="narrow-hide" data-i18n="btn_share_link">Copier le lien</span></button>
+      <div class="menu narrow-only">
+        <button type="button" class="menu-btn" id="btn-menu-more" aria-expanded="false" aria-controls="menu-more" data-i18n-label="menu_more" aria-label="Plus"><span aria-hidden="true">⋯</span></button>
+        <div class="menu-list align-right" id="menu-more" hidden>
+          <button type="button" class="menu-item" id="menu-share-link" data-i18n="btn_share_link">Copier le lien</button>
+          <button type="button" class="menu-item" id="menu-about" data-i18n="btn_about_short">À propos</button>
+          <button type="button" class="menu-item" id="menu-lang" lang="en">English</button>
+        </div>
+      </div>
+      <button type="button" class="header-btn narrow-hide" id="btn-share-link" data-i18n-title="title_share_link" title="Un lien qui rouvre exactement ce motif"><span aria-hidden="true">🔗</span> <span class="narrow-hide" data-i18n="btn_share_link">Copier le lien</span></button>
     </nav>
-    <button class="btn-about-header" id="btn-about" data-i18n-label="btn_about" aria-label="À propos"><span aria-hidden="true">ℹ️</span> <span class="narrow-hide" data-i18n="btn_about_short">À propos</span></button>
-    <div class="lang-switch">
+    <button class="btn-about-header narrow-hide" id="btn-about" data-i18n-label="btn_about" aria-label="À propos"><span aria-hidden="true">ℹ️</span> <span class="narrow-hide" data-i18n="btn_about_short">À propos</span></button>
+    <div class="lang-switch narrow-hide">
       <button id="lang-btn-fr" class="lang-btn active" >
         FR
       </button>
@@ -832,10 +878,6 @@
             <div class="patchwork-bar">
                 <span id="patchwork-title" class="patchwork-title" data-i18n="title_patch_board">Planche patchwork : cliquez un motif pour le reprendre, 📌 pour le garder, ≈ pour des variantes</span>
                 <span id="patchwork-status" class="patchwork-status" aria-live="polite"></span>
-                <button type="button" class="btn-secondary" id="btn-patchwork-new" data-i18n="btn_patch_new">Nouveau lot</button>
-                <button type="button" class="btn-secondary" id="btn-patchwork-png" data-i18n="btn_patch_png">Exporter PNG</button>
-                <button type="button" class="btn-secondary" id="btn-generate-patchwork-zip" data-i18n="btn_gen_patchwork_zip">Exporter ZIP</button>
-                <button type="button" class="btn-secondary" id="btn-patchwork-close" data-i18n="btn_patch_close">Fermer</button>
             </div>
             <div id="patchwork-grid" class="patchwork-grid"></div>
         </div>
@@ -968,63 +1010,6 @@
         </div>
 </details>
 
-<details >
-  <summary data-i18n="sec_patchwork">Patchwork (planche d'inspiration)</summary>
-  <div class="details-content">
-
-      <div class="control-group" style="margin-bottom: 12px;">
-      <div class="control-row">
-          <label for="patchwork-mode" data-i18n="lbl_patch_mode">Mode</label>
-          <select id="patchwork-mode" class="patchwork-select">
-              <option value="random" data-i18n="opt_mode_random">Aléatoire</option>
-              <option value="criteria" data-i18n="opt_mode_criteria">Par critères</option>
-          </select>
-      </div>
-      <div class="control-row patchwork-criteria-row" hidden>
-          <label for="patchwork-axis-x" data-i18n="lbl_axis_x">Critère en colonnes</label>
-          <select id="patchwork-axis-x" class="patchwork-select">
-              <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
-              <option value="stripes" data-i18n="axis_stripes">Nombre de bandes</option>
-              <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
-              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
-              <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
-          </select>
-      </div>
-      <div class="control-row patchwork-criteria-row" hidden>
-          <label for="patchwork-axis-y" data-i18n="lbl_axis_y">Critère en lignes</label>
-          <select id="patchwork-axis-y" class="patchwork-select">
-              <option value="none" data-i18n="axis_none">Aucun</option>
-              <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
-              <option value="stripes" selected data-i18n="axis_stripes">Nombre de bandes</option>
-              <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
-              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
-              <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
-          </select>
-      </div>
-      <div class="control-row" id="patchwork-qty-row">
-          <label for="patchwork-qty" data-i18n="lbl_patch_qty">Quantité (10-100)</label>
-          <input type="number" id="patchwork-qty" value="12" min="10" max="100" class="input-number">
-      </div>
-      <div class="control-row">
-          <label for="patchwork-size" data-i18n="lbl_patch_size">Tuile à l'export (px)</label>
-          <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number">
-      </div>
-      <div class="control-row" style="margin-bottom: 5px;">
-          <label for="patchwork-scale" data-i18n="lbl_patch_scale">Échelle des tuiles</label>
-          <select id="patchwork-scale" style="background:#222; color:#ccc; border:1px solid #444; padding:4px; border-radius:3px; font-size:12px;">
-              <option value="fit" data-i18n="opt_scale_fit">Motif entier</option>
-              <option value="zoom" data-i18n="opt_scale_zoom">Zoom actuel</option>
-          </select>
-      </div>
-      <div style="font-size: 11px; color: #888; text-align: center;" id="patchwork-info">
-          <!-- Dynamic info here -->
-      </div>
-      </div>
-      <button class="btn-primary btn-open-board" id="btn-generate-patchwork" data-i18n="btn_gen_patchwork">OUVRIR LA PLANCHE</button>
-
-        </div>
-</details>
-
       </div>
 
       <div class="tab-panel" role="tabpanel" id="panel-colors" aria-labelledby="tab-colors" hidden>
@@ -1107,6 +1092,63 @@
         </div>
 </details>
 
+      </div>
+
+<!-- Planche mode: the mood board settings take the panel -->
+      <div class="board-panel" id="panel-board">
+          <h2 class="board-panel-title" data-i18n="mode_board">Planche</h2>
+
+      <div class="control-group" style="margin-bottom: 12px;">
+      <div class="control-row">
+          <label for="patchwork-mode" data-i18n="lbl_patch_mode">Mode</label>
+          <select id="patchwork-mode" class="patchwork-select">
+              <option value="random" data-i18n="opt_mode_random">Aléatoire</option>
+              <option value="criteria" data-i18n="opt_mode_criteria">Par critères</option>
+          </select>
+      </div>
+      <div class="control-row patchwork-criteria-row" hidden>
+          <label for="patchwork-axis-x" data-i18n="lbl_axis_x">Critère en colonnes</label>
+          <select id="patchwork-axis-x" class="patchwork-select">
+              <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
+              <option value="stripes" data-i18n="axis_stripes">Nombre de bandes</option>
+              <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
+              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
+              <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
+          </select>
+      </div>
+      <div class="control-row patchwork-criteria-row" hidden>
+          <label for="patchwork-axis-y" data-i18n="lbl_axis_y">Critère en lignes</label>
+          <select id="patchwork-axis-y" class="patchwork-select">
+              <option value="none" data-i18n="axis_none">Aucun</option>
+              <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
+              <option value="stripes" selected data-i18n="axis_stripes">Nombre de bandes</option>
+              <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
+              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
+              <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
+          </select>
+      </div>
+      <div class="control-row" id="patchwork-qty-row">
+          <label for="patchwork-qty" data-i18n="lbl_patch_qty">Quantité (10-100)</label>
+          <input type="number" id="patchwork-qty" value="12" min="10" max="100" class="input-number">
+      </div>
+      <div class="control-row">
+          <label for="patchwork-size" data-i18n="lbl_patch_size">Tuile à l'export (px)</label>
+          <input type="number" id="patchwork-size" value="300" min="50" max="1000" class="input-number">
+      </div>
+      <div class="control-row" style="margin-bottom: 5px;">
+          <label for="patchwork-scale" data-i18n="lbl_patch_scale">Échelle des tuiles</label>
+          <select id="patchwork-scale" style="background:#222; color:#ccc; border:1px solid #444; padding:4px; border-radius:3px; font-size:12px;">
+              <option value="fit" data-i18n="opt_scale_fit">Motif entier</option>
+              <option value="zoom" data-i18n="opt_scale_zoom">Zoom actuel</option>
+          </select>
+      </div>
+      <div style="font-size: 11px; color: #888; text-align: center;" id="patchwork-info">
+          <!-- Dynamic info here -->
+      </div>
+      </div>
+
+          <p class="board-note" data-i18n="board_follows">Les tuiles suivent les réglages et les verrous de l'Atelier.</p>
+          <button type="button" class="btn-generate btn-board-new" id="btn-patchwork-new" data-i18n="btn_patch_new">Nouveau lot</button>
       </div>
 
 <div style="margin-top:20px; text-align:center; font-size:14px; color:#444;">ID Gen: <span id="gen-id">0</span></div>

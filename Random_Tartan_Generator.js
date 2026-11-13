@@ -416,6 +416,15 @@ const TRANSLATIONS = {
         title_copy_srt: "Copier le code SRT",
         msg_copied: "Copié !",
         srt_bar_size: "1 motif = %c cm · %n fils",
+        mode_label: "Mode",
+        mode_studio: "Atelier",
+        mode_board: "Planche",
+        title_mode_studio: "Un motif à la fois, avec tous ses réglages",
+        title_mode_board: "Une planche de motifs à comparer",
+        board_follows: "Les tuiles suivent les réglages et les verrous de l'Atelier.",
+        menu_board_png: "Planche en PNG",
+        menu_board_zip: "Planche en ZIP (une image par tuile)",
+        menu_more: "Plus",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -631,6 +640,15 @@ const TRANSLATIONS = {
         title_copy_srt: "Copy the SRT code",
         msg_copied: "Copied!",
         srt_bar_size: "1 repeat = %c cm · %n threads",
+        mode_label: "Mode",
+        mode_studio: "Studio",
+        mode_board: "Board",
+        title_mode_studio: "One pattern at a time, with all its settings",
+        title_mode_board: "A board of patterns to compare",
+        board_follows: "The tiles follow the Studio settings and locks.",
+        menu_board_png: "Board as PNG",
+        menu_board_zip: "Board as ZIP (one image per tile)",
+        menu_more: "More",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -972,14 +990,26 @@ function bindEvents() {
     if (btnGenerate) btnGenerate.addEventListener('click', () => handleGenerateClick());
 
     const btnGenPatchwork = domElements.btnGenPatchwork;
-    if (btnGenPatchwork) btnGenPatchwork.addEventListener('click', () => generatePatchwork());
+    if (btnGenPatchwork) btnGenPatchwork.addEventListener('click', () => { if (!isPatchworkOpen()) generatePatchwork(); });
 
     const btnGenPatchworkZip = domElements.btnGenPatchworkZip;
     if (btnGenPatchworkZip) btnGenPatchworkZip.addEventListener('click', () => generatePatchworkZIP());
 
     if (domElements.btnPatchworkNew) domElements.btnPatchworkNew.addEventListener('click', () => generatePatchwork());
     if (domElements.btnPatchworkPng) domElements.btnPatchworkPng.addEventListener('click', () => exportPatchworkPNG());
-    if (domElements.btnPatchworkClose) domElements.btnPatchworkClose.addEventListener('click', closePatchworkBoard);
+    if (domElements.btnPatchworkClose) domElements.btnPatchworkClose.addEventListener('click', () => {
+        if (!isPatchworkOpen()) return;
+        closePatchworkBoard();
+        domElements.btnPatchworkClose.focus();
+    });
+    // ⋯ menu (phones): the link, À propos and the other language
+    document.getElementById('menu-share-link')?.addEventListener('click', copySharedLink);
+    document.getElementById('menu-about')?.addEventListener('click', () => openAboutModal());
+    document.getElementById('menu-lang')?.addEventListener('click', () => setLanguage(currentLang === 'fr' ? 'en' : 'fr'));
+    // A new pattern is made in the Atelier: leave the board first
+    document.getElementById('menu-new')?.addEventListener('click', (e) => {
+        if (e.target.closest('.menu-item') && isPatchworkOpen()) closePatchworkBoard();
+    }, true);
     if (domElements.patchworkScale) domElements.patchworkScale.addEventListener('change', renderPatchworkBoard);
     [domElements.patchworkMode, domElements.patchworkAxisX, domElements.patchworkAxisY].forEach(el => {
         if (el) el.addEventListener('change', updatePatchworkModeUI);
@@ -1317,6 +1347,11 @@ function setLanguage(lang) {
     renderAppMessage();
     updateReadabilityUI();
     updateScaleInfo(); // The size of a repeat in the SRT bar
+    const langItem = document.getElementById('menu-lang');
+    if (langItem) {
+        langItem.textContent = lang === 'fr' ? 'English' : 'Français';
+        langItem.lang = lang === 'fr' ? 'en' : 'fr';
+    }
     if (isEstimateOpen()) selectProposal(estimateState.selected);
     if (isPatchworkOpen()) renderPatchworkBoard();
     if (isPreviewOpen()) renderObjectPreview();
@@ -1969,7 +2004,7 @@ function setupMenus() {
     document.querySelectorAll('.menu-btn').forEach(btn => {
         const list = document.getElementById(btn.getAttribute('aria-controls'));
         if (!list) return;
-        const items = () => [...list.querySelectorAll('.menu-item')];
+        const items = () => [...list.querySelectorAll('.menu-item')].filter(item => item.getClientRects().length > 0);
         btn.addEventListener('click', () => {
             const opening = list.hidden;
             closeMenus();
@@ -5137,9 +5172,18 @@ function usePatchworkTile(index) {
     saveState();
 }
 
+// Atelier: one pattern and its settings. Planche: the mood board, with its own settings in the panel.
+function syncModeSwitch() {
+    const board = isPatchworkOpen();
+    document.body.classList.toggle('board-mode', board);
+    domElements.btnPatchworkClose?.setAttribute('aria-pressed', String(!board));
+    domElements.btnGenPatchwork?.setAttribute('aria-pressed', String(board));
+}
+
 function closePatchworkBoard() {
     if (!domElements.patchworkBoard) return;
     domElements.patchworkBoard.hidden = true;
+    syncModeSwitch();
     // Back to the control that opened the board, or to the open button
     const target = patchworkOpener?.isConnected ? patchworkOpener : domElements.btnGenPatchwork;
     patchworkOpener = null;
@@ -5188,6 +5232,7 @@ window.generatePatchwork = function() {
     if (!wasOpen) patchworkOpener = document.activeElement;
     closeObjectPreview();
     board.hidden = false;
+    syncModeSwitch();
     setPatchworkStatus(status);
     renderPatchworkBoard();
     if (!wasOpen) domElements.patchworkGrid.querySelector('button')?.focus();
