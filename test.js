@@ -593,6 +593,19 @@ function runTests() {
             assertEqual(JSON.stringify(again.map(p => p.stripes)), JSON.stringify(first.map(p => p.stripes)), 'the same image gives the same series');
             assertEqual(inventProposals(paint(100, 100, () => [128, 128, 128])).length, 0, 'a plain image gives nothing');
             console.info('✅ invent from an image');
+        },
+        () => {
+            // Damier with a range: one width, drawn in the range, never a cut last stripe
+            const palette = [{ code: 'R', hex: '#C80000' }, { code: 'K', hex: '#101010' }];
+            const widths = new Set();
+            for (let run = 0; run < 200; run++) {
+                const stripes = createStripes({ minW: 4, maxW: 64, targetStripes: 8, targetSett: 260, isCheckMode: true }, palette);
+                assertSilent(stripes.length >= 2 && new Set(stripes.map(s => s.count)).size === 1, 'Damier: equal stripes');
+                assertSilent(sumStripeThreads(stripes) <= 260 && stripes[0].count >= 4 && stripes[0].count <= 64, 'Damier: in the range');
+                widths.add(stripes[0].count);
+            }
+            assertSilent(widths.size > 5, 'Damier: the width varies');
+            console.info('✅ Damier keeps the width range');
         }
     ];
 

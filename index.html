@@ -254,6 +254,7 @@
       .canvas-column {
         width: 100%;
         height: 50%;
+        height: round(down, 50%, 1px); /* half of an odd height would blur the pattern */
         flex: none;
       }
       /* Prefixed: the base rules come later in the sheet */
@@ -303,10 +304,10 @@
 
       /* The mood board needs room: it takes most of the height while open */
       .app-main:has(.sidebar.collapsed) .canvas-column { height: 100%; }
-      .app-main:has(#patchwork-board:not([hidden])) .canvas-column { height: 75%; }
+      .app-main:has(#patchwork-board:not([hidden])) .canvas-column { height: 75%; height: round(down, 75%, 1px); }
       .app-main:has(#patchwork-board:not([hidden])) .sidebar { height: 25%; }
       .app-main:has(#patchwork-board:not([hidden])) .btn-toggle-ui { display: none; }
-      .app-main:has(#preview-board:not([hidden])) .canvas-column { height: 75%; }
+      .app-main:has(#preview-board:not([hidden])) .canvas-column { height: 75%; height: round(down, 75%, 1px); }
       .app-main:has(#preview-board:not([hidden])) .sidebar { height: 25%; }
       .app-main:has(#preview-board:not([hidden])) .btn-toggle-ui { display: none; }
     }
@@ -1013,9 +1014,9 @@
             <label id="lbl-limits" data-i18n="lbl_limits">Fils par bande (min. et max.)</label>
             <div style="display:flex; gap:10px;">
               <label for="in-minwidth" class="sr-only">Minimum fils par bande</label>
-              <input type="number" id="in-minwidth" value="4" min="2" step="2" style="width:50px;" title="Minimum">
+              <input type="number" id="in-minwidth" value="4" min="2" max="124" step="2" style="width:50px;" title="Minimum">
               <label for="in-maxwidth" class="sr-only">Maximum fils par bande</label>
-              <input type="number" id="in-maxwidth" value="64" max="124" step="2" style="width:50px;" title="Maximum">
+              <input type="number" id="in-maxwidth" value="64" min="2" max="124" step="2" style="width:50px;" title="Maximum">
             </div>
         </div>
         <!-- Sett / Densité -->

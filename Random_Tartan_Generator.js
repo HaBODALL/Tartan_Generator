@@ -923,6 +923,9 @@ function bindEvents() {
 
     inputsToWatch.forEach(id => {
         let el = document.getElementById(id);
+        if (el && (id === 'in-minwidth' || id === 'in-maxwidth')) {
+            el.addEventListener('change', () => linkWidthBounds(id === 'in-maxwidth' ? 'max' : 'min'));
+        }
         if(el) {
             // 'change' waits for the end of typing: "260" is not read as "2", then "26"
             el.addEventListener('change', () => window.handleGenerateClick(true));
@@ -2213,37 +2216,38 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
     saveState();
 }
 
+// Even widths from 2 to 124, the minimum never above the maximum. The bound just changed
+// wins and pushes the other one: a minimum raised past the maximum raises the maximum,
+// a maximum lowered under the minimum lowers the minimum. An empty field keeps its last value.
+const WIDTH_LIMIT_MIN = 2, WIDTH_LIMIT_MAX = 124;
+let lastWidthBounds = { minW: 4, maxW: 64 };
+function linkWidthBounds(changed = 'min') {
+    const even = (field, fallback) => {
+        const v = parseInt(field?.value);
+        if (!Number.isFinite(v)) return fallback;
+        return Math.max(WIDTH_LIMIT_MIN, Math.min(WIDTH_LIMIT_MAX, v % 2 ? v + 1 : v));
+    };
+    let minW = even(domElements.minWidth, lastWidthBounds.minW);
+    let maxW = even(domElements.maxWidth, lastWidthBounds.maxW);
+    if (minW > maxW) {
+        if (changed === 'max') minW = maxW;
+        else maxW = minW;
+    }
+    if (domElements.minWidth) domElements.minWidth.value = minW;
+    if (domElements.maxWidth) domElements.maxWidth.value = maxW;
+    lastWidthBounds = { minW, maxW };
+    return lastWidthBounds;
+}
+
 // Reads and normalizes the structure settings. Returns errorKey when they cannot produce a pattern.
 function readGenerationParams() {
-    let minW = parseInt(domElements.minWidth?.value) || 2;
-    let maxW = parseInt(domElements.maxWidth?.value) || 124;
+    let { minW, maxW } = linkWidthBounds();
     let targetStripes = parseInt(domElements.targetStripes?.value) || 12;
     let targetSett = parseInt(domElements.sett?.value) || 260;
     let noticeKey = null;
 
-    // Option "Check Mode" (Equal widths)
+    // Damier: every stripe takes one width, drawn between the two bounds
     let isCheckMode = domElements.checkMode?.checked || false;
-
-    // Automatic correction: Min/Max must be even
-    if (minW % 2 !== 0) minW++;
-    if (maxW % 2 !== 0) maxW++;
-    if (minW < 2) minW = 2;
-    if (maxW > 124) maxW = 124;
-    if (minW === maxW && !isCheckMode) {
-        isCheckMode = true;
-        if (domElements.checkMode) domElements.checkMode.checked = true;
-    }
-
-    if (isCheckMode && minW !== maxW) {
-        noticeKey = 'msg_err_check_mode_forced';
-        let lower = Math.min(minW, maxW);
-        minW = lower;
-        maxW = lower;
-        if (domElements.minWidth) domElements.minWidth.value = lower;
-        if (domElements.maxWidth) domElements.maxWidth.value = maxW;
-    } else if (minW > maxW) {
-        minW = maxW;
-    }
 
     const errorKey = targetStripes * minW > targetSett ? 'msg_err_sett_too_low' : null;
     return { minW, maxW, targetStripes, targetSett, isCheckMode, noticeKey, errorKey };
@@ -2273,12 +2277,13 @@ function recolorStripes(stripes, palette) {
 // New stripes from normalized settings (see readGenerationParams).
 function createStripes(params, palette, rand = Math.random) {
     const { minW, maxW, targetStripes, targetSett, isCheckMode } = params;
-    const randomEvenWidth = () => {
+    const randomEvenWidth = (upper = maxW) => {
         const minPair = minW / 2;
-        const maxPair = maxW / 2;
+        const maxPair = Math.max(minPair, upper / 2);
         return (Math.floor(rand() * (maxPair - minPair + 1)) + minPair) * 2;
     };
-    const fixedCheckWidth = isCheckMode ? randomEvenWidth() : 0;
+    // Damier: one width for every stripe, small enough for at least two whole stripes
+    const fixedCheckWidth = isCheckMode ? randomEvenWidth(Math.min(maxW, Math.floor(targetSett / 4) * 2)) : 0;
 
     const stripes = [];
     let previous = null;
@@ -2293,6 +2298,7 @@ function createStripes(params, palette, rand = Math.random) {
 
         // Adjust if sett is exceeded
         if (totalThreads + width > targetSett) {
+            if (isCheckMode) break; // A cut stripe would break the Damier
             width = targetSett - totalThreads;
             if (width % 2 !== 0) width--; // Keep even
             if (width < minW) break; // Too small, stop
@@ -4935,7 +4941,7 @@ function applyCriterion(tile, axis, value) {
     else if (axis === 'sett') tile.params.targetSett = value;
     else if (axis === 'maxWidth') {
         tile.params.maxW = value;
-        if (tile.params.isCheckMode) tile.params.minW = value;
+        if (tile.params.minW > value) tile.params.minW = value;
     }
 }
 
