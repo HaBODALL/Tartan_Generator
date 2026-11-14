@@ -501,6 +501,10 @@ const TRANSLATIONS = {
         scale_current: "Actuel",
         loupe_hint: "Survolez ou touchez l'objet pour voir le tissage de près",
         scale_larger: "2 × plus large",
+        theme_to_light: "Passer au thème clair",
+        theme_to_dark: "Passer au thème sombre",
+        theme_light: "Thème clair",
+        theme_dark: "Thème sombre",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -801,6 +805,10 @@ const TRANSLATIONS = {
         scale_current: "Current",
         loupe_hint: "Hover over or touch the object to see the weave up close",
         scale_larger: "Twice as bold",
+        theme_to_light: "Switch to the light theme",
+        theme_to_dark: "Switch to the dark theme",
+        theme_light: "Light theme",
+        theme_dark: "Dark theme",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -1163,6 +1171,9 @@ function bindEvents() {
     // ⋯ menu (phones): the link, À propos and the other language
     document.getElementById('menu-about')?.addEventListener('click', () => openAboutModal());
     document.getElementById('menu-lang')?.addEventListener('click', () => setLanguage(currentLang === 'fr' ? 'en' : 'fr'));
+    document.getElementById('btn-theme')?.addEventListener('click', toggleTheme);
+    document.getElementById('menu-theme')?.addEventListener('click', toggleTheme);
+    applyTheme(readSavedTheme());
     // A new pattern is made in the Atelier: leave the board first
     ['menu-new', 'menu-import'].forEach(id => document.getElementById(id)?.addEventListener('click', (e) => {
         if (e.target.closest('.menu-item') && isPatchworkOpen()) closePatchworkBoard();
@@ -1472,6 +1483,48 @@ document.addEventListener('keydown', (e) => {
     }
 });
 // --- LANGUAGE MANAGEMENT ---
+// Two themes: "dark" (Nuit douce, the default) and "light" (Atelier clair)
+const THEME_KEY = 'tartanTheme';
+let currentTheme = 'dark';
+function readSavedTheme() {
+    try { return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark'; } catch (e) { return 'dark'; }
+}
+
+function applyTheme(theme) {
+    currentTheme = theme === 'light' ? 'light' : 'dark';
+    if (currentTheme === 'light') document.documentElement.dataset.theme = 'light';
+    else delete document.documentElement.dataset.theme;
+    syncThemeControls();
+    if (isPreviewOpen()) renderObjectPreview(); // Its labels and shadows follow the theme
+}
+
+function toggleTheme() {
+    applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+    try { localStorage.setItem(THEME_KEY, currentTheme); } catch (e) { /* Private mode: the theme still changes for this visit */ }
+}
+
+// The controls name the theme they lead to
+function syncThemeControls() {
+    const t = TRANSLATIONS[currentLang];
+    const light = currentTheme === 'light';
+    const label = light ? t.theme_to_dark : t.theme_to_light;
+    const btn = document.getElementById('btn-theme');
+    if (btn) {
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+        btn.setAttribute('aria-pressed', String(light));
+        const icon = document.getElementById('btn-theme-icon');
+        if (icon) icon.textContent = light ? '☾' : '☀';
+    }
+    const item = document.getElementById('menu-theme');
+    if (item) item.textContent = light ? t.theme_dark : t.theme_light;
+}
+
+// A colour of the current theme, for what is drawn on a canvas
+function themeColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 function setLanguage(lang) {
     if(!TRANSLATIONS[lang]) return;
     currentLang = lang;
@@ -1525,6 +1578,7 @@ function setLanguage(lang) {
     const langItem = document.getElementById('menu-lang');
     if (langItem) {
         langItem.textContent = lang === 'fr' ? 'English' : 'Français';
+        syncThemeControls();
         langItem.lang = lang === 'fr' ? 'en' : 'fr';
     }
     if (isEstimateOpen()) selectProposal(estimateState.selected);
@@ -1937,7 +1991,7 @@ function openColorPicker(editIndex = -1) {
     let titleText = (editIndex >= 0) ? t.lbl_mod_nuance : t.lbl_add_nuance;
     let title = document.createElement('div');
     title.innerText = titleText;
-    title.style.cssText = "color:#fff; margin-bottom:10px; font-weight:bold; text-align:center;";
+    title.style.cssText = "color:var(--text-strong); margin-bottom:10px; font-weight:bold; text-align:center;";
     modal.appendChild(title);
 
     let grid = document.createElement('div');
@@ -2001,7 +2055,7 @@ function updateUserPaletteUI() {
     listContainer.textContent = '';
     let div = document.createElement('div');
     div.style.fontSize = '10px';
-    div.style.color = '#666';
+    div.style.color = 'var(--text-soft)';
     div.style.marginBottom = '5px';
     listContainer.appendChild(div);
 
@@ -2019,7 +2073,7 @@ function updateUserPaletteUI() {
         chip.style.width = '32px';
         chip.style.height = '32px';
         chip.style.backgroundColor = p.hex;
-        chip.style.border = '1px solid #555';
+        chip.style.border = '1px solid var(--line-strong)';
         chip.style.borderRadius = '4px';
         chip.style.cursor = 'pointer';
         chip.setAttribute('role', 'button');
@@ -2039,13 +2093,13 @@ function updateUserPaletteUI() {
 
         let delBtn = document.createElement('div');
         delBtn.textContent = "\u00D7";
-        delBtn.style.cssText = "color:#aaa; font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
+        delBtn.style.cssText = "color:var(--text-soft); font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
         delBtn.title = TRANSLATIONS[currentLang].title_remove_color;
         delBtn.setAttribute('role', 'button');
         delBtn.setAttribute('tabindex', '0');
         delBtn.setAttribute('aria-label', TRANSLATIONS[currentLang].label_remove_color.replace('%', formatColorLabel(p)));
-        delBtn.onmouseenter = () => delBtn.style.color = "red";
-        delBtn.onmouseleave = () => delBtn.style.color = "#666";
+        delBtn.onmouseenter = () => delBtn.style.color = "var(--accent-text)";
+        delBtn.onmouseleave = () => delBtn.style.color = "var(--text-soft)";
 
         const onDelSelect = () => removeFromPalette(idx);
         delBtn.onclick = onDelSelect;
@@ -2067,7 +2121,7 @@ function updateUserPaletteUI() {
 
         let btnPlus = document.createElement('button');
         btnPlus.innerText = "+";
-        btnPlus.style.cssText = "width:32px; height:32px; background:#222; color:#fff; border:1px dashed #666; cursor:pointer; border-radius:4px;";
+        btnPlus.style.cssText = "width:32px; height:32px; background:var(--bg-control); color:var(--text-strong); border:1px dashed var(--line-strong); cursor:pointer; border-radius:4px;";
         btnPlus.setAttribute('aria-label', 'Add a color to the palette');
         btnPlus.onclick = () => openColorPicker(-1);
 
@@ -2096,14 +2150,14 @@ function updateGeneratedListUI() {
         let fragment = document.createDocumentFragment();
         tartanStripes.forEach(s => {
             let row = document.createElement('div');
-            row.style.cssText = 'display:flex; align-items:center; margin-bottom:2px; font-size:11px; color:#aaa;';
+            row.style.cssText = 'display:flex; align-items:center; margin-bottom:2px; font-size:11px; color:var(--text-soft);';
 
             let colorBox = document.createElement('div');
             colorBox.style.width = '12px';
             colorBox.style.height = '12px';
             colorBox.style.backgroundColor = s.hex;
             colorBox.style.marginRight = '8px';
-            colorBox.style.border = '1px solid #333';
+            colorBox.style.border = '1px solid var(--line-strong)';
 
             let codeBold = document.createElement('b');
             codeBold.textContent = s.code;
@@ -4602,14 +4656,14 @@ function renderObjectPreview() {
     pieceLayouts = [];
     drawn.forEach(d => {
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.75)';
+        ctx.shadowColor = themeColor('--object-shadow');
         ctx.shadowBlur = Math.round(16 * density);
         ctx.shadowOffsetY = Math.round(6 * density);
         ctx.drawImage(d.layer, x, top);
         ctx.restore();
         pieceLayouts.push({ x, y: top + d.fringe, w: d.w, h: d.h, factor: d.factor, stripes: d.stripes, ends: d.data.ends, picks: d.data.picks, warpStart: d.data.warpStart, weftStart: d.data.weftStart });
         if (compareScales) {
-            ctx.fillStyle = d.factor === 1 ? '#fff' : '#ccc';
+            ctx.fillStyle = themeColor(d.factor === 1 ? '--text-strong' : '--text-soft');
             // Centred under its object; the short form when the long one would run into its neighbour
             let label = d.factor === 1 ? t.scale_current : (d.factor < 1 ? t.scale_smaller : t.scale_larger);
             if (ctx.measureText(label).width > d.w + gap - 6 * density) label = d.factor === 1 ? '× 1' : (d.factor < 1 ? '× ½' : '× 2');
@@ -4621,7 +4675,7 @@ function renderObjectPreview() {
     });
     const barX = pieceLayouts[0].x;
     const barY = top + drawn[0].h + drawn[0].fringe * 2 + Math.round(labelPx * (compareScales ? 2.4 : 1.3));
-    ctx.fillStyle = '#ccc';
+    ctx.fillStyle = themeColor('--text-soft');
     ctx.fillRect(barX, barY, Math.max(1, Math.round(10 * scale)), Math.max(2, Math.round(2 * density)));
     ctx.fillText('10 cm', barX, barY - 3);
 

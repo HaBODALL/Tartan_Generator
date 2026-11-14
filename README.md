@@ -38,6 +38,7 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 * 2/2 twill, Z or S, with thread relief and yarn irregularity.
 * Zoom with the buttons on the pattern, the slider, the mouse wheel (around the pointer), the `+` and `-` keys or a pinch.
 * Move the pattern by dragging or with the arrow keys; a double click or the ⌖ button goes back to the start.
+* Two themes: a soft dark one by default and a light one (☀ button in the top bar), remembered on your device.
 
 **Save and share** (*Save / share* menu in the top bar)
 * PNG of the current view, SVG of one seamless repeat at real size, text details (SRT and Ink/Stitch codes), ZIP or PNG of the mood board.
