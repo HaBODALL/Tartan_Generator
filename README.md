@@ -30,7 +30,7 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 **Explore** (*Board* mode, next to *Studio* in the top bar)
 * Mood board of 10 to 100 patterns, with pins and variants around a tile.
 * Criteria mode: a grid whose columns and rows each vary one setting (colors, stripes, maximum width, sett, symmetry).
-* **Product views** on the pattern: Scarf (30 × 180 cm, loose 3 cm or twisted 10 cm fringes), Yardage (70 cm wide) and Sample (30 × 30 cm), to scale from the density; sizes can be changed. Beside the piece: warp ends and weft picks, repeats across the width, what each selvedge cuts, the pattern centred or starting at the selvedge, yarn per colour in metres (warp and weft, fringes included, without loom waste), and a magnifier on the real twill. The settings stay usable meanwhile.
+* **The pattern on objects**, to scale: Scarf, Throw, Cushion and Kilt, sized from the density. A magnifier under the pointer shows the real weave, and *Compare pattern sizes* puts the same pattern twice as fine, as it is and twice as bold side by side; a click takes one. The settings stay usable meanwhile.
 * Color readability: warning on neighboring stripes that are hard to tell apart, and color blindness simulation (on screen only).
 
 **Render**
@@ -38,10 +38,11 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 * 2/2 twill, Z or S, with thread relief and yarn irregularity.
 * Zoom with the buttons on the pattern, the slider, the mouse wheel (around the pointer), the `+` and `-` keys or a pinch.
 * Move the pattern by dragging or with the arrow keys; a double click or the ⌖ button goes back to the start.
+* Two themes: a soft dark one by default and a light one (☀ button in the top bar), remembered on your device.
 
 **Save and share** (*Save / share* menu in the top bar)
 * PNG of the current view, SVG of one seamless repeat at real size, text details (SRT and Ink/Stitch codes), ZIP or PNG of the mood board.
-* **Prepare the weaving**: a printable sheet for the chosen piece (from the product view or the *Save / share* menu). Piece and size, warp length per end, the warping plan from selvedge to selvedge with a running total, the weft, and the yarn per colour in metres. The weaver can enter her loom waste per warp end, a margin and the metres per kilo of each yarn to get the weight; these figures stay on her device.
+* **Prepare the weaving**: a printable sheet for a scarf or a throw (*Save / share* menu).* **Prepare the weaving**: a printable sheet for the chosen piece (from the product view or the *Save / share* menu). Piece and size, warp length per end, the warping plan from selvedge to selvedge with a running total, the weft, and the yarn per colour in metres. The weaver can enter her loom waste per warp end, a margin and the metres per kilo of each yarn to get the weight; these figures stay on her device.
 * Link that reopens exactly the pattern, with no server involved.
 
 **Keyboard**: `Space` or `G` generate, `S` export all, `P` export PNG, `Ctrl+Z` undo, `+` and `-` zoom, arrows move, `Esc` closes a menu, the board or a window. In a menu, the arrow keys move between choices.

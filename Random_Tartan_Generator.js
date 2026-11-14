@@ -216,7 +216,7 @@ const TRANSLATIONS = {
         lbl_limits: "Fils par bande (min. et max.)",
         chk_check_mode: "Damier",
         desc_check_mode: "Génère des bandes de largeurs égales",
-        lbl_sett: "Fils par motif",
+        lbl_sett: "Fils des bandes",
         sec_zoom: "Fil et rendu",
         lbl_thread_mm: "Taille d'un fil (mm)",
         lbl_zoom: "Zoom",
@@ -296,7 +296,7 @@ const TRANSLATIONS = {
         axis_colors: "Nombre de couleurs",
         axis_stripes: "Nombre de bandes",
         axis_maxWidth: "Largeur max des bandes",
-        axis_sett: "Fils par motif",
+        axis_sett: "Fils des bandes",
         axis_symmetric: "Symétrie",
         crit_colors: "% couleurs",
         crit_stripes: "% bandes",
@@ -331,7 +331,7 @@ const TRANSLATIONS = {
         sheet_col_yarn: "Mètres par m² de tissu",
         sheet_note: "Quantités théoriques pour la chaîne et la trame réunies, sans l'embuvage ni les chutes : prévoyez une marge.",
         btn_preview_objects: "Aperçu sur objets",
-        preview_title: "La pièce à l'échelle, d'après la densité",
+        preview_title: "Le motif sur l'objet, à l'échelle",
         preview_scarf: "Écharpe",
         preview_repeat: "Un motif : % cm",
         sec_readability: "Lisibilité des couleurs",
@@ -433,13 +433,13 @@ const TRANSLATIONS = {
         unit_density: "fils/cm",
         note_thread_mm: "soit % mm par fil",
         actual_value: "obtenu : %",
-        title_sett: "Le nombre de fils d'un motif complet, avant qu'il se répète",
+        title_sett: "Le nombre de fils à répartir entre les bandes. Avec la symétrie, le motif repasse par les bandes en miroir : le motif entier compte plus de fils, indiqués à côté.",
         title_weave_dir: "Le sens des diagonales du sergé",
         sheet_density: "%d fils/cm (%m mm par fil)",
         title_remove_color: "Retirer de la palette",
         label_remove_color: "Retirer la couleur %",
-        preview_yardage: "Métrage",
-        preview_sample: "Échantillon",
+        preview_plaid: "Plaid",
+        preview_cushion: "Coussin",
         piece_width: "Largeur",
         piece_length: "Longueur",
         piece_fringe: "Franges",
@@ -490,6 +490,21 @@ const TRANSLATIONS = {
         sheet_perkg_label: "Métrage au kilo du fil %",
         sheet_yarn_note_without: "En mètres, franges comprises. Ajoutez la perte au métier et une marge ci-dessus pour les inclure ; le métrage au kilo de chaque fil donne le poids.",
         sheet_yarn_note_with: "En mètres, franges comprises, avec %l cm de perte par fil de chaîne et %m % de marge.",
+        actual_full_repeat: "motif entier : % fils",
+        preview_kilt: "Kilt",
+        piece_caption: "%p, %w × %h cm · un motif = %c cm · %d fils/cm",
+        btn_compare_scales: "Comparer les tailles du motif",
+        title_compare_scales: "Le même motif en trois tailles sur l'objet : deux fois plus fin, actuel, deux fois plus large",
+        btn_scale_smaller: "Prendre le plus fin",
+        btn_scale_larger: "Prendre le plus large",
+        scale_smaller: "2 × plus fin",
+        scale_current: "Actuel",
+        loupe_hint: "Survolez ou touchez l'objet pour voir le tissage de près",
+        scale_larger: "2 × plus large",
+        theme_to_light: "Passer au thème clair",
+        theme_to_dark: "Passer au thème sombre",
+        theme_light: "Thème clair",
+        theme_dark: "Thème sombre",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -505,7 +520,7 @@ const TRANSLATIONS = {
         lbl_limits: "Threads per stripe (min. and max.)",
         chk_check_mode: "Checkers",
         desc_check_mode: "Generates stripes of equal widths",
-        lbl_sett: "Threads per repeat",
+        lbl_sett: "Threads in the stripes",
         sec_zoom: "Yarn & rendering",
         lbl_thread_mm: "Size of one thread (mm)",
         lbl_zoom: "Zoom",
@@ -585,7 +600,7 @@ const TRANSLATIONS = {
         axis_colors: "Number of colors",
         axis_stripes: "Number of stripes",
         axis_maxWidth: "Maximum stripe width",
-        axis_sett: "Threads per repeat",
+        axis_sett: "Threads in the stripes",
         axis_symmetric: "Symmetry",
         crit_colors: "% colors",
         crit_stripes: "% stripes",
@@ -620,7 +635,7 @@ const TRANSLATIONS = {
         sheet_col_yarn: "Meters per m² of cloth",
         sheet_note: "Theoretical amounts for warp and weft together, without take-up or waste: allow a margin.",
         btn_preview_objects: "Preview on objects",
-        preview_title: "The piece to scale, from the density",
+        preview_title: "The pattern on the object, to scale",
         preview_scarf: "Scarf",
         preview_repeat: "One repeat: % cm",
         sec_readability: "Color readability",
@@ -722,13 +737,13 @@ const TRANSLATIONS = {
         unit_density: "threads/cm",
         note_thread_mm: "that is % mm per thread",
         actual_value: "got: %",
-        title_sett: "The number of threads in one full repeat, before it starts again",
+        title_sett: "The number of threads shared between the stripes. With symmetry the repeat runs back through the stripes: the full repeat has more threads, shown beside.",
         title_weave_dir: "The direction of the twill lines",
         sheet_density: "%d threads/cm (%m mm per thread)",
         title_remove_color: "Remove from palette",
         label_remove_color: "Remove color %",
-        preview_yardage: "Yardage",
-        preview_sample: "Sample",
+        preview_plaid: "Throw",
+        preview_cushion: "Cushion",
         piece_width: "Width",
         piece_length: "Length",
         piece_fringe: "Fringes",
@@ -779,6 +794,21 @@ const TRANSLATIONS = {
         sheet_perkg_label: "Metres per kilo of the % yarn",
         sheet_yarn_note_without: "In metres, fringes included. Enter the loom waste and a margin above to include them; the metres per kilo of each yarn give the weight.",
         sheet_yarn_note_with: "In metres, fringes included, with %l cm of waste per warp end and a %m % margin.",
+        actual_full_repeat: "full repeat: % threads",
+        preview_kilt: "Kilt",
+        piece_caption: "%p, %w × %h cm · one repeat = %c cm · %d threads/cm",
+        btn_compare_scales: "Compare pattern sizes",
+        title_compare_scales: "The same pattern in three sizes on the object: twice as fine, current, twice as bold",
+        btn_scale_smaller: "Take the finer one",
+        btn_scale_larger: "Take the bolder one",
+        scale_smaller: "Twice as fine",
+        scale_current: "Current",
+        loupe_hint: "Hover over or touch the object to see the weave up close",
+        scale_larger: "Twice as bold",
+        theme_to_light: "Switch to the light theme",
+        theme_to_dark: "Switch to the dark theme",
+        theme_light: "Light theme",
+        theme_dark: "Dark theme",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -1141,6 +1171,9 @@ function bindEvents() {
     // ⋯ menu (phones): the link, À propos and the other language
     document.getElementById('menu-about')?.addEventListener('click', () => openAboutModal());
     document.getElementById('menu-lang')?.addEventListener('click', () => setLanguage(currentLang === 'fr' ? 'en' : 'fr'));
+    document.getElementById('btn-theme')?.addEventListener('click', toggleTheme);
+    document.getElementById('menu-theme')?.addEventListener('click', toggleTheme);
+    applyTheme(readSavedTheme());
     // A new pattern is made in the Atelier: leave the board first
     ['menu-new', 'menu-import'].forEach(id => document.getElementById(id)?.addEventListener('click', (e) => {
         if (e.target.closest('.menu-item') && isPatchworkOpen()) closePatchworkBoard();
@@ -1272,9 +1305,9 @@ function bindEvents() {
         });
     }
     document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => setObjectView(btn.dataset.view)));
-    bindPiecePanel();
-    document.getElementById('btn-piece-sheet')?.addEventListener('click', openWeavingSheet);
+    bindProductView();
     watchPreviewStage();
+    watchCanvasContainer();
     if (domElements.btnWeavingSheet) domElements.btnWeavingSheet.addEventListener('click', openWeavingSheet);
     if (domElements.btnSheetPrint) domElements.btnSheetPrint.addEventListener('click', () => window.print());
     if (domElements.btnSheetClose) domElements.btnSheetClose.addEventListener('click', closeWeavingSheet);
@@ -1450,6 +1483,48 @@ document.addEventListener('keydown', (e) => {
     }
 });
 // --- LANGUAGE MANAGEMENT ---
+// Two themes: "dark" (Nuit douce, the default) and "light" (Atelier clair)
+const THEME_KEY = 'tartanTheme';
+let currentTheme = 'dark';
+function readSavedTheme() {
+    try { return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark'; } catch (e) { return 'dark'; }
+}
+
+function applyTheme(theme) {
+    currentTheme = theme === 'light' ? 'light' : 'dark';
+    if (currentTheme === 'light') document.documentElement.dataset.theme = 'light';
+    else delete document.documentElement.dataset.theme;
+    syncThemeControls();
+    if (isPreviewOpen()) renderObjectPreview(); // Its labels and shadows follow the theme
+}
+
+function toggleTheme() {
+    applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+    try { localStorage.setItem(THEME_KEY, currentTheme); } catch (e) { /* Private mode: the theme still changes for this visit */ }
+}
+
+// The controls name the theme they lead to
+function syncThemeControls() {
+    const t = TRANSLATIONS[currentLang];
+    const light = currentTheme === 'light';
+    const label = light ? t.theme_to_dark : t.theme_to_light;
+    const btn = document.getElementById('btn-theme');
+    if (btn) {
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+        btn.setAttribute('aria-pressed', String(light));
+        const icon = document.getElementById('btn-theme-icon');
+        if (icon) icon.textContent = light ? '☾' : '☀';
+    }
+    const item = document.getElementById('menu-theme');
+    if (item) item.textContent = light ? t.theme_dark : t.theme_light;
+}
+
+// A colour of the current theme, for what is drawn on a canvas
+function themeColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 function setLanguage(lang) {
     if(!TRANSLATIONS[lang]) return;
     currentLang = lang;
@@ -1503,6 +1578,7 @@ function setLanguage(lang) {
     const langItem = document.getElementById('menu-lang');
     if (langItem) {
         langItem.textContent = lang === 'fr' ? 'English' : 'Français';
+        syncThemeControls();
         langItem.lang = lang === 'fr' ? 'en' : 'fr';
     }
     if (isEstimateOpen()) selectProposal(estimateState.selected);
@@ -1517,6 +1593,21 @@ function windowResized() {
         resizeCanvas(container.offsetWidth, container.offsetHeight);
         if (window.redrawTartan) window.redrawTartan();
     }
+}
+
+// The pattern area can change size without the window doing so: a tab loaded in the background
+// or with no width yet, the panel folding, a split view. Without this the pattern stayed blank.
+let canvasLayoutFrame = 0;
+function watchCanvasContainer() {
+    const container = domElements.canvasContainer;
+    if (!container || typeof ResizeObserver === 'undefined') return;
+    new ResizeObserver(() => {
+        cancelAnimationFrame(canvasLayoutFrame);
+        canvasLayoutFrame = requestAnimationFrame(() => {
+            const w = container.offsetWidth, h = container.offsetHeight;
+            if (w > 0 && h > 0 && (w !== width || h !== height)) windowResized();
+        });
+    }).observe(container);
 }
 
 function formatColorLabel(p) {
@@ -1708,11 +1799,13 @@ function updateActualSett() {
     // Comparison with target
     let targetSett = parseInt(domElements.sett?.value) || 260;
 
-    if (actualSett !== targetSett) {
-        display.textContent = TRANSLATIONS[currentLang].actual_value.replace('%', actualSett);
-    } else {
-        display.textContent = '';
-    }
+    const t = TRANSLATIONS[currentLang];
+    const isSymmetric = domElements.sym?.checked || false;
+    const parts = [];
+    if (actualSett !== targetSett) parts.push(t.actual_value.replace('%', actualSett));
+    // Mirrored, the repeat runs back through the stripes: say how many threads it really has
+    if (isSymmetric) parts.push(t.actual_full_repeat.replace('%', countSettThreads(tartanStripes, true)));
+    display.textContent = parts.join(' · ');
 }
 
 // === THREAD TYPE SELECTOR ===
@@ -1898,7 +1991,7 @@ function openColorPicker(editIndex = -1) {
     let titleText = (editIndex >= 0) ? t.lbl_mod_nuance : t.lbl_add_nuance;
     let title = document.createElement('div');
     title.innerText = titleText;
-    title.style.cssText = "color:#fff; margin-bottom:10px; font-weight:bold; text-align:center;";
+    title.style.cssText = "color:var(--text-strong); margin-bottom:10px; font-weight:bold; text-align:center;";
     modal.appendChild(title);
 
     let grid = document.createElement('div');
@@ -1962,7 +2055,7 @@ function updateUserPaletteUI() {
     listContainer.textContent = '';
     let div = document.createElement('div');
     div.style.fontSize = '10px';
-    div.style.color = '#666';
+    div.style.color = 'var(--text-soft)';
     div.style.marginBottom = '5px';
     listContainer.appendChild(div);
 
@@ -1980,7 +2073,7 @@ function updateUserPaletteUI() {
         chip.style.width = '32px';
         chip.style.height = '32px';
         chip.style.backgroundColor = p.hex;
-        chip.style.border = '1px solid #555';
+        chip.style.border = '1px solid var(--line-strong)';
         chip.style.borderRadius = '4px';
         chip.style.cursor = 'pointer';
         chip.setAttribute('role', 'button');
@@ -2000,13 +2093,13 @@ function updateUserPaletteUI() {
 
         let delBtn = document.createElement('div');
         delBtn.textContent = "\u00D7";
-        delBtn.style.cssText = "color:#aaa; font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
+        delBtn.style.cssText = "color:var(--text-soft); font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
         delBtn.title = TRANSLATIONS[currentLang].title_remove_color;
         delBtn.setAttribute('role', 'button');
         delBtn.setAttribute('tabindex', '0');
         delBtn.setAttribute('aria-label', TRANSLATIONS[currentLang].label_remove_color.replace('%', formatColorLabel(p)));
-        delBtn.onmouseenter = () => delBtn.style.color = "red";
-        delBtn.onmouseleave = () => delBtn.style.color = "#666";
+        delBtn.onmouseenter = () => delBtn.style.color = "var(--accent-text)";
+        delBtn.onmouseleave = () => delBtn.style.color = "var(--text-soft)";
 
         const onDelSelect = () => removeFromPalette(idx);
         delBtn.onclick = onDelSelect;
@@ -2028,7 +2121,7 @@ function updateUserPaletteUI() {
 
         let btnPlus = document.createElement('button');
         btnPlus.innerText = "+";
-        btnPlus.style.cssText = "width:32px; height:32px; background:#222; color:#fff; border:1px dashed #666; cursor:pointer; border-radius:4px;";
+        btnPlus.style.cssText = "width:32px; height:32px; background:var(--bg-control); color:var(--text-strong); border:1px dashed var(--line-strong); cursor:pointer; border-radius:4px;";
         btnPlus.setAttribute('aria-label', 'Add a color to the palette');
         btnPlus.onclick = () => openColorPicker(-1);
 
@@ -2057,14 +2150,14 @@ function updateGeneratedListUI() {
         let fragment = document.createDocumentFragment();
         tartanStripes.forEach(s => {
             let row = document.createElement('div');
-            row.style.cssText = 'display:flex; align-items:center; margin-bottom:2px; font-size:11px; color:#aaa;';
+            row.style.cssText = 'display:flex; align-items:center; margin-bottom:2px; font-size:11px; color:var(--text-soft);';
 
             let colorBox = document.createElement('div');
             colorBox.style.width = '12px';
             colorBox.style.height = '12px';
             colorBox.style.backgroundColor = s.hex;
             colorBox.style.marginRight = '8px';
-            colorBox.style.border = '1px solid #333';
+            colorBox.style.border = '1px solid var(--line-strong)';
 
             let codeBold = document.createElement('b');
             codeBold.textContent = s.code;
@@ -2664,15 +2757,17 @@ function getTileScale(effectType, zoom) {
 let weaveTileCanvas = null;
 let panPointer = null; // Pointer dragging the pattern
 let objectView = 'scarf';
-// The pieces a hand-weaving workshop makes, in cm. Sizes can be changed in the view;
-// only the scarf has fringes (3 cm loose or 10 cm twisted).
+// Objects to try the pattern on, in cm. An idea of the result, to scale; "woven" ones can also
+// be taken to the weaving sheet. Fringes: the warp left free at both ends.
 const OBJECT_VIEWS = {
-    scarf: { w: 30, h: 180, fringe: 10, fringes: true },
-    yardage: { w: 70, h: 100, fringe: 0, fringes: false },
-    sample: { w: 30, h: 30, fringe: 0, fringes: false },
+    scarf: { w: 30, h: 180, fringe: 10, fringes: true, woven: true },
+    plaid: { w: 130, h: 170, fringe: 3, fringes: true, woven: true },
+    cushion: { w: 45, h: 45, fringe: 0, fringes: false, woven: false },
+    kilt: { w: 60, h: 60, fringe: 0, fringes: false, woven: false },
 };
+let compareScales = false;     // Three pattern sizes side by side on the object
 let piecePlacement = 'centre'; // 'centre': a pivot in the middle of the piece; 'edge': the repeat starts at the selvedge
-let pieceLayout = null;        // Where the piece was drawn, for the magnifier
+let pieceLayouts = [];         // Where each object was drawn, for the magnifier and the clicks
 let previewStageSize = '';
 let previewLayoutTimer = 0;
 
@@ -2865,6 +2960,7 @@ function resetView() {
 }
 window.updateSymmetry = function() {
     commitStructureSettings();
+    updateActualValues();
     updateGeneratedListUI(); // The SRT notation depends on symmetry
     redrawTartan();
     saveState();
@@ -4387,6 +4483,54 @@ function drawScarf(ctx, make, x, y, w, h, fringe, twisted) {
     }
 }
 
+function drawCushion(ctx, make, x, y, size) {
+    const pinch = size * 0.05;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x + size / 2, y + pinch, x + size, y);
+    ctx.quadraticCurveTo(x + size - pinch, y + size / 2, x + size, y + size);
+    ctx.quadraticCurveTo(x + size / 2, y + size - pinch, x, y + size);
+    ctx.quadraticCurveTo(x + pinch, y + size / 2, x, y);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(make(size, size).cloth, x, y);
+    const shade = ctx.createRadialGradient(x + size * 0.45, y + size * 0.4, size * 0.1, x + size / 2, y + size / 2, size * 0.75);
+    shade.addColorStop(0, 'rgba(255,255,255,0.12)');
+    shade.addColorStop(1, 'rgba(0,0,0,0.42)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(x, y, size, size);
+    ctx.restore();
+}
+
+function drawKilt(ctx, make, x, y, w, h) {
+    const waist = h * 0.07;
+    const inset = w * 0.08;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x + inset, y);
+    ctx.lineTo(x + w - inset, y);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(make(w, h).cloth, x, y);
+    // Flat apron on the left, pleats on the right
+    const pleats = 9;
+    const start = x + w * 0.42;
+    const pleat = (x + w - start) / pleats;
+    for (let i = 0; i < pleats; i++) {
+        const shade = ctx.createLinearGradient(start + i * pleat, 0, start + (i + 1) * pleat, 0);
+        shade.addColorStop(0, 'rgba(255,255,255,0.14)');
+        shade.addColorStop(1, 'rgba(0,0,0,0.42)');
+        ctx.fillStyle = shade;
+        ctx.fillRect(start + i * pleat, y + waist, pleat, h - waist);
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(x, y, w, waist);
+    ctx.restore();
+}
+
 // Walks the thread sequence from a position, a stripe (or part of one) at a time
 function walkSequence(sequence, start, count, visit) {
     const total = sequence.reduce((sum, s) => sum + s.count, 0);
@@ -4440,6 +4584,35 @@ function buildPieceData(stripes, isSymmetric, threadMm, piece, placement) {
     };
 }
 
+// The pattern with every stripe scaled, on even thread counts: finer or bolder on the same object
+function scaleStripes(stripes, factor) {
+    return stripes.map(s => ({ ...s, count: Math.max(2, Math.round(s.count * factor / 2) * 2) }));
+}
+
+// One object on its own layer, then laid on the stage with a soft shadow under it
+function drawObjectLayer(view, data, o, scale, density) {
+    const px = cm => Math.max(1, Math.round(cm * scale));
+    const w = px(o.w), h = px(o.h), fringe = px(data.fringe);
+    const layer = document.createElement('canvas');
+    layer.width = w;
+    layer.height = h + fringe * 2;
+    const ctx = layer.getContext('2d');
+    const threadsPerPixel = data.perCm / scale;
+    const make = (cw, ch) => makeClothCanvas(data.sequence, threadsPerPixel, cw, ch, data.warpStart, data.weftStart);
+    if (view === 'cushion') drawCushion(ctx, make, 0, 0, w);
+    else if (view === 'kilt') drawKilt(ctx, make, 0, 0, w, h);
+    else {
+        drawScarf(ctx, make, 0, fringe, w, h, fringe, data.fringe >= 10);
+        // Flat cloth is never perfectly even: a little light from the top left
+        const light = ctx.createLinearGradient(0, fringe, w, fringe + h);
+        light.addColorStop(0, 'rgba(255,255,255,0.07)');
+        light.addColorStop(1, 'rgba(0,0,0,0.16)');
+        ctx.fillStyle = light;
+        ctx.fillRect(0, fringe, w, h);
+    }
+    return { layer, w, h, fringe };
+}
+
 function renderObjectPreview() {
     const canvas = domElements.previewCanvas;
     if (!canvas || !isPreviewOpen() || tartanStripes.length === 0) return;
@@ -4458,114 +4631,115 @@ function renderObjectPreview() {
     const isSymmetric = domElements.sym?.checked || false;
     const view = OBJECT_VIEWS[objectView] ? objectView : 'scarf';
     const o = OBJECT_VIEWS[view];
-    const data = buildPieceData(tartanStripes, isSymmetric, threadMm, o, piecePlacement);
+    const factors = compareScales ? [0.5, 1, 2] : [1];
+    const variants = factors.map(factor => {
+        const stripes = factor === 1 ? tartanStripes : scaleStripes(tartanStripes, factor);
+        return { factor, stripes, data: buildPieceData(stripes, isSymmetric, threadMm, o, 'centre') };
+    });
+    const fringeCm = variants[0].data.fringe;
 
-    // The piece, as large as the stage allows, with a 10 cm bar and its size under it
-    const labelPx = 22 * density;
-    const margin = 16 * density;
-    const scale = Math.min((canvas.width - margin * 2) / o.w, (canvas.height - labelPx * 3 - margin) / (o.h + data.fringe * 2));
-    const threadsPerPixel = data.perCm / scale;
-    const make = (w, h) => makeClothCanvas(data.sequence, threadsPerPixel, w, h, data.warpStart, data.weftStart);
-    const px = cm => Math.max(1, Math.round(cm * scale));
-
-    const x = Math.round((canvas.width - px(o.w)) / 2);
-    const top = Math.round(labelPx + px(data.fringe));
-    drawScarf(ctx, make, x, top, px(o.w), px(o.h), px(data.fringe), data.fringe >= 10);
-    pieceLayout = { x, y: top, w: px(o.w), h: px(o.h), ends: data.ends, picks: data.picks, warpStart: data.warpStart, weftStart: data.weftStart };
-
+    // The objects side by side, as large as the stage allows, with a 10 cm bar under the first
+    const labelPx = Math.round(20 * density);
+    const margin = Math.round(18 * density);
+    const gap = Math.round(28 * density);
+    const scale = Math.min(
+        (canvas.width - margin * 2 - gap * (factors.length - 1)) / (o.w * factors.length),
+        (canvas.height - margin - labelPx * 3) / (o.h + fringeCm * 2));
+    const drawn = variants.map(v => ({ ...v, ...drawObjectLayer(view, v.data, o, scale, density) }));
+    const totalW = drawn.reduce((sum, d) => sum + d.w, 0) + gap * (drawn.length - 1);
+    let x = Math.round((canvas.width - totalW) / 2);
+    // Centred in the height left once the labels are counted
+    const objectH = drawn[0].h + drawn[0].fringe * 2;
+    const top = Math.max(margin, Math.round((canvas.height - labelPx * 3 - objectH) / 2));
     ctx.font = `${Math.round(12 * density)}px sans-serif`;
     ctx.textBaseline = 'bottom';
-    ctx.fillStyle = '#ccc';
-    const barY = top + px(o.h) + px(data.fringe) + Math.round(labelPx * 1.2);
-    ctx.fillRect(x, barY, px(10), Math.max(2, Math.round(2 * density)));
-    ctx.fillText('10 cm', x, barY - 3);
-    ctx.fillText(`${formatNumber(o.w, 0)} × ${formatNumber(o.h, 0)} cm`, x, barY + labelPx);
+    pieceLayouts = [];
+    drawn.forEach(d => {
+        ctx.save();
+        ctx.shadowColor = themeColor('--object-shadow');
+        ctx.shadowBlur = Math.round(16 * density);
+        ctx.shadowOffsetY = Math.round(6 * density);
+        ctx.drawImage(d.layer, x, top);
+        ctx.restore();
+        pieceLayouts.push({ x, y: top + d.fringe, w: d.w, h: d.h, factor: d.factor, stripes: d.stripes, ends: d.data.ends, picks: d.data.picks, warpStart: d.data.warpStart, weftStart: d.data.weftStart });
+        if (compareScales) {
+            ctx.fillStyle = themeColor(d.factor === 1 ? '--text-strong' : '--text-soft');
+            // Centred under its object; the short form when the long one would run into its neighbour
+            let label = d.factor === 1 ? t.scale_current : (d.factor < 1 ? t.scale_smaller : t.scale_larger);
+            if (ctx.measureText(label).width > d.w + gap - 6 * density) label = d.factor === 1 ? '× 1' : (d.factor < 1 ? '× ½' : '× 2');
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x + d.w / 2, top + d.h + d.fringe * 2 + labelPx);
+            ctx.textAlign = 'left';
+        }
+        x += d.w + gap;
+    });
+    const barX = pieceLayouts[0].x;
+    const barY = top + drawn[0].h + drawn[0].fringe * 2 + Math.round(labelPx * (compareScales ? 2.4 : 1.3));
+    ctx.fillStyle = themeColor('--text-soft');
+    ctx.fillRect(barX, barY, Math.max(1, Math.round(10 * scale)), Math.max(2, Math.round(2 * density)));
+    ctx.fillText('10 cm', barX, barY - 3);
+
+    const data = variants.find(v => v.factor === 1).data;
     canvas.setAttribute('aria-label', `${t['preview_' + view]} : ${t.preview_title}`);
-    updatePiecePanel(view, data);
-    drawLoupe(data.ends / 2, data.picks / 2);
+    canvas.title = t.loupe_hint;
+    const caption = document.getElementById('piece-caption');
+    if (caption) {
+        caption.textContent = t.piece_caption
+            .replace('%p', t['preview_' + view])
+            .replace('%w', formatNumber(o.w, 0)).replace('%h', formatNumber(o.h, 0))
+            .replace('%c', formatNumber(data.repeatCm, 1))
+            .replace('%d', formatNumber(data.perCm, 1));
+    }
+    const compare = document.getElementById('btn-compare-scales');
+    if (compare) compare.setAttribute('aria-pressed', String(compareScales));
+    for (const id of ['btn-scale-smaller', 'btn-scale-larger']) {
+        const btn = document.getElementById(id);
+        if (btn) btn.hidden = !compareScales;
+    }
+    hideLoupe();
 }
 
-// The panel beside the piece: its size, its threads, its selvedges and the yarn it takes
-function updatePiecePanel(view, data) {
-    const t = TRANSLATIONS[currentLang];
-    const o = OBJECT_VIEWS[view];
-    const title = document.getElementById('piece-title');
-    if (title) title.textContent = t['preview_' + view];
-    for (const [id, value] of [['piece-width', o.w], ['piece-length', o.h]]) {
-        const field = document.getElementById(id);
-        if (field && document.activeElement !== field) field.value = value;
-    }
-    const fringeRow = document.getElementById('piece-fringe-row');
-    if (fringeRow) fringeRow.hidden = !o.fringes;
-    const fringe = document.getElementById('piece-fringe');
-    if (fringe) fringe.value = String(o.fringe);
-    const place = document.getElementById('piece-place');
-    if (place) place.value = piecePlacement;
-
-    const name = (s) => {
-        const color = userPalette.find(p => p.hex.toUpperCase() === s.hex.toUpperCase());
-        return color ? formatColorLabel(color) : s.code;
-    };
-    const facts = document.getElementById('piece-facts');
-    if (facts) {
-        const edge = (e) => e.whole
-            ? t.fact_edge_whole.replace('%s', name(e.stripe)).replace('%n', e.threads)
-            : t.fact_edge_value.replace('%s', name(e.stripe)).replace('%n', e.threads).replace('%t', e.stripe.count);
-        const size = `${formatNumber(o.w, 0)} × ${formatNumber(o.h, 0)} cm` + (data.fringe ? t.fact_fringe.replace('%', formatNumber(data.fringe, 0)) : '');
-        facts.replaceChildren();
-        [
-            [t.fact_size, size],
-            [t.fact_warp, t.fact_warp_value.replace('%n', formatNumber(data.ends, 0)).replace('%d', formatNumber(data.perCm, 1))],
-            [t.fact_weft, t.fact_weft_value.replace('%n', formatNumber(data.picks, 0))],
-            [t.fact_repeats, t.fact_repeats_value.replace('%r', formatNumber(data.repeats, 1)).replace('%c', formatNumber(data.repeatCm, 1))],
-            [t.fact_left, edge(data.left)],
-            [t.fact_right, edge(data.right)],
-        ].forEach(([term, value]) => {
-            const dt = document.createElement('dt'); dt.textContent = term;
-            const dd = document.createElement('dd'); dd.textContent = value;
-            facts.append(dt, dd);
-        });
-    }
-    const table = document.getElementById('piece-yarn');
-    if (table) {
-        const meters = m => formatNumber(m, m < 10 ? 1 : 0);
-        const body = table.tBodies[0];
-        body.replaceChildren();
-        let warp = 0, weft = 0;
-        data.yarn.forEach(c => {
-            const row = body.insertRow();
-            const cell = row.insertCell();
-            const chip = document.createElement('span');
-            chip.className = 'piece-chip';
-            chip.style.background = c.hex;
-            cell.append(chip, document.createTextNode(name(c)));
-            row.insertCell().textContent = meters(c.warpM);
-            row.insertCell().textContent = meters(c.weftM);
-            row.insertCell().textContent = meters(c.warpM + c.weftM) + ' m';
-            warp += c.warpM; weft += c.weftM;
-        });
-        const foot = table.tFoot;
-        foot.replaceChildren();
-        const row = foot.insertRow();
-        row.insertCell().textContent = t.yarn_sum;
-        row.insertCell().textContent = meters(warp);
-        row.insertCell().textContent = meters(weft);
-        row.insertCell().textContent = meters(warp + weft) + ' m';
-    }
+// The pattern takes one of the compared sizes; the previous one goes to the history
+function applyPatternScale(factor) {
+    if (tartanStripes.length === 0 || factor === 1) return;
+    pushToHistory();
+    tartanStripes = scaleStripes(tartanStripes, factor);
+    showAppMessage(null);
+    updateGeneratedListUI();
+    updateActualValues();
+    redrawTartan();
+    updateUndoButton();
+    saveState();
+    renderObjectPreview();
 }
 
-// The magnifier: the real 2/2 twill, thread by thread, around a point of the piece
-const LOUPE_THREADS = 24, LOUPE_PX = 6;
-function drawLoupe(threadX, threadY) {
+// The magnifier: the real 2/2 twill, thread by thread, around the point under the pointer
+const LOUPE_THREADS = 22, LOUPE_PX = 6;
+function hideLoupe() {
+    const loupe = document.getElementById('piece-loupe');
+    if (loupe) loupe.hidden = true;
+}
+
+function layoutAt(e) {
+    const canvas = domElements.previewCanvas;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const density = canvas.width / Math.max(1, rect.width);
+    const px = (e.clientX - rect.left) * density, py = (e.clientY - rect.top) * density;
+    const layout = pieceLayouts.find(l => px >= l.x && px <= l.x + l.w && py >= l.y && py <= l.y + l.h);
+    return layout ? { layout, px, py, cssX: e.clientX - rect.left, cssY: e.clientY - rect.top } : null;
+}
+
+function drawLoupe(layout, threadX, threadY) {
     const canvas = document.getElementById('piece-loupe');
-    if (!canvas || !pieceLayout || tartanStripes.length === 0) return;
+    if (!canvas || !layout) return;
     const isSymmetric = domElements.sym?.checked || false;
-    const total = countSettThreads(tartanStripes, isSymmetric);
+    const total = countSettThreads(layout.stripes, isSymmetric);
     const n = LOUPE_THREADS;
     const x0 = Math.round(threadX - n / 2), y0 = Math.round(threadY - n / 2);
     const wrap = v => ((v % total) + total) % total;
-    const warp = buildThreadColors(tartanStripes, isSymmetric, n, wrap(pieceLayout.warpStart + x0));
-    const weft = buildThreadColors(tartanStripes, isSymmetric, n, wrap(pieceLayout.weftStart + y0));
+    const warp = buildThreadColors(layout.stripes, isSymmetric, n, wrap(layout.warpStart + x0));
+    const weft = buildThreadColors(layout.stripes, isSymmetric, n, wrap(layout.weftStart + y0));
     const tile = document.createElement('canvas');
     tile.width = n;
     tile.height = n;
@@ -4580,50 +4754,41 @@ function drawLoupe(threadX, threadY) {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(tile, 0, 0, canvas.width, canvas.height);
     canvas.dataset.at = `${Math.round(threadX)},${Math.round(threadY)}`;
+    canvas.dataset.factor = String(layout.factor);
 }
 
-// Pointer over the piece moves the magnifier
 function loupeFromPointer(e) {
-    const canvas = domElements.previewCanvas;
-    if (!canvas || !pieceLayout) return;
-    const rect = canvas.getBoundingClientRect();
-    const density = canvas.width / Math.max(1, rect.width);
-    const px = (e.clientX - rect.left) * density - pieceLayout.x;
-    const py = (e.clientY - rect.top) * density - pieceLayout.y;
-    if (px < 0 || py < 0 || px > pieceLayout.w || py > pieceLayout.h) return;
-    drawLoupe(px / pieceLayout.w * pieceLayout.ends, py / pieceLayout.h * pieceLayout.picks);
+    const hit = layoutAt(e);
+    const loupe = document.getElementById('piece-loupe');
+    if (!loupe) return;
+    if (!hit) { loupe.hidden = true; return; }
+    const { layout } = hit;
+    drawLoupe(layout, (hit.px - layout.x) / layout.w * layout.ends, (hit.py - layout.y) / layout.h * layout.picks);
+    // Beside the pointer, not under the finger, and inside the stage
+    const stage = loupe.parentElement, size = 132;
+    let left = hit.cssX + 18, topPx = hit.cssY - size - 12;
+    if (left + size > stage.clientWidth) left = hit.cssX - size - 18;
+    if (topPx < 0) topPx = hit.cssY + 18;
+    loupe.style.left = Math.max(0, left) + 'px';
+    loupe.style.top = Math.max(0, Math.min(stage.clientHeight - size, topPx)) + 'px';
+    loupe.hidden = false;
 }
 
-// Size, fringes and placement typed in the panel
-function bindPiecePanel() {
-    const number = (id, key, min, max) => {
-        const field = document.getElementById(id);
-        if (!field) return;
-        field.addEventListener('input', () => {
-            const v = parseFloat(field.value);
-            const o = OBJECT_VIEWS[objectView];
-            if (!o || !(v >= min && v <= max)) return;
-            o[key] = v;
-            renderObjectPreview();
-        });
-        field.addEventListener('change', () => renderObjectPreview());
-    };
-    number('piece-width', 'w', 5, 300);
-    number('piece-length', 'h', 5, 1000);
-    document.getElementById('piece-fringe')?.addEventListener('change', (e) => {
-        const o = OBJECT_VIEWS[objectView];
-        if (o?.fringes) o.fringe = parseFloat(e.target.value) || 0;
-        renderObjectPreview();
-    });
-    document.getElementById('piece-place')?.addEventListener('change', (e) => {
-        piecePlacement = e.target.value === 'edge' ? 'edge' : 'centre';
-        renderObjectPreview();
-    });
+function bindProductView() {
     const canvas = domElements.previewCanvas;
     if (canvas) {
         canvas.addEventListener('pointermove', loupeFromPointer);
         canvas.addEventListener('pointerdown', loupeFromPointer);
+        canvas.addEventListener('pointerleave', hideLoupe);
+        // In the comparison, a click on a size takes it
+        canvas.addEventListener('click', (e) => {
+            const hit = compareScales ? layoutAt(e) : null;
+            if (hit && hit.layout.factor !== 1) applyPatternScale(hit.layout.factor);
+        });
     }
+    document.getElementById('btn-compare-scales')?.addEventListener('click', () => { compareScales = !compareScales; renderObjectPreview(); });
+    document.getElementById('btn-scale-smaller')?.addEventListener('click', () => applyPatternScale(0.5));
+    document.getElementById('btn-scale-larger')?.addEventListener('click', () => applyPatternScale(2));
 }
 
 // The canvas shows the cloth, or one object made of it: a view, not a window, so the settings stay usable
@@ -4694,6 +4859,7 @@ function buildWeavingSheetData(stripes, isSymmetric, threadMm) {
 }
 
 let weavingSheetOpener = null;
+let sheetPiece = 'scarf';      // The piece of the weaving sheet: a woven one
 
 function isWeavingSheetOpen() {
     return !!domElements.sheetModal && !domElements.sheetModal.hidden;
@@ -4820,13 +4986,14 @@ function openWeavingSheet() {
     body.appendChild(sheetElement('p', data.sequence.map(s => `${s.code} ${s.count}`).join(' · '), 'sheet-order'));
 
     // The piece: chosen here or in the product view, the same sizes in both
-    if (!OBJECT_VIEWS[objectView]) objectView = 'scarf';
+    if (!OBJECT_VIEWS[sheetPiece]?.woven) sheetPiece = 'scarf';
+    if (OBJECT_VIEWS[objectView]?.woven && isPreviewOpen()) sheetPiece = objectView;
     body.appendChild(sheetElement('h3', t.sheet_piece));
     const form = sheetElement('div', undefined, 'sheet-form');
-    const piece = sheetSelect(Object.keys(OBJECT_VIEWS).map(v => [v, t['preview_' + v]]), objectView);
-    const width = sheetNumber(OBJECT_VIEWS[objectView].w, 5, 300, 1);
-    const length = sheetNumber(OBJECT_VIEWS[objectView].h, 5, 1000, 1);
-    const fringe = sheetSelect([['0', t.fringe_none], ['3', t.fringe_free], ['10', t.fringe_twisted]], String(OBJECT_VIEWS[objectView].fringe));
+    const piece = sheetSelect(Object.keys(OBJECT_VIEWS).filter(v => OBJECT_VIEWS[v].woven).map(v => [v, t['preview_' + v]]), sheetPiece);
+    const width = sheetNumber(OBJECT_VIEWS[sheetPiece].w, 5, 300, 1);
+    const length = sheetNumber(OBJECT_VIEWS[sheetPiece].h, 5, 1000, 1);
+    const fringe = sheetSelect([['0', t.fringe_none], ['3', t.fringe_free], ['10', t.fringe_twisted]], String(OBJECT_VIEWS[sheetPiece].fringe));
     const place = sheetSelect([['centre', t.place_centre], ['edge', t.place_edge]], piecePlacement);
     const loss = sheetNumber(weavingPrefs.loss, 0, 500, 1);
     const margin = sheetNumber(weavingPrefs.margin, 0, 100, 1);
@@ -4845,27 +5012,26 @@ function openWeavingSheet() {
     body.appendChild(pieceInfo);
 
     const refresh = () => {
-        const o = OBJECT_VIEWS[objectView];
+        const o = OBJECT_VIEWS[sheetPiece];
         fringeField.hidden = !o.fringes;
         renderSheetPiece(pieceInfo, o);
         if (isPreviewOpen()) renderObjectPreview();
     };
     piece.addEventListener('change', () => {
-        objectView = piece.value;
-        const o = OBJECT_VIEWS[objectView];
+        sheetPiece = piece.value;
+        const o = OBJECT_VIEWS[sheetPiece];
         width.value = o.w; length.value = o.h; fringe.value = String(o.fringe);
-        syncViewSwitch();
         refresh();
     });
     const number = (field, apply, min, max) => field.addEventListener('input', () => {
         const v = parseFloat(field.value);
         if (v >= min && v <= max) { apply(v); refresh(); }
     });
-    number(width, v => { OBJECT_VIEWS[objectView].w = v; }, 5, 300);
-    number(length, v => { OBJECT_VIEWS[objectView].h = v; }, 5, 1000);
+    number(width, v => { OBJECT_VIEWS[sheetPiece].w = v; }, 5, 300);
+    number(length, v => { OBJECT_VIEWS[sheetPiece].h = v; }, 5, 1000);
     number(loss, v => { weavingPrefs.loss = v; saveWeavingPrefs(); }, 0, 500);
     number(margin, v => { weavingPrefs.margin = v; saveWeavingPrefs(); }, 0, 100);
-    fringe.addEventListener('change', () => { if (OBJECT_VIEWS[objectView].fringes) OBJECT_VIEWS[objectView].fringe = parseFloat(fringe.value) || 0; refresh(); });
+    fringe.addEventListener('change', () => { if (OBJECT_VIEWS[sheetPiece].fringes) OBJECT_VIEWS[sheetPiece].fringe = parseFloat(fringe.value) || 0; refresh(); });
     place.addEventListener('change', () => { piecePlacement = place.value === 'edge' ? 'edge' : 'centre'; refresh(); });
     refresh();
 
