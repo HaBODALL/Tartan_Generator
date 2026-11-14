@@ -20,7 +20,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 * Choix de 8 couleurs au plus parmi les 137 nuances SRT.
 * Historique des 50 derniers motifs en bande sous le motif, et annulation.
 
-**Reprendre un motif** (menu *Importer* de la barre du haut ; *Nouveau motif* en crée un)
+**Reprendre un motif** (menu *Importer* de la barre du haut ; *Générer* en crée un au hasard, et sa flèche part d'une image)
 * Taper ou coller un code SRT (`R/72 B8 K12 ...`) dans la barre sous le motif, qui affiche aussi le code du motif courant : `Entrée` valide, `Échap` remet le code. Les couleurs déjà présentes gardent leur nuance. Ou charger un exemple.
 * Rouvrir un fichier texte produit par l'export *Détails*, avec ses teintes exactes et ses réglages de rendu.
 * Ouvrir un lien partagé.
@@ -30,7 +30,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 **Explorer** (mode *Planche*, à côté d'*Atelier* dans la barre du haut)
 * Mood board de 10 à 100 motifs, avec épingles et variantes autour d'une tuile.
 * Mode par critères : une grille dont les colonnes et les lignes font varier chacune un réglage (couleurs, bandes, largeur max, sett, symétrie).
-* **Vues produit** sur le motif : Écharpe (30 × 180 cm, franges de 3 cm libres ou 10 cm torsadées), Métrage (70 cm de large) et Échantillon (30 × 30 cm), à l'échelle d'après la densité ; les dimensions se changent. À côté de la pièce : fils de chaîne et duites, motifs dans la largeur, ce que coupe chaque lisière, motif centré ou depuis la lisière, fil par couleur en mètres (chaîne et trame, franges comprises, sans la perte au métier), et une loupe sur le vrai sergé. Les réglages restent utilisables pendant ce temps.
+* **Le motif sur des objets**, à l'échelle : Écharpe, Plaid, Coussin et Kilt, dimensionnés d'après la densité. Une loupe sous le pointeur montre le vrai tissage, et *Comparer les tailles du motif* met côte à côte le même motif deux fois plus fin, tel quel et deux fois plus large ; un clic en prend un. Les réglages restent utilisables pendant ce temps.
 * Lisibilité des couleurs : alerte sur les bandes voisines difficiles à distinguer, et simulation du daltonisme (à l'écran seulement).
 
 **Rendu**
@@ -38,10 +38,11 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 * Sergé 2/2, Z ou S, avec relief des fils et irrégularité de la laine.
 * Zoom aux boutons posés sur le motif, au curseur, à la molette (autour du pointeur), aux touches `+` et `-` ou au pincement.
 * Déplacement du motif en le faisant glisser ou aux flèches ; un double-clic ou le bouton ⌖ revient au début.
+* Deux thèmes : un sombre adouci par défaut et un clair (bouton ☀ de la barre du haut), retenu sur votre appareil.
 
 **Enregistrer et partager** (menu *Enregistrer / partager* de la barre du haut)
 * PNG de la vue, SVG d'un motif complet raccordable à la taille réelle, détails en texte (codes SRT et Ink/Stitch), ZIP ou PNG du mood board.
-* **Préparer le tissage** : une fiche imprimable pour la pièce choisie (depuis la vue produit ou le menu *Enregistrer / partager*). Pièce et dimensions, longueur de chaîne par fil, plan d'ourdissage d'une lisière à l'autre avec le cumul, la trame, et le fil par couleur en mètres. La tisserande peut saisir sa perte au métier par fil de chaîne, une marge et le métrage au kilo de chaque fil pour obtenir le poids ; ces valeurs restent sur son appareil.
+* **Préparer le tissage** : une fiche imprimable pour une écharpe ou un plaid (menu *Enregistrer / partager*).* **Préparer le tissage** : une fiche imprimable pour la pièce choisie (depuis la vue produit ou le menu *Enregistrer / partager*). Pièce et dimensions, longueur de chaîne par fil, plan d'ourdissage d'une lisière à l'autre avec le cumul, la trame, et le fil par couleur en mètres. La tisserande peut saisir sa perte au métier par fil de chaîne, une marge et le métrage au kilo de chaque fil pour obtenir le poids ; ces valeurs restent sur son appareil.
 * Lien qui rouvre exactement le motif, sans aucun serveur.
 
 **Clavier** : `Espace` ou `G` génèrent, `S` exporte tout, `P` exporte le PNG, `Ctrl+Z` annule, `+` et `-` zooment, les flèches déplacent, `Échap` ferme un menu, la planche ou la fenêtre. Dans un menu, les flèches passent d'un choix à l'autre.

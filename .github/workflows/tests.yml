@@ -1,6 +1,6 @@
 name: Tests
 
-# Runs the tests on every pull request, before merging.
+# Runs the unit tests and the browser tests on every pull request, before merging.
 # Deployment stays in deploy.yml, which runs them again on main.
 on:
   pull_request:
@@ -24,3 +24,13 @@ jobs:
         run: node --check Random_Tartan_Generator.js
       - name: Run tests
         run: node test.js
+
+  # The real page in headless Chrome, at desktop, tablet and phone widths
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run browser tests
+        run: node tests/browser/run.js
