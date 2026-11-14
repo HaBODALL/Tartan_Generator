@@ -216,7 +216,7 @@ const TRANSLATIONS = {
         lbl_limits: "Fils par bande (min. et max.)",
         chk_check_mode: "Damier",
         desc_check_mode: "Génère des bandes de largeurs égales",
-        lbl_sett: "Fils par motif",
+        lbl_sett: "Fils des bandes",
         sec_zoom: "Fil et rendu",
         lbl_thread_mm: "Taille d'un fil (mm)",
         lbl_zoom: "Zoom",
@@ -296,7 +296,7 @@ const TRANSLATIONS = {
         axis_colors: "Nombre de couleurs",
         axis_stripes: "Nombre de bandes",
         axis_maxWidth: "Largeur max des bandes",
-        axis_sett: "Fils par motif",
+        axis_sett: "Fils des bandes",
         axis_symmetric: "Symétrie",
         crit_colors: "% couleurs",
         crit_stripes: "% bandes",
@@ -433,7 +433,7 @@ const TRANSLATIONS = {
         unit_density: "fils/cm",
         note_thread_mm: "soit % mm par fil",
         actual_value: "obtenu : %",
-        title_sett: "Le nombre de fils d'un motif complet, avant qu'il se répète",
+        title_sett: "Le nombre de fils à répartir entre les bandes. Avec la symétrie, le motif repasse par les bandes en miroir : le motif entier compte plus de fils, indiqués à côté.",
         title_weave_dir: "Le sens des diagonales du sergé",
         sheet_density: "%d fils/cm (%m mm par fil)",
         title_remove_color: "Retirer de la palette",
@@ -490,6 +490,7 @@ const TRANSLATIONS = {
         sheet_perkg_label: "Métrage au kilo du fil %",
         sheet_yarn_note_without: "En mètres, franges comprises. Ajoutez la perte au métier et une marge ci-dessus pour les inclure ; le métrage au kilo de chaque fil donne le poids.",
         sheet_yarn_note_with: "En mètres, franges comprises, avec %l cm de perte par fil de chaîne et %m % de marge.",
+        actual_full_repeat: "motif entier : % fils",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -505,7 +506,7 @@ const TRANSLATIONS = {
         lbl_limits: "Threads per stripe (min. and max.)",
         chk_check_mode: "Checkers",
         desc_check_mode: "Generates stripes of equal widths",
-        lbl_sett: "Threads per repeat",
+        lbl_sett: "Threads in the stripes",
         sec_zoom: "Yarn & rendering",
         lbl_thread_mm: "Size of one thread (mm)",
         lbl_zoom: "Zoom",
@@ -585,7 +586,7 @@ const TRANSLATIONS = {
         axis_colors: "Number of colors",
         axis_stripes: "Number of stripes",
         axis_maxWidth: "Maximum stripe width",
-        axis_sett: "Threads per repeat",
+        axis_sett: "Threads in the stripes",
         axis_symmetric: "Symmetry",
         crit_colors: "% colors",
         crit_stripes: "% stripes",
@@ -722,7 +723,7 @@ const TRANSLATIONS = {
         unit_density: "threads/cm",
         note_thread_mm: "that is % mm per thread",
         actual_value: "got: %",
-        title_sett: "The number of threads in one full repeat, before it starts again",
+        title_sett: "The number of threads shared between the stripes. With symmetry the repeat runs back through the stripes: the full repeat has more threads, shown beside.",
         title_weave_dir: "The direction of the twill lines",
         sheet_density: "%d threads/cm (%m mm per thread)",
         title_remove_color: "Remove from palette",
@@ -779,6 +780,7 @@ const TRANSLATIONS = {
         sheet_perkg_label: "Metres per kilo of the % yarn",
         sheet_yarn_note_without: "In metres, fringes included. Enter the loom waste and a margin above to include them; the metres per kilo of each yarn give the weight.",
         sheet_yarn_note_with: "In metres, fringes included, with %l cm of waste per warp end and a %m % margin.",
+        actual_full_repeat: "full repeat: % threads",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -1275,6 +1277,7 @@ function bindEvents() {
     bindPiecePanel();
     document.getElementById('btn-piece-sheet')?.addEventListener('click', openWeavingSheet);
     watchPreviewStage();
+    watchCanvasContainer();
     if (domElements.btnWeavingSheet) domElements.btnWeavingSheet.addEventListener('click', openWeavingSheet);
     if (domElements.btnSheetPrint) domElements.btnSheetPrint.addEventListener('click', () => window.print());
     if (domElements.btnSheetClose) domElements.btnSheetClose.addEventListener('click', closeWeavingSheet);
@@ -1519,6 +1522,21 @@ function windowResized() {
     }
 }
 
+// The pattern area can change size without the window doing so: a tab loaded in the background
+// or with no width yet, the panel folding, a split view. Without this the pattern stayed blank.
+let canvasLayoutFrame = 0;
+function watchCanvasContainer() {
+    const container = domElements.canvasContainer;
+    if (!container || typeof ResizeObserver === 'undefined') return;
+    new ResizeObserver(() => {
+        cancelAnimationFrame(canvasLayoutFrame);
+        canvasLayoutFrame = requestAnimationFrame(() => {
+            const w = container.offsetWidth, h = container.offsetHeight;
+            if (w > 0 && h > 0 && (w !== width || h !== height)) windowResized();
+        });
+    }).observe(container);
+}
+
 function formatColorLabel(p) {
     let varStr = p.variant ? ` ${p.variant}` : '';
     return `${p.name}${varStr} (${p.code})`;
@@ -1708,11 +1726,13 @@ function updateActualSett() {
     // Comparison with target
     let targetSett = parseInt(domElements.sett?.value) || 260;
 
-    if (actualSett !== targetSett) {
-        display.textContent = TRANSLATIONS[currentLang].actual_value.replace('%', actualSett);
-    } else {
-        display.textContent = '';
-    }
+    const t = TRANSLATIONS[currentLang];
+    const isSymmetric = domElements.sym?.checked || false;
+    const parts = [];
+    if (actualSett !== targetSett) parts.push(t.actual_value.replace('%', actualSett));
+    // Mirrored, the repeat runs back through the stripes: say how many threads it really has
+    if (isSymmetric) parts.push(t.actual_full_repeat.replace('%', countSettThreads(tartanStripes, true)));
+    display.textContent = parts.join(' · ');
 }
 
 // === THREAD TYPE SELECTOR ===
@@ -2865,6 +2885,7 @@ function resetView() {
 }
 window.updateSymmetry = function() {
     commitStructureSettings();
+    updateActualValues();
     updateGeneratedListUI(); // The SRT notation depends on symmetry
     redrawTartan();
     saveState();

@@ -529,7 +529,8 @@
     .view-btn:hover { background: #333; color: #fff; }
     .view-btn[aria-pressed="true"] { background: #c0392b; color: #fff; }
     #canvas-container:has(#patchwork-board:not([hidden])) .view-switch { display: none; }
-    .preview-board { padding-top: 52px; }
+    /* Two classes: the board's own padding comes later in the sheet */
+    .patchwork-board.preview-board { padding-top: 52px; }
 
     .btn-secondary { padding: 8px 12px; background: #333; color: #fff; border: 1px solid #444; cursor: pointer; border-radius: 3px; font-size: 11px; white-space: nowrap;}
     .btn-secondary:hover { background: #444; }
@@ -1097,7 +1098,7 @@
         </div>
         <!-- Sett / Densité -->
         <div class="control-row">
-            <label for="in-sett" data-i18n="lbl_sett" data-i18n-title="title_sett" title="Le nombre de fils d'un motif complet, avant qu'il se répète">Fils par motif</label>
+            <label for="in-sett" data-i18n="lbl_sett" data-i18n-title="title_sett" title="Le nombre de fils à répartir entre les bandes. Avec la symétrie, le motif repasse par les bandes en miroir : le motif entier compte plus de fils, indiqués à côté.">Fils des bandes</label>
             <div style="display:flex; align-items:center; gap:10px;">
                 <input type="number" id="in-sett" value="260" min="150" max="300" step="2" style="width:70px;" >
                 <span id="sett-actual" class="field-actual"></span>
@@ -1214,7 +1215,7 @@
               <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
               <option value="stripes" data-i18n="axis_stripes">Nombre de bandes</option>
               <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
-              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
+              <option value="sett" data-i18n="axis_sett">Fils des bandes</option>
               <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
           </select>
       </div>
@@ -1225,7 +1226,7 @@
               <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
               <option value="stripes" selected data-i18n="axis_stripes">Nombre de bandes</option>
               <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
-              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
+              <option value="sett" data-i18n="axis_sett">Fils des bandes</option>
               <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
           </select>
       </div>
