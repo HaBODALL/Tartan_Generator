@@ -25,9 +25,8 @@ async function run() {
 
   // From the scarf view
   document.querySelector('.view-btn[data-view="scarf"]').click(); await sleep(30);
-  const open = $('btn-piece-sheet');
-  check('Préparer le tissage in the piece panel', open && open.textContent === 'Préparer le tissage' && open.getClientRects().length > 0);
-  open.click();
+  check('the sheet is not pushed in the product view', !$('btn-piece-sheet'));
+  openWeavingSheet();
   check('sheet opens on the scarf', !$('sheet-modal').hidden && $('sheet-piece').value === 'scarf' && $('sheet-width').value === '30' && $('sheet-length').value === '180' && $('sheet-fringe').value === '10');
   check('warp length per end', fact('Longueur de chaîne') === '200 cm par fil, franges et perte comprises', fact('Longueur de chaîne'));
 
@@ -58,7 +57,7 @@ async function run() {
 
   // Kept for next time
   $('btn-sheet-close').click();
-  $('btn-piece-sheet').click();
+  openWeavingSheet();
   check('loss, margin and m/kg kept', $('sheet-loss').value === '50' && $('sheet-margin').value === '10' && [...document.querySelectorAll('.sheet-perkg')].every(k => k.value === '2000'));
   set('sheet-loss', '0'); set('sheet-margin', '0');
 
@@ -68,13 +67,14 @@ async function run() {
   check('from the selvedge: whole red stripe first', p[0][1] === 48 && p[p.length - 1][1] === 42, JSON.stringify([p[0], p[p.length - 1]]));
   set('sheet-place', 'centre', 'change');
   set('sheet-width', '40');
-  check('width 40: 360 ends, the view follows', plan().slice(-1)[0][2] === '360' && $('piece-width').value === '40');
+  check('width 40: 360 ends, the view follows', plan().slice(-1)[0][2] === '360' && OBJECT_VIEWS.scarf.w === 40 && pieceLayouts.length === 1);
   set('sheet-width', '30');
 
   // Other pieces
-  set('sheet-piece', 'yardage', 'change');
-  check('yardage: 70 cm, no fringes', $('sheet-width').value === '70' && $('sheet-fringe').closest('.sheet-field').hidden && plan().slice(-1)[0][2] === '630' && fact('Longueur de chaîne').startsWith('100 cm'));
-  check('the view switch follows', document.querySelector('.view-btn[aria-pressed="true"]').dataset.view === 'yardage');
+  check('only woven pieces on the sheet', [...$('sheet-piece').options].map(o => o.value).join() === 'scarf,plaid');
+  set('sheet-piece', 'plaid', 'change');
+  check('plaid: 130 cm wide, 3 cm fringes', $('sheet-width').value === '130' && $('sheet-fringe').value === '3' && plan().slice(-1)[0][2] === '1 170' && fact('Longueur de chaîne').startsWith('176 cm'), $('sheet-width').value + ' ' + plan().slice(-1)[0][2] + ' ' + fact('Longueur de chaîne'));
+  check('the product view keeps its own object', document.querySelector('.view-btn[aria-pressed="true"]').dataset.view === 'scarf');
   set('sheet-piece', 'scarf', 'change');
 
   // From the menu too, and in English
@@ -83,7 +83,7 @@ async function run() {
   check('menu entry renamed', $('btn-weaving-sheet').textContent === 'Préparer le tissage (fiche à imprimer)');
   closeMenus();
   setLanguage('en');
-  $('btn-piece-sheet').click();
+  openWeavingSheet();
   check('English', $('sheet-body').textContent.includes('Warping plan') && $('sheet-body').textContent.includes('Loom waste (cm per warp end)'));
   $('btn-sheet-close').click();
   setLanguage('fr');

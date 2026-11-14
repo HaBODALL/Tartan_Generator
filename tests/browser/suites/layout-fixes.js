@@ -32,11 +32,11 @@ async function run() {
 
   // 2. Product view: nothing under the view switch or the panel button
   document.querySelector('.view-btn[data-view="scarf"]').click(); await sleep(60);
-  const panel = box(document.querySelector('.piece-panel')), stage = box(document.querySelector('.preview-stage'));
+  const panel = box(document.querySelector('.preview-bar')), stage = box(document.querySelector('.preview-stage'));
   const toggle = $('btn-toggle-ui'), sw = box(document.querySelector('.view-switch'));
-  if (toggle.getClientRects().length) check('panel button clear of the piece panel', !overlap(box(toggle), panel), JSON.stringify([box(toggle).bottom, panel.top]));
+  if (toggle.getClientRects().length) check('panel button clear of the caption bar', !overlap(box(toggle), panel), JSON.stringify([box(toggle).bottom, panel.top]));
   else check('panel button hidden in the product view', true);
-  check('piece and panel start under the view switch', stage.top >= sw.bottom && panel.top >= sw.bottom, JSON.stringify([sw.bottom, stage.top, panel.top]));
+  check('the object starts under the view switch', stage.top >= sw.bottom && panel.top >= stage.bottom - 1, JSON.stringify([sw.bottom, stage.top, panel.top]));
   document.querySelector('.view-btn[data-view="cloth"]').click();
 
   // 3. Thread counts

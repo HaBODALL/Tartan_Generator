@@ -106,7 +106,7 @@ If the application shows a blank screen or a button does not work:
 | Text import | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
 | Weaving sheet | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
-| Product views | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
+| Product views | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
 | SRT bar | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Readability | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Photo estimate | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
@@ -227,7 +227,7 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Import texte | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
 | Fiche de tissage | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
-| Vues produit | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
+| Vues produit | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
 | Barre SRT | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Lisibilité | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Estimation depuis une photo | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
