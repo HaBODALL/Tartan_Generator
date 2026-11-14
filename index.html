@@ -529,7 +529,8 @@
     .view-btn:hover { background: #333; color: #fff; }
     .view-btn[aria-pressed="true"] { background: #c0392b; color: #fff; }
     #canvas-container:has(#patchwork-board:not([hidden])) .view-switch { display: none; }
-    .preview-board { padding-top: 52px; }
+    /* Two classes: the board's own padding comes later in the sheet */
+    .patchwork-board.preview-board { padding-top: 52px; }
 
     .btn-secondary { padding: 8px 12px; background: #333; color: #fff; border: 1px solid #444; cursor: pointer; border-radius: 3px; font-size: 11px; white-space: nowrap;}
     .btn-secondary:hover { background: #444; }
@@ -681,33 +682,16 @@
     #canvas-container > canvas { touch-action: none; cursor: grab; }
     #canvas-container > canvas.panning { cursor: grabbing; }
     .preview-stage { flex: 1; min-height: 0; overflow: hidden; }
-    /* Product views: the piece, and what the weaver needs beside it */
-    .preview-layout { flex: 1; min-height: 0; display: flex; gap: 12px; }
-    .preview-layout .preview-stage { min-width: 0; }
-    #preview-canvas { cursor: crosshair; touch-action: none; }
-    .piece-panel { width: 300px; flex-shrink: 0; overflow-y: auto; background: #151515; border: 1px solid #2a2a2a; border-radius: 6px; padding: 12px; color: #ddd; font-size: 13px; }
-    .piece-title { margin: 0 0 10px; font-size: 16px; color: #fff; }
-    .piece-panel h3 { font-size: 13px; margin: 16px 0 6px; color: #fff; }
-    .piece-fields { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; }
-    .piece-fields label { color: #ccc; }
-    .piece-fields select { width: 100%; }
-    .piece-row { display: contents; }
-    .piece-row[hidden] { display: none; }
-    .piece-facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 14px 0 0; }
-    .piece-facts dt { color: #aaa; }
-    .piece-facts dd { margin: 0; color: #fff; font-variant-numeric: tabular-nums; }
-    .piece-yarn { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-    .piece-yarn th { color: #aaa; font-weight: 600; text-align: right; padding: 2px 4px; }
-    .piece-yarn td { text-align: right; padding: 2px 4px; color: #eee; }
-    .piece-yarn th:first-child, .piece-yarn td:first-child { text-align: left; }
-    .piece-yarn tfoot td { border-top: 1px solid #444; font-weight: 600; color: #fff; }
-    .piece-chip { display: inline-block; width: 12px; height: 12px; border: 1px solid #777; border-radius: 2px; vertical-align: -2px; margin-right: 6px; }
-    .piece-note { color: #aaa; font-size: 12px; margin: 6px 0 0; line-height: 1.4; }
-    #piece-loupe { width: 144px; height: 144px; display: block; border: 1px solid #555; border-radius: 4px; }
-    @media (max-width: 768px) {
-      .preview-layout { flex-direction: column; gap: 8px; }
-      .piece-panel { width: auto; max-height: 45%; }
-    }
+    /* Product views: the object in large, a caption under it, a magnifier under the pointer */
+    .preview-stage { position: relative; }
+    #preview-canvas { cursor: zoom-in; touch-action: none; }
+    .piece-loupe { position: absolute; width: 132px; height: 132px; border-radius: 50%; border: 2px solid #eee; box-shadow: 0 6px 18px rgba(0,0,0,0.7); pointer-events: none; z-index: 5; }
+    .piece-loupe[hidden] { display: none; }
+    .preview-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
+    .piece-caption { margin: 0; color: #ccc; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .preview-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .preview-actions [hidden] { display: none; }
+    #btn-compare-scales[aria-pressed="true"] { background: #c0392b; border-color: #c0392b; }
     .preview-stage canvas { display: block; }
     .sheet-paper { background: #fff; color: #111; width: 680px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: 24px; border-radius: 6px; font-size: 13px; }
     .sheet-paper h2 { font-size: 20px; margin-bottom: 2px; color: #111; }
@@ -736,7 +720,6 @@
     .sheet-plan th:first-child, .sheet-plan td:first-child { width: 2.5em; color: #555; }
     .sheet-plan th:nth-child(2), .sheet-plan td:nth-child(2) { text-align: left; }
     .sheet-perkg { width: 70px !important; }
-    .btn-piece-sheet { width: 100%; margin-top: 14px; }
     .sheet-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
     .sheet-actions [hidden] { display: none; }
     @media (max-width: 768px) { .import-box { flex-wrap: wrap; } .import-input { flex-basis: 100%; } }
@@ -930,46 +913,22 @@
             <span class="view-switch-label" data-i18n="view_label" aria-hidden="true">Vue</span>
             <button type="button" class="view-btn" data-view="cloth" aria-pressed="true" data-i18n="view_cloth">Tissu</button>
             <button type="button" class="view-btn" data-view="scarf" aria-pressed="false" data-i18n="preview_scarf">Écharpe</button>
-            <button type="button" class="view-btn" data-view="yardage" aria-pressed="false" data-i18n="preview_yardage">Métrage</button>
-            <button type="button" class="view-btn" data-view="sample" aria-pressed="false" data-i18n="preview_sample">Échantillon</button>
+            <button type="button" class="view-btn" data-view="plaid" aria-pressed="false" data-i18n="preview_plaid">Plaid</button>
+            <button type="button" class="view-btn" data-view="cushion" aria-pressed="false" data-i18n="preview_cushion">Coussin</button>
+            <button type="button" class="view-btn" data-view="kilt" aria-pressed="false" data-i18n="preview_kilt">Kilt</button>
         </div>
         <div id="preview-board" class="patchwork-board preview-board" hidden>
-            <div class="preview-layout">
-                <div class="preview-stage"><canvas id="preview-canvas" role="img"></canvas></div>
-                <aside class="piece-panel" aria-labelledby="piece-title">
-                    <h2 class="piece-title" id="piece-title">Écharpe</h2>
-                    <div class="piece-fields">
-                        <label for="piece-width" data-i18n="piece_width">Largeur</label>
-                        <span class="field-with-unit"><input type="number" id="piece-width" min="5" max="300" step="1"><span class="field-unit">cm</span></span>
-                        <label for="piece-length" data-i18n="piece_length">Longueur</label>
-                        <span class="field-with-unit"><input type="number" id="piece-length" min="5" max="1000" step="1"><span class="field-unit">cm</span></span>
-                        <div class="piece-row" id="piece-fringe-row">
-                            <label for="piece-fringe" data-i18n="piece_fringe">Franges</label>
-                            <select id="piece-fringe" class="patchwork-select">
-                                <option value="0" data-i18n="fringe_none">Sans</option>
-                                <option value="3" data-i18n="fringe_free">3 cm libres</option>
-                                <option value="10" data-i18n="fringe_twisted">10 cm torsadées</option>
-                            </select>
-                        </div>
-                        <label for="piece-place" data-i18n="piece_place" data-i18n-title="title_piece_place" title="Centré : le milieu de la pièce tombe sur le milieu d'une bande pivot. Depuis la lisière : le motif commence au bord.">Motif</label>
-                        <select id="piece-place" class="patchwork-select">
-                            <option value="centre" data-i18n="place_centre">Centré</option>
-                            <option value="edge" data-i18n="place_edge">Depuis la lisière</option>
-                        </select>
-                    </div>
-                    <dl class="piece-facts" id="piece-facts"></dl>
-                    <button type="button" class="btn-generate btn-piece-sheet" id="btn-piece-sheet" data-i18n="btn_piece_sheet">Préparer le tissage</button>
-                    <h3 data-i18n="yarn_title">Fil par couleur</h3>
-                    <table class="piece-yarn" id="piece-yarn">
-                        <thead><tr><th scope="col" data-i18n="yarn_color">Couleur</th><th scope="col" data-i18n="yarn_warp">Chaîne</th><th scope="col" data-i18n="yarn_weft">Trame</th><th scope="col" data-i18n="yarn_total">Total</th></tr></thead>
-                        <tbody></tbody>
-                        <tfoot></tfoot>
-                    </table>
-                    <p class="piece-note" data-i18n="yarn_note">En mètres, franges comprises, sans la perte au métier (nouage, embuvage, essais) : ajoutez la marge de votre atelier.</p>
-                    <h3 data-i18n="loupe_title">Loupe : le vrai tissage</h3>
-                    <canvas id="piece-loupe" role="img" data-i18n-label="loupe_label" aria-label="Le sergé fil à fil, à l'endroit choisi sur la pièce"></canvas>
-                    <p class="piece-note" data-i18n="loupe_note">Survolez ou touchez la pièce pour déplacer la loupe.</p>
-                </aside>
+            <div class="preview-stage">
+                <canvas id="preview-canvas" role="img"></canvas>
+                <canvas id="piece-loupe" class="piece-loupe" aria-hidden="true" hidden></canvas>
+            </div>
+            <div class="preview-bar">
+                <p class="piece-caption" id="piece-caption" aria-live="polite"></p>
+                <div class="preview-actions">
+                    <button type="button" class="btn-secondary" id="btn-scale-smaller" data-i18n="btn_scale_smaller" hidden>Prendre le plus fin</button>
+                    <button type="button" class="btn-secondary" id="btn-scale-larger" data-i18n="btn_scale_larger" hidden>Prendre le plus large</button>
+                    <button type="button" class="btn-secondary" id="btn-compare-scales" aria-pressed="false" data-i18n="btn_compare_scales" data-i18n-title="title_compare_scales" title="Le même motif en trois tailles sur l'objet : deux fois plus fin, actuel, deux fois plus large">Comparer les tailles du motif</button>
+                </div>
             </div>
         </div>
         <div id="patchwork-board" class="patchwork-board" role="dialog" aria-labelledby="patchwork-title" hidden>
@@ -1097,7 +1056,7 @@
         </div>
         <!-- Sett / Densité -->
         <div class="control-row">
-            <label for="in-sett" data-i18n="lbl_sett" data-i18n-title="title_sett" title="Le nombre de fils d'un motif complet, avant qu'il se répète">Fils par motif</label>
+            <label for="in-sett" data-i18n="lbl_sett" data-i18n-title="title_sett" title="Le nombre de fils à répartir entre les bandes. Avec la symétrie, le motif repasse par les bandes en miroir : le motif entier compte plus de fils, indiqués à côté.">Fils des bandes</label>
             <div style="display:flex; align-items:center; gap:10px;">
                 <input type="number" id="in-sett" value="260" min="150" max="300" step="2" style="width:70px;" >
                 <span id="sett-actual" class="field-actual"></span>
@@ -1214,7 +1173,7 @@
               <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
               <option value="stripes" data-i18n="axis_stripes">Nombre de bandes</option>
               <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
-              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
+              <option value="sett" data-i18n="axis_sett">Fils des bandes</option>
               <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
           </select>
       </div>
@@ -1225,7 +1184,7 @@
               <option value="colors" data-i18n="axis_colors">Nombre de couleurs</option>
               <option value="stripes" selected data-i18n="axis_stripes">Nombre de bandes</option>
               <option value="maxWidth" data-i18n="axis_maxWidth">Largeur max des bandes</option>
-              <option value="sett" data-i18n="axis_sett">Fils par motif</option>
+              <option value="sett" data-i18n="axis_sett">Fils des bandes</option>
               <option value="symmetric" data-i18n="axis_symmetric">Symétrie</option>
           </select>
       </div>

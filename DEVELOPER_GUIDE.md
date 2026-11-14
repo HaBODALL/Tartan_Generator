@@ -32,6 +32,7 @@ The repository is straightforward. All critical files are located at the root:
 *   **`p5.min.js`**: The minified p5.js library. **Do not modify this file.**
 *   **`README.md` & `README.fr.md`**: Public user-facing documentation.
 *   **`test.js`**: Unit tests of the pure functions, run with `node test.js` and on every pull request.
+*   **`tests/browser/`**: Browser tests. Each suite in `suites/` drives the real page in headless Chrome, served with its real Content-Security-Policy; `run.js` runs them. Not published with the site.
 *   **`libraries/jszip.min.js`**: JSZip, loaded only when a ZIP is exported. Dependencies are served locally, never from a CDN.
 
 ## 3. Key Concepts to Understand
@@ -73,8 +74,15 @@ To run the project properly and avoid CORS (Cross-Origin Resource Sharing) issue
 
 ### Running the tests
 ```bash
-node test.js
+node test.js                              # unit tests, no browser
+node tests/browser/run.js                 # browser tests: every suite, at 1400, 1024, 760 and 360 px
+node tests/browser/run.js menus tabs      # only these suites
+node tests/browser/run.js --width=360     # only the phone width
+node tests/browser/run.js --list          # the suites and the widths each one runs at
 ```
+The browser tests need Chrome (set `CHROME_PATH` if it is not on a usual path) and nothing else. Both kinds run on every pull request.
+
+A suite is a plain script loaded after the app: it calls the app's functions and clicks its buttons, records one `PASS` or `FAIL` line per check, then adds `<pre id="bench-out">` with those lines. To add one, copy a recent suite, and register it in the `SUITES` table of `run.js` with the widths it supports. Two traps: a top-level `const` in a suite must not reuse a p5 global name (`background`, `width`…), and the page's policy blocks `blob:` images, so load exported files through a `data:` URL.
 
 ### Debugging
 If the application shows a blank screen or a button does not work:
@@ -98,7 +106,7 @@ If the application shows a blank screen or a button does not work:
 | Text import | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
 | Weaving sheet | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
-| Product views | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
+| Product views | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
 | SRT bar | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Readability | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Photo estimate | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
@@ -145,6 +153,7 @@ Le dépôt est minimaliste. Tous les fichiers critiques sont à la racine :
 *   **`p5.min.js`** : La bibliothèque p5.js compressée. **Ne modifiez pas ce fichier.**
 *   **`README.md` & `README.fr.md`** : La documentation publique destinée aux utilisateurs finaux.
 *   **`test.js`** : Tests unitaires des fonctions pures, lancés avec `node test.js` et sur chaque pull request.
+*   **`tests/browser/`** : Tests dans le navigateur. Chaque suite de `suites/` pilote la vraie page dans Chrome sans fenêtre, servie avec sa vraie Content-Security-Policy ; `run.js` les lance. Non publié avec le site.
 *   **`libraries/jszip.min.js`** : JSZip, chargé seulement à l'export ZIP. Les dépendances sont servies localement, jamais depuis un CDN.
 
 ## 3. Les Concepts Clés à Comprendre
@@ -186,8 +195,15 @@ Pour exécuter le projet correctement et éviter les erreurs CORS (Cross-Origin 
 
 ### Lancer les tests
 ```bash
-node test.js
+node test.js                              # tests unitaires, sans navigateur
+node tests/browser/run.js                 # tests navigateur : toutes les suites, à 1400, 1024, 760 et 360 px
+node tests/browser/run.js menus tabs      # seulement ces suites
+node tests/browser/run.js --width=360     # seulement la largeur téléphone
+node tests/browser/run.js --list          # les suites et les largeurs de chacune
 ```
+Les tests navigateur demandent Chrome (variable `CHROME_PATH` s'il n'est pas à un emplacement habituel) et rien d'autre. Les deux sortes tournent sur chaque pull request.
+
+Une suite est un simple script chargé après l'application : elle appelle ses fonctions et clique sur ses boutons, note une ligne `PASS` ou `FAIL` par vérification, puis ajoute `<pre id="bench-out">` avec ces lignes. Pour en ajouter une, copier une suite récente et l'inscrire dans la table `SUITES` de `run.js` avec les largeurs qu'elle supporte. Deux pièges : un `const` de haut niveau dans une suite ne doit pas reprendre un nom global de p5 (`background`, `width`…), et la politique de la page bloque les images `blob:`, donc charger les fichiers exportés par une URL `data:`.
 
 ### Débogage
 Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
@@ -211,7 +227,7 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Import texte | `exportTXT`, `parseExportedText` |
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
 | Fiche de tissage | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
-| Vues produit | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
+| Vues produit | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
 | Barre SRT | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Lisibilité | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Estimation depuis une photo | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
