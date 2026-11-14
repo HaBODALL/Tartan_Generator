@@ -207,9 +207,9 @@ const TRANSLATIONS = {
         ph_import: "Coller le code SRT ici (ex: K4 R32)...",
         btn_import: "✓ Valider",
         opt_load_example: "-- Charger un exemple --",
-        btn_generate: "GÉNÉRER",
-        chk_keep_colors: "Garder les couleurs",
-        chk_keep_struct: "Garder la structure",
+        btn_generate: "Générer",
+        chk_keep_colors: "les couleurs",
+        chk_keep_struct: "la structure",
         sec_structure: "Structure du motif",
         chk_symmetry: "Symétrie",
         lbl_stripes: "Nombre de bandes",
@@ -252,7 +252,7 @@ const TRANSLATIONS = {
         opt_cotton: "Coton (14 fils/cm)",
         opt_custom: "Autre densité",
         lbl_weave_dir: "Diagonale du sergé",
-        btn_undo: "Annuler",
+        btn_undo: " Annuler",
         title_undo: "Annuler ({n} étapes disponibles)",
         sec_history: "Historique (50 motifs max)",
         hist_empty: "Les motifs précédents apparaîtront ici.",
@@ -505,15 +505,20 @@ const TRANSLATIONS = {
         theme_to_dark: "Passer au thème sombre",
         theme_light: "Thème clair",
         theme_dark: "Thème sombre",
+        title_generate: "Un nouveau motif au hasard (touche G)",
+        menu_new_other: "Autres façons de créer un motif",
+        locks_label: "Garder",
+        title_keep_colors: "Le prochain motif garde ces couleurs",
+        title_keep_struct: "Le prochain motif garde ces bandes",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
         ph_import: "Paste SRT code here (e.g. K4 R32)...",
         btn_import: "✓ Apply",
         opt_load_example: "-- Load Example --",
-        btn_generate: "GENERATE",
-        chk_keep_colors: "Keep the colors",
-        chk_keep_struct: "Keep the structure",
+        btn_generate: "Generate",
+        chk_keep_colors: "the colors",
+        chk_keep_struct: "the structure",
         sec_structure: "Pattern structure",
         chk_symmetry: "Symmetry",
         lbl_stripes: "Number of stripes",
@@ -556,7 +561,7 @@ const TRANSLATIONS = {
         opt_cotton: "Cotton (14 threads/cm)",
         opt_custom: "Other density",
         lbl_weave_dir: "Twill direction",
-        btn_undo: "Undo",
+        btn_undo: " Undo",
         title_undo: "Undo ({n} steps available)",
         sec_history: "History (50 patterns max)",
         hist_empty: "Previous patterns will appear here.",
@@ -809,6 +814,11 @@ const TRANSLATIONS = {
         theme_to_dark: "Switch to the dark theme",
         theme_light: "Light theme",
         theme_dark: "Dark theme",
+        title_generate: "A new random pattern (G key)",
+        menu_new_other: "Other ways to create a pattern",
+        locks_label: "Keep",
+        title_keep_colors: "The next pattern keeps these colors",
+        title_keep_struct: "The next pattern keeps these stripes",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -1124,8 +1134,6 @@ function bindEvents() {
 
     setupMenus();
     setupTabs();
-    const menuNewRandom = document.getElementById('menu-new-random');
-    if (menuNewRandom) menuNewRandom.addEventListener('click', () => handleGenerateClick());
     const menuNewSrt = document.getElementById('menu-new-srt');
     if (menuNewSrt) menuNewSrt.addEventListener('click', () => { domElements.importText?.focus(); domElements.importText?.select(); });
     const menuNewExample = document.getElementById('menu-new-example');
@@ -1153,7 +1161,10 @@ function bindEvents() {
     if (srtExamples) srtExamples.addEventListener('change', (e) => loadExample(e.target.value));
 
     const btnGenerate = domElements.btnGenerate;
-    if (btnGenerate) btnGenerate.addEventListener('click', () => handleGenerateClick());
+    if (btnGenerate) btnGenerate.addEventListener('click', () => {
+        if (isPatchworkOpen()) closePatchworkBoard();
+        handleGenerateClick();
+    });
 
     const btnGenPatchwork = domElements.btnGenPatchwork;
     if (btnGenPatchwork) btnGenPatchwork.addEventListener('click', () => { if (!isPatchworkOpen()) generatePatchwork(); });

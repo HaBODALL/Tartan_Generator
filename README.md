@@ -20,7 +20,7 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 * Choose up to 8 colors from the 137 SRT shades.
 * History of the last 50 patterns in a strip under the pattern, and undo.
 
-**Bring a pattern in** (*Import* menu in the top bar; *New pattern* creates one)
+**Bring a pattern in** (*Import* menu in the top bar; *Generate* creates a random one, and its arrow starts from an image)
 * Type or paste an SRT threadcount (`R/72 B8 K12 ...`) in the bar under the pattern, which also shows the code of the current pattern: `Enter` applies, `Esc` puts the code back. Colors already there keep their shade. Or load one of the examples.
 * Reopen a text file written by the *Details* export, with its exact shades and rendering settings.
 * Open a shared link.

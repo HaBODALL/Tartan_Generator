@@ -20,7 +20,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 * Choix de 8 couleurs au plus parmi les 137 nuances SRT.
 * Historique des 50 derniers motifs en bande sous le motif, et annulation.
 
-**Reprendre un motif** (menu *Importer* de la barre du haut ; *Nouveau motif* en crée un)
+**Reprendre un motif** (menu *Importer* de la barre du haut ; *Générer* en crée un au hasard, et sa flèche part d'une image)
 * Taper ou coller un code SRT (`R/72 B8 K12 ...`) dans la barre sous le motif, qui affiche aussi le code du motif courant : `Entrée` valide, `Échap` remet le code. Les couleurs déjà présentes gardent leur nuance. Ou charger un exemple.
 * Rouvrir un fichier texte produit par l'export *Détails*, avec ses teintes exactes et ses réglages de rendu.
 * Ouvrir un lien partagé.

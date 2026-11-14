@@ -30,17 +30,20 @@ async function choose(menuButton, item, file) {
 async function run() {
   const vw = document.documentElement.clientWidth;
   check('viewport ' + vw, true);
-  check('Nouveau motif: random, image', ids('menu-new') === 'menu-new-random,menu-new-image', ids('menu-new'));
+  check('Générer arrow: from an image; random is Générer itself', ids('menu-new') === 'menu-new-image' && $('btn-generate').textContent.trim() === 'Générer', ids('menu-new'));
   check('Importer: SRT, known tartan, tartan photo, text file', ids('menu-import') === 'menu-new-srt,menu-new-example,btn-import-photo,btn-import-file', ids('menu-import'));
   check('Enregistrer / partager starts with the link', ids('menu-export').split(',').filter(id => !['btn-patchwork-png', 'btn-generate-patchwork-zip'].includes(id))[0] === 'btn-share-link');
   check('no separate link button in the bar', !!$('btn-share-link').closest('#menu-export') && !document.querySelector('.header-btn'));
-  for (const id of ['btn-menu-new', 'btn-menu-import', 'btn-menu-export']) {
+  for (const id of ['btn-menu-import', 'btn-menu-export']) {
     const r = $(id).getBoundingClientRect();
     check(id + ' in the bar, one line', r.right <= vw && r.left >= 0 && r.height < 40 && r.bottom <= 50, JSON.stringify([r.left, r.right, r.height]));
   }
   const labels = ['btn-menu-new', 'btn-menu-import', 'btn-menu-export'].map(id => $(id).innerText.replace(/\s+/g, ' ').trim());
-  if (vw > 1180) check('long labels on wide screens', labels[0].startsWith('Nouveau motif') && labels[2].startsWith('Enregistrer / partager'), labels.join(' | '));
-  else check('short labels', labels[0].startsWith('Nouveau') && !labels[0].includes('motif') && labels[2].startsWith('Enregistrer') && !labels[2].includes('partager'), labels.join(' | '));
+  if (vw > 1180) check('long labels on wide screens', labels[1].startsWith('Importer') && labels[2].startsWith('Enregistrer / partager'), labels.join(' | '));
+  else check('short labels', labels[2].startsWith('Enregistrer') && !labels[2].includes('partager'), labels.join(' | '));
+  { const a = $('btn-generate').getBoundingClientRect(), b = $('btn-menu-new').getBoundingClientRect(), u = $('btn-undo').getBoundingClientRect();
+    check('Générer, its arrow and Annuler side by side', a.width > 0 && b.left >= a.right - 1 && u.left >= b.right - 1 && Math.abs(a.top - u.top) < 12 && u.right <= vw, JSON.stringify([a.left, a.right, b.left, u.left, u.right])); }
+  check('one main action only', document.querySelectorAll('.btn-generate').length === 2 && [...document.querySelectorAll('.btn-generate')].filter(b => b.getClientRects().length).length === 1);
   check('no horizontal overflow', document.documentElement.scrollWidth <= vw);
   for (const [btn, list] of [['btn-menu-new', 'menu-new'], ['btn-menu-import', 'menu-import'], ['btn-menu-export', 'menu-export']]) {
     $(btn).click();
@@ -78,7 +81,7 @@ async function run() {
 
   setLanguage('en');
   const en = ['btn-menu-new', 'btn-menu-import', 'btn-menu-export'].map(id => $(id).innerText.replace(/\s+/g, ' ').trim());
-  check('English', en[0].startsWith('New') && en[1].startsWith('Import') && en[2].startsWith('Save') && $('btn-share-link').textContent.includes('Copy the link') && $('menu-new-example').textContent === 'A known tartan (examples)', en.join(' | '));
+  check('English', $('btn-generate').textContent.trim() === 'Generate' && en[1].startsWith('Import') && en[2].startsWith('Save') && $('btn-share-link').textContent.includes('Copy the link') && $('menu-new-example').textContent === 'A known tartan (examples)', en.join(' | '));
   check('English fits', document.documentElement.scrollWidth <= vw && $('btn-menu-export').getBoundingClientRect().right <= vw);
   setLanguage('fr');
   check('no alert', alerts.length === 0);

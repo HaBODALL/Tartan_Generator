@@ -1,4 +1,4 @@
-// Redesign phase 2: the side panel in three tabs under a fixed Générer block.
+// The side panel in three tabs; Générer stays reachable from any of them.
 window.alerts = [];
 window.alert = m => window.alerts.push(m);
 const results = [];
@@ -21,7 +21,7 @@ async function run() {
   check('Motif: examples, structure', ['srt-examples', 'in-stripes'].every(id => $('panel-pattern').contains($(id))));
   check('Couleurs: palette, readability', ['color-list', 'readability-list', 'vision-select'].every(id => $('panel-colors').contains($(id))));
   check('Tissu: yarn, relief, irregularity, width', ['thread-type', 'effect-relief', 'yarn-irregular', 'real-width'].every(id => $('panel-fabric').contains($(id))));
-  check('Générer and locks above the tabs', !$('btn-generate').closest('.tab-panel') && !$('lock-colors').closest('.tab-panel'));
+  check('locks above the tabs, Générer out of the panel', !$('sidebar').contains($('btn-generate')) && !$('lock-colors').closest('.tab-panel') && $('lock-colors').closest('.panel-top') !== null);
   // Mouse
   $('tab-colors').click();
   check('Couleurs selected', state() === '010/010', state());
@@ -45,7 +45,7 @@ async function run() {
   sb.scrollTop = sb.scrollHeight;
   await sleep(50);
   const g = $('btn-generate').getBoundingClientRect(), s = sb.getBoundingClientRect();
-  check('Générer visible after scrolling', g.top >= s.top - 1 && g.bottom <= s.bottom && document.elementFromPoint(g.left + g.width / 2, g.top + g.height / 2)?.closest('#btn-generate') !== null, JSON.stringify([g.top, s.top]));
+  check('Générer visible after scrolling', g.width > 0 && g.top >= 0 && g.bottom <= window.innerHeight + 1 && document.elementFromPoint(g.left + g.width / 2, g.top + g.height / 2)?.closest('#btn-generate') !== null, JSON.stringify([g.top, s.top]));
   const id = generationID;
   $('btn-generate').click();
   check('Générer works from Tissu', generationID !== id && state() === '001/001');
