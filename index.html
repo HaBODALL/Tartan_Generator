@@ -443,7 +443,6 @@
     }
 
     /* PALETTE LIST */
-    #color-list { display: flex; flex-direction: column; gap: 3px; border: 1px solid var(--line); padding: 5px; background: var(--bg-app); border-radius: 4px; min-height: 50px;}
     .stripe-row { display: flex; align-items: center; background: var(--bg-panel); padding: 3px; border-radius: 3px;}
     .stripe-color { width: 18px; height: 18px; border-radius: 2px; margin-right: 5px; border: 1px solid var(--line-strong); }
     .stripe-select { flex-grow: 1; background: var(--bg-control); color: var(--text); border: none; font-size: 11px; padding: 2px; cursor: pointer;}
@@ -530,6 +529,9 @@
     .ribbon-stripe:hover { filter: brightness(1.12); }
     .ribbon-stripe:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     .ribbon-stripe[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--text-strong), inset 0 0 0 4px var(--bg-app); }
+    /* A kept stripe: a bar along its foot, in its ink */
+    .ribbon-stripe.locked::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: currentColor; }
+    .ribbon-lock[aria-pressed="true"] { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--on-accent); }
     .ribbon-stripe.pivot::before { content: ""; position: absolute; top: 0; left: 50%; margin-left: -4px; border: 4px solid transparent; border-top-color: currentColor; }
     .ribbon-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 6px; padding: 0 10px; font-size: 12px; color: var(--text); }
     .ribbon-editor[hidden] { display: none; }
@@ -541,6 +543,19 @@
     .ribbon-color:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .ribbon-editor .srt-bar-btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .ribbon-close { margin-left: auto; }
+    .ribbon-palette { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; padding: 0 10px; font-size: 12px; }
+    .ribbon-palette[hidden] { display: none; }
+    .ribbon-palette-note { color: var(--text-soft); font-size: 11px; }
+    .palette-chips { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+    .palette-item { position: relative; display: inline-flex; }
+    .palette-chip { width: 24px; height: 24px; border: 1px solid var(--line-strong); border-radius: 4px; padding: 0; cursor: pointer; }
+    .palette-chip:focus-visible, .palette-remove:focus-visible, .palette-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .palette-remove { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--bg-panel); color: var(--text); font-size: 11px; line-height: 13px; padding: 0; cursor: pointer; opacity: 0; }
+    .palette-item:hover .palette-remove, .palette-item:focus-within .palette-remove { opacity: 1; }
+    .palette-add { width: 24px; height: 24px; border: 1px dashed var(--line-strong); border-radius: 4px; background: var(--bg-control); color: var(--text-strong); padding: 0; cursor: pointer; }
+    @media (hover: none) { .palette-remove { opacity: 1; } }
+    .ribbon-track { touch-action: none; }
+    .ribbon-track.dragging .ribbon-stripe { cursor: grabbing; }
     .srt-bar { position: relative; display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 10px; background: var(--bg-app); border-top: 1px solid var(--line); flex-shrink: 0; }
     .srt-bar-label { color: var(--text-soft); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
     .srt-help { border-bottom: 1px dashed var(--line-strong); cursor: pointer; }
@@ -1012,7 +1027,12 @@
     <!-- Stripe ribbon: the stripes of the sett to scale; a click on one opens its editing bar -->
     <div class="stripe-ribbon studio-only" id="stripe-ribbon">
         <div class="ribbon-track" id="ribbon-track" role="group" data-i18n-label="ribbon_label" aria-label="Bandes du motif" aria-describedby="ribbon-hint"></div>
-        <p id="ribbon-hint" class="sr-only" data-i18n="ribbon_hint">Cliquez une bande pour la modifier. Clavier : flèches pour choisir, Maj et flèches pour déplacer, plus et moins pour les fils, Suppr pour retirer.</p>
+        <div class="ribbon-palette" id="ribbon-palette" role="group" aria-labelledby="ribbon-palette-label">
+            <span class="ribbon-which" id="ribbon-palette-label" data-i18n="palette_label">Palette</span>
+            <div class="palette-chips" id="color-list"></div>
+            <span class="ribbon-palette-note" data-i18n="palette_note">Les couleurs de Générer. Cliquez une bande pour la modifier.</span>
+        </div>
+        <p id="ribbon-hint" class="sr-only" data-i18n="ribbon_hint">Cliquez une bande pour la modifier, ou faites-la glisser pour la déplacer. Clavier : flèches pour choisir, Maj et flèches pour déplacer, plus et moins pour les fils, Suppr pour retirer.</p>
         <div class="ribbon-editor" id="ribbon-editor" role="group" aria-labelledby="ribbon-which" hidden>
             <span class="ribbon-which" id="ribbon-which"></span>
             <button type="button" class="srt-bar-btn" id="ribbon-left" data-i18n-title="ribbon_left" data-i18n-label="ribbon_left" title="Déplacer vers la gauche" aria-label="Déplacer vers la gauche"><span aria-hidden="true">◀</span></button>
@@ -1021,7 +1041,9 @@
             <button type="button" class="srt-bar-btn" id="ribbon-more" data-i18n-title="ribbon_more" data-i18n-label="ribbon_more" title="2 fils de plus" aria-label="2 fils de plus"><span aria-hidden="true">+</span></button>
             <button type="button" class="srt-bar-btn" id="ribbon-right" data-i18n-title="ribbon_right" data-i18n-label="ribbon_right" title="Déplacer vers la droite" aria-label="Déplacer vers la droite"><span aria-hidden="true">▶</span></button>
             <span class="ribbon-colors" id="ribbon-colors" role="group" data-i18n-label="ribbon_colors" aria-label="Couleur"></span>
-            <button type="button" class="srt-bar-btn" id="ribbon-dup" data-i18n="ribbon_dup">Dupliquer</button>
+            <button type="button" class="srt-bar-btn ribbon-lock" id="ribbon-lock" aria-pressed="false" data-i18n-title="ribbon_lock_title" title="Générer garde cette bande : sa place, sa couleur et ses fils"><span aria-hidden="true">🔒</span> <span data-i18n="ribbon_lock">Garder</span></button>
+            <button type="button" class="srt-bar-btn" id="ribbon-shade" data-i18n="ribbon_shade" data-i18n-title="ribbon_shade_title" title="Une des 137 nuances du Register pour cette bande">Nuances…</button>
+            <button type="button" class="srt-bar-btn" id="ribbon-add" data-i18n="ribbon_add" data-i18n-title="ribbon_add_title" title="Une nouvelle bande à droite, d'une autre couleur">Ajouter</button>
             <button type="button" class="srt-bar-btn" id="ribbon-del" data-i18n="ribbon_del">Retirer</button>
             <button type="button" class="srt-bar-btn ribbon-close" id="ribbon-close" data-i18n-title="ribbon_close" data-i18n-label="ribbon_close" title="Fermer" aria-label="Fermer"><span aria-hidden="true">✕</span></button>
         </div>
@@ -1061,8 +1083,7 @@
 
         <div class="panel-tabs" role="tablist" data-i18n-label="panel_tabs" aria-label="Sections du panneau">
           <button type="button" class="panel-tab" role="tab" id="tab-pattern" aria-controls="panel-pattern" aria-selected="true" tabindex="0"><span data-i18n="tab_pattern">Motif</span></button>
-          <button type="button" class="panel-tab" role="tab" id="tab-colors" aria-controls="panel-colors" aria-selected="false" tabindex="-1"><span data-i18n="tab_colors">Couleurs</span> <span class="tab-badge" id="tab-colors-badge" aria-hidden="true"></span></button>
-          <button type="button" class="panel-tab" role="tab" id="tab-fabric" aria-controls="panel-fabric" aria-selected="false" tabindex="-1"><span data-i18n="tab_fabric">Tissu</span></button>
+          <button type="button" class="panel-tab" role="tab" id="tab-fabric" aria-controls="panel-fabric" aria-selected="false" tabindex="-1"><span data-i18n="tab_fabric">Tissu</span> <span class="tab-badge" id="tab-fabric-badge" aria-hidden="true"></span></button>
         </div>
       </div>
 
@@ -1147,36 +1168,6 @@
 
       </div>
 
-      <div class="tab-panel" role="tabpanel" id="panel-colors" aria-labelledby="tab-colors" hidden>
-<!-- SECTION: PALETTE -->
-      <details open>
-  <summary data-i18n="sec_palette">Palette de couleurs sélectionnées (Max 8)</summary>
-  <div class="details-content">
-
-      <div id="color-list"></div>
-
-        </div>
-</details>
-
-<details>
-  <summary><span data-i18n="sec_readability">Lisibilité des couleurs</span> <span id="readability-badge"></span></summary>
-  <div class="details-content">
-      <div id="readability-list" class="readability-list" aria-live="polite"></div>
-      <div class="control-row">
-          <label for="vision-select" data-i18n="lbl_vision">Simuler la vision</label>
-          <select id="vision-select" class="patchwork-select">
-              <option value="normal" data-i18n="vision_normal">Normale</option>
-              <option value="protan" data-i18n="vision_protan">Protanopie (rouge)</option>
-              <option value="deuter" data-i18n="vision_deuter">Deutéranopie (vert)</option>
-              <option value="tritan" data-i18n="vision_tritan">Tritanopie (bleu)</option>
-          </select>
-      </div>
-      <p class="read-note" data-i18n="note_vision">À l'écran seulement : les exports gardent les vraies couleurs.</p>
-  </div>
-</details>
-
-      </div>
-
       <div class="tab-panel" role="tabpanel" id="panel-fabric" aria-labelledby="tab-fabric" hidden>
 <!-- SECTION: ZOOM & ECHELLE -->
       <details open>
@@ -1229,6 +1220,23 @@
       </div>
 
         </div>
+</details>
+
+<details>
+  <summary><span data-i18n="sec_readability">Lisibilité des couleurs</span> <span id="readability-badge"></span></summary>
+  <div class="details-content">
+      <div id="readability-list" class="readability-list" aria-live="polite"></div>
+      <div class="control-row">
+          <label for="vision-select" data-i18n="lbl_vision">Simuler la vision</label>
+          <select id="vision-select" class="patchwork-select">
+              <option value="normal" data-i18n="vision_normal">Normale</option>
+              <option value="protan" data-i18n="vision_protan">Protanopie (rouge)</option>
+              <option value="deuter" data-i18n="vision_deuter">Deutéranopie (vert)</option>
+              <option value="tritan" data-i18n="vision_tritan">Tritanopie (bleu)</option>
+          </select>
+      </div>
+      <p class="read-note" data-i18n="note_vision">À l'écran seulement : les exports gardent les vraies couleurs.</p>
+  </div>
 </details>
 
       </div>

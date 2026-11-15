@@ -102,7 +102,7 @@ If the application shows a blank screen or a button does not work:
 | View | `setZoom`, `zoomViewAt`, `panView`, `resetView`, `viewX` / `viewY` |
 | Top bar: Generate and its arrow, Import, Save / share | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener`, `pendingImageMode` |
 | Studio / Board modes | `syncModeSwitch`, `generatePatchwork`, `closePatchworkBoard` |
-| Side panel tabs (Motif, Couleurs, Tissu) | `setupTabs`, `selectTab`, `currentTab`, `PANEL_TABS` |
+| Side panel tabs (Motif, Tissu; the palette lives under the ribbon, the readability in Tissu) | `setupTabs`, `selectTab`, `currentTab`, `PANEL_TABS` |
 | Saving and history | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |
 | Loading a whole pattern | `applyLoadedPattern` (shared link, text file, image) |
 | Shared link | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |
@@ -111,7 +111,7 @@ If the application shows a blank screen or a button does not work:
 | Weaving sheet | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
 | Register application | `REGISTER` (the Register's figures and links, read on 15 November 2026: update them there), `registerOrder`, `prepareRegisterPattern`, `registerColours`, `comparePalette`, `openRegisterGuide`, `renderRegisterGuide`, draft in localStorage `tartanRegisterDraft` |
 | Product views (set aside: `PRODUCT_VIEWS = false` hides the view switch; `setProductViews(true)` shows it, as the browser suites do) | `setProductViews`, `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` |
-| Stripe ribbon | `renderStripeRibbon` (called by `updateGeneratedListUI` and `redrawTartan`, so it follows every change, the zoom and the panning; blocks are placed from `viewX` and the zoom, relative to the canvas), `ribbonSequence`, `renderRibbonEditor`, `editRibbon` (one history step per burst of quick changes), `bindStripeRibbon`, `inkOn` |
+| Stripe ribbon | `renderStripeRibbon` (called by `updateGeneratedListUI` and `redrawTartan`, so it follows every change, the zoom and the panning; blocks are placed from `viewX` and the zoom, relative to the canvas), `ribbonSequence`, `renderRibbonEditor`, `editRibbon` (one history step per burst of quick changes), `bindStripeRibbon` (also the drag), `mergeSameNeighbours` (after every edit and at the end of a drag), `ribbonAdd`, `ribbonShade`, `inkOn`; locks: `locked` on a stripe, put back by `applyStripeLocks` in `handleGenerateClick` |
 | SRT bar | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Readability | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Photo estimate | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
@@ -228,7 +228,7 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Vue | `setZoom`, `zoomViewAt`, `panView`, `resetView`, `viewX` / `viewY` |
 | Barre du haut : Générer et sa flèche, Importer, Enregistrer / partager | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener`, `pendingImageMode` |
 | Modes Atelier / Planche | `syncModeSwitch`, `generatePatchwork`, `closePatchworkBoard` |
-| Onglets du panneau (Motif, Couleurs, Tissu) | `setupTabs`, `selectTab`, `currentTab`, `PANEL_TABS` |
+| Onglets du panneau (Motif, Tissu ; la palette est sous le ruban, la lisibilité dans Tissu) | `setupTabs`, `selectTab`, `currentTab`, `PANEL_TABS` |
 | Sauvegarde et historique | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |
 | Charger un motif complet | `applyLoadedPattern` (lien, fichier texte, image) |
 | Lien partagé | `encodeSharedPattern`, `decodeSharedPattern`, `openSharedLink` |
@@ -237,7 +237,7 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Fiche de tissage | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
 | Demande au Register | `REGISTER` (chiffres et liens du Register, lus le 15 novembre 2026 : les mettre à jour là), `registerOrder`, `prepareRegisterPattern`, `registerColours`, `comparePalette`, `openRegisterGuide`, `renderRegisterGuide`, brouillon en localStorage `tartanRegisterDraft` |
 | Vues produit (mises de côté : `PRODUCT_VIEWS = false` masque le sélecteur de vue ; `setProductViews(true)` le montre, comme le font les suites navigateur) | `setProductViews`, `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` |
-| Ruban des bandes | `renderStripeRibbon` (appelé par `updateGeneratedListUI` et `redrawTartan` : il suit chaque changement, le zoom et le déplacement ; les blocs sont placés d'après `viewX` et le zoom, par rapport au canevas), `ribbonSequence`, `renderRibbonEditor`, `editRibbon` (un seul pas d'historique par rafale de changements rapides), `bindStripeRibbon`, `inkOn` |
+| Ruban des bandes | `renderStripeRibbon` (appelé par `updateGeneratedListUI` et `redrawTartan` : il suit chaque changement, le zoom et le déplacement ; les blocs sont placés d'après `viewX` et le zoom, par rapport au canevas), `ribbonSequence`, `renderRibbonEditor`, `editRibbon` (un seul pas d'historique par rafale de changements rapides), `bindStripeRibbon` (et le glisser), `mergeSameNeighbours` (après chaque modification et à la fin d'un glisser), `ribbonAdd`, `ribbonShade`, `inkOn` ; cadenas : `locked` sur une bande, remise en place par `applyStripeLocks` dans `handleGenerateClick` |
 | Barre SRT | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Lisibilité | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Estimation depuis une photo | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |

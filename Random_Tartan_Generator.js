@@ -601,7 +601,7 @@ const TRANSLATIONS = {
         reg_todo_sample: "Une fois tissé, un échantillon d'au moins 18 × 23 cm peut lui être envoyé.",
         reg_disclaimer: "Cet outil ne vérifie pas l'originalité du motif et n'envoie rien : la demande se fait sur le site du Register.",
         ribbon_label: "Bandes du motif",
-        ribbon_hint: "Cliquez une bande pour la modifier. Clavier : flèches pour choisir, Maj et flèches pour déplacer, plus et moins pour les fils, Suppr pour retirer.",
+        ribbon_hint: "Cliquez une bande pour la modifier, ou faites-la glisser pour la déplacer. Clavier : flèches pour choisir, Maj et flèches pour déplacer, plus et moins pour les fils, Suppr pour retirer.",
         ribbon_stripe: "Bande %i sur %n : %c, %t fils",
         ribbon_pivot: "pivot",
         ribbon_which: "Bande %i sur %n · %c",
@@ -614,6 +614,16 @@ const TRANSLATIONS = {
         ribbon_dup: "Dupliquer",
         ribbon_del: "Retirer",
         ribbon_close: "Fermer",
+        ribbon_lock: "Garder",
+        ribbon_lock_title: "Générer garde cette bande : sa place, sa couleur et ses fils",
+        ribbon_locked: "gardée",
+        palette_label: "Palette",
+        palette_note: "Les couleurs de Générer. Cliquez une bande pour la modifier.",
+        palette_change: "Changer la nuance de %",
+        ribbon_shade: "Nuances…",
+        ribbon_shade_title: "Une des 137 nuances du Register pour cette bande",
+        ribbon_add: "Ajouter",
+        ribbon_add_title: "Une nouvelle bande à droite, d'une autre couleur",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -993,7 +1003,7 @@ const TRANSLATIONS = {
         reg_todo_sample: "Once woven, a sample of at least 18 × 23 cm can be sent to it.",
         reg_disclaimer: "This tool does not check whether the design is original and sends nothing: the application is made on the Register's site.",
         ribbon_label: "Stripes of the sett",
-        ribbon_hint: "Click a stripe to change it. Keyboard: arrows to choose, Shift and arrows to move, plus and minus for threads, Delete to remove.",
+        ribbon_hint: "Click a stripe to change it, or drag it to move it. Keyboard: arrows to choose, Shift and arrows to move, plus and minus for threads, Delete to remove.",
         ribbon_stripe: "Stripe %i of %n: %c, %t threads",
         ribbon_pivot: "pivot",
         ribbon_which: "Stripe %i of %n · %c",
@@ -1006,6 +1016,16 @@ const TRANSLATIONS = {
         ribbon_dup: "Duplicate",
         ribbon_del: "Remove",
         ribbon_close: "Close",
+        ribbon_lock: "Keep",
+        ribbon_lock_title: "Generate keeps this stripe: its place, colour and threads",
+        ribbon_locked: "kept",
+        palette_label: "Palette",
+        palette_note: "The colours Generate uses. Click a stripe to change it.",
+        palette_change: "Change the shade of %",
+        ribbon_shade: "Shades…",
+        ribbon_shade_title: "One of the 137 Register shades for this stripe",
+        ribbon_add: "Add",
+        ribbon_add_title: "A new stripe on the right, in another colour",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -1211,6 +1231,7 @@ function cacheDomElements() {
     domElements.ribbonWhich = document.getElementById('ribbon-which');
     domElements.ribbonCount = document.getElementById('ribbon-count');
     domElements.ribbonColors = document.getElementById('ribbon-colors');
+    domElements.ribbonPalette = document.getElementById('ribbon-palette');
     domElements.btnRegisterGuide = document.getElementById('btn-register-guide');
     domElements.registerModal = document.getElementById('register-modal');
     domElements.registerBody = document.getElementById('register-body');
@@ -2205,7 +2226,7 @@ function updateHistoryList() {
 
 // Expose to HTML
 window.undo = undo;
-function openColorPicker(editIndex = -1) {
+function openColorPicker(editIndex = -1, onPick = null) {
     let t = TRANSLATIONS[currentLang];
     let existing = document.getElementById('picker-modal');
     if(existing) existing.remove();
@@ -2214,7 +2235,7 @@ function openColorPicker(editIndex = -1) {
     modal.id = 'picker-modal';
     modal.className = 'picker-modal';
 
-    let titleText = (editIndex >= 0) ? t.lbl_mod_nuance : t.lbl_add_nuance;
+    let titleText = onPick ? t.ribbon_shade_title : (editIndex >= 0) ? t.lbl_mod_nuance : t.lbl_add_nuance;
     let title = document.createElement('div');
     title.innerText = titleText;
     title.style.cssText = "color:var(--text-strong); margin-bottom:10px; font-weight:bold; text-align:center;";
@@ -2235,6 +2256,11 @@ function openColorPicker(editIndex = -1) {
         chip.setAttribute('aria-label', label);
 
         const onChipSelect = () => {
+            if (onPick) {
+                document.body.removeChild(modal);
+                onPick(srtIndex);
+                return;
+            }
             if(editIndex >= 0) {
                 modifyPalette(editIndex, srtIndex);
             } else {
@@ -2279,83 +2305,38 @@ function updateUserPaletteUI() {
     if(!listContainer) return;
 
     listContainer.textContent = '';
-    let div = document.createElement('div');
-    div.style.fontSize = '10px';
-    div.style.color = 'var(--text-soft)';
-    div.style.marginBottom = '5px';
-    listContainer.appendChild(div);
-
-    let paletteRow = document.createElement('div');
-    paletteRow.style.display = 'flex';
-    paletteRow.style.flexWrap = 'wrap';
-    paletteRow.style.gap = '8px';
-    paletteRow.style.marginBottom = '15px';
-
+    // Compact chips under the ribbon: a click changes the shade, × removes it, + adds one
     userPalette.forEach((p, idx) => {
-        let itemWrapper = document.createElement('div');
-        itemWrapper.style.cssText = "display:flex; flex-direction:column; align-items:center; width:34px;";
-
-        let chip = document.createElement('div');
-        chip.style.width = '32px';
-        chip.style.height = '32px';
-        chip.style.backgroundColor = p.hex;
-        chip.style.border = '1px solid var(--line-strong)';
-        chip.style.borderRadius = '4px';
-        chip.style.cursor = 'pointer';
-        chip.setAttribute('role', 'button');
-        chip.setAttribute('tabindex', '0');
-
-        let label = formatColorLabel(p) + "\nClick to change";
-        chip.title = label;
-        chip.setAttribute('aria-label', `Change color ${formatColorLabel(p)}`);
-
-        chip.onclick = () => openColorPicker(idx);
-        chip.onkeydown = (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                openColorPicker(idx);
-            }
-        };
-
-        let delBtn = document.createElement('div');
-        delBtn.textContent = "\u00D7";
-        delBtn.style.cssText = "color:var(--text-soft); font-size:16px; font-weight:bold; cursor:pointer; margin-top:-2px; line-height:1;";
-        delBtn.title = TRANSLATIONS[currentLang].title_remove_color;
-        delBtn.setAttribute('role', 'button');
-        delBtn.setAttribute('tabindex', '0');
-        delBtn.setAttribute('aria-label', TRANSLATIONS[currentLang].label_remove_color.replace('%', formatColorLabel(p)));
-        delBtn.onmouseenter = () => delBtn.style.color = "var(--accent-text)";
-        delBtn.onmouseleave = () => delBtn.style.color = "var(--text-soft)";
-
-        const onDelSelect = () => removeFromPalette(idx);
-        delBtn.onclick = onDelSelect;
-        delBtn.onkeydown = (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onDelSelect();
-            }
-        };
-
-        itemWrapper.appendChild(chip);
-        itemWrapper.appendChild(delBtn);
-        paletteRow.appendChild(itemWrapper);
+        const item = document.createElement('span');
+        item.className = 'palette-item';
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'palette-chip';
+        chip.style.background = p.hex;
+        chip.title = t.palette_change.replace('%', formatColorLabel(p));
+        chip.setAttribute('aria-label', chip.title);
+        chip.addEventListener('click', () => openColorPicker(idx));
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'palette-remove';
+        del.textContent = '×';
+        del.title = t.title_remove_color;
+        del.setAttribute('aria-label', t.label_remove_color.replace('%', formatColorLabel(p)));
+        del.addEventListener('click', () => removeFromPalette(idx));
+        item.append(chip, del);
+        listContainer.appendChild(item);
     });
-
     if (userPalette.length < 8) {
-        let addWrapper = document.createElement('div');
-        addWrapper.style.cssText = "display:flex; flex-direction:column; align-items:center; width:34px;";
-
-        let btnPlus = document.createElement('button');
-        btnPlus.innerText = "+";
-        btnPlus.style.cssText = "width:32px; height:32px; background:var(--bg-control); color:var(--text-strong); border:1px dashed var(--line-strong); cursor:pointer; border-radius:4px;";
-        btnPlus.setAttribute('aria-label', 'Add a color to the palette');
-        btnPlus.onclick = () => openColorPicker(-1);
-
-        addWrapper.appendChild(btnPlus);
-        paletteRow.appendChild(addWrapper);
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'palette-add';
+        add.textContent = '+';
+        add.title = t.lbl_add_nuance;
+        add.setAttribute('aria-label', t.lbl_add_nuance);
+        add.addEventListener('click', () => openColorPicker(-1));
+        listContainer.appendChild(add);
     }
-
-    listContainer.appendChild(paletteRow);
+    if (typeof renderRibbonEditor === 'function' && ribbonSelected !== null) renderRibbonEditor();
 }
 
 function updateGeneratedListUI() {
@@ -2465,8 +2446,8 @@ function renderStripeRibbon() {
         const pivot = symmetric && (i === 0 || i === n - 1);
         return {
             pivot,
-            title: `${s.code} ${s.count}${pivot ? ' · ' + t.ribbon_pivot : ''}`,
-            aria: t.ribbon_stripe.replace('%i', i + 1).replace('%n', n).replace('%c', s.code).replace('%t', s.count) + (pivot ? ', ' + t.ribbon_pivot : ''),
+            title: `${s.code} ${s.count}${pivot ? ' · ' + t.ribbon_pivot : ''}${s.locked ? ' · ' + t.ribbon_locked : ''}`,
+            aria: t.ribbon_stripe.replace('%i', i + 1).replace('%n', n).replace('%c', s.code).replace('%t', s.count) + (pivot ? ', ' + t.ribbon_pivot : '') + (s.locked ? ', ' + t.ribbon_locked : ''),
             ink: inkOn(s.hex),
         };
     });
@@ -2484,7 +2465,7 @@ function renderStripeRibbon() {
             if (right - left < 0.5) continue;
             const b = document.createElement('button');
             b.type = 'button';
-            b.className = 'ribbon-stripe' + (labels[i].pivot ? ' pivot' : '');
+            b.className = 'ribbon-stripe' + (labels[i].pivot ? ' pivot' : '') + (s.locked ? ' locked' : '');
             b.dataset.index = i;
             b.style.left = left.toFixed(1) + 'px';
             b.style.width = (right - left).toFixed(1) + 'px';
@@ -2521,6 +2502,7 @@ function renderRibbonEditor() {
     if (!editor) return;
     const i = ribbonSelected;
     editor.hidden = i === null;
+    if (domElements.ribbonPalette) domElements.ribbonPalette.hidden = i !== null;
     if (i === null) return;
     const t = TRANSLATIONS[currentLang];
     const s = tartanStripes[i];
@@ -2532,6 +2514,7 @@ function renderRibbonEditor() {
     document.getElementById('ribbon-less').disabled = s.count <= 1;
     document.getElementById('ribbon-more').disabled = s.count >= RIBBON_MAX_COUNT;
     document.getElementById('ribbon-del').disabled = n <= 2;
+    document.getElementById('ribbon-lock').setAttribute('aria-pressed', String(!!s.locked));
 
     const colours = domElements.ribbonColors;
     const hadFocus = colours.contains(document.activeElement);
@@ -2563,13 +2546,46 @@ function selectRibbonStripe(i, focus = true, x = null) {
 }
 const ribbonCentre = el => parseFloat(el.style.left) + parseFloat(el.style.width) / 2;
 
+// Two neighbours of one colour read as one stripe: they become one, their threads added. A pivot
+// shows once and its neighbour twice (on both sides), so a pivot takes twice the neighbour's threads.
+// Returns the stripes and where the given index went. Never fewer than two stripes.
+function mergeSameNeighbours(stripes, symmetric, index = null) {
+    const same = (a, b) => a.hex.toUpperCase() === b.hex.toUpperCase();
+    const n = stripes.length;
+    const list = [];
+    const where = [];
+    stripes.forEach((s, i) => {
+        const last = list[list.length - 1];
+        if (last && same(last, s)) {
+            // Threads as the cloth shows them: a pivot once, every other stripe on both sides of it
+            const lastIsPivot = symmetric && list.length === 1;
+            const isPivot = symmetric && i === n - 1;
+            if (lastIsPivot && !isPivot) last.count += 2 * s.count;
+            else if (isPivot && !lastIsPivot) last.count = s.count + 2 * last.count;
+            else last.count += s.count;
+            if (s.locked) last.locked = true;
+        } else list.push({ ...s });
+        where.push(list.length - 1);
+    });
+    // A repeating sett loops: its last stripe touches its first one
+    if (!symmetric && list.length > 2 && same(list[0], list[list.length - 1])) {
+        const last = list.pop();
+        list[0].count += last.count;
+        if (last.locked) list[0].locked = true;
+        for (let k = 0; k < where.length; k++) if (where[k] === list.length) where[k] = 0;
+    }
+    return { stripes: list, index: index === null || !where.length ? null : where[Math.min(index, where.length - 1)] };
+}
+
 // One change of the stripes. Quick repeats (+, +, +) make a single step in the history.
 function editRibbon(change, burst = false) {
     const now = Date.now();
     if (!burst || now - lastRibbonEdit > RIBBON_BURST_MS) pushToHistory();
     lastRibbonEdit = burst ? now : 0;
-    const next = tartanStripes.map(s => ({ ...s }));
+    let next = tartanStripes.map(s => ({ ...s }));
     change(next);
+    const merged = mergeSameNeighbours(next, domElements.sym?.checked || false, ribbonSelected);
+    if (merged.stripes.length >= 2) { next = merged.stripes; ribbonSelected = merged.index; }
     tartanStripes = next;
     updateGeneratedListUI();
     redrawTartan();
@@ -2585,26 +2601,98 @@ function ribbonSetCount(i, value, burst) {
 function ribbonMove(i, step) {
     const j = i + step;
     if (j < 0 || j >= tartanStripes.length) return;
-    editRibbon(list => { [list[i], list[j]] = [list[j], list[i]]; });
     ribbonSelected = j;
-    renderStripeRibbon();
+    editRibbon(list => { [list[i], list[j]] = [list[j], list[i]]; });
 }
 
-function ribbonDuplicate(i) {
-    editRibbon(list => { list.splice(i + 1, 0, { ...list[i] }); });
-    selectRibbonStripe(i + 1, false);
+function ribbonAdd(i) {
+    const choices = ribbonColourChoices();
+    const around = [tartanStripes[i], tartanStripes[i + 1]].filter(Boolean).map(s => s.hex.toUpperCase());
+    const colour = choices.find(c => !around.includes(c.hex.toUpperCase()));
+    if (!colour) { showAppMessage('msg_palette_min', true); return; }
+    ribbonSelected = i + 1;
+    editRibbon(list => { list.splice(i + 1, 0, { code: colour.code, hex: colour.hex, count: Math.max(RIBBON_STEP, list[i].count) }); });
+    selectRibbonStripe(ribbonSelected, false);
+}
+
+// A shade of the Register for the chosen stripe; it joins the palette while there is room
+function ribbonShade(i) {
+    openColorPicker(-1, (srtIndex) => {
+        const c = SRT_PALETTE[srtIndex];
+        editRibbon(list => {
+            list[i] = { ...list[i], code: c.code, hex: c.hex };
+            if (userPalette.length < 8 && !userPalette.some(p => p.hex.toUpperCase() === c.hex.toUpperCase())) userPalette.push(c);
+        });
+        updateUserPaletteUI();
+        document.getElementById('ribbon-shade')?.focus();
+    });
 }
 
 function ribbonRemove(i) {
     if (tartanStripes.length <= 2) return;
+    ribbonSelected = Math.min(i, tartanStripes.length - 2);  // The stripe that takes its place, in the list after removal
     editRibbon(list => { list.splice(i, 1); });
-    selectRibbonStripe(Math.min(i, tartanStripes.length - 1), false);
+    selectRibbonStripe(ribbonSelected, false);
 }
 
 function bindStripeRibbon() {
     const track = domElements.ribbonTrack;
     if (!track) return;
+    let drag = null;
+    let dragJustEnded = false;
+    track.addEventListener('pointerdown', (e) => {
+        const b = e.target.closest('.ribbon-stripe');
+        if (!b || e.button !== 0) return;
+        drag = { index: Number(b.dataset.index), x: e.clientX, moved: false, id: e.pointerId };
+    });
+    track.addEventListener('pointermove', (e) => {
+        if (!drag || e.pointerId !== drag.id) return;
+        if (!drag.moved) {
+            if (Math.abs(e.clientX - drag.x) < 5) return;
+            drag.moved = true;
+            try { track.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+            pushToHistory();
+            track.classList.add('dragging');
+            ribbonSelected = drag.index;
+        }
+        const x = e.clientX - track.getBoundingClientRect().left;
+        for (let step = 0; step < tartanStripes.length; step++) {
+            const copies = [...track.querySelectorAll(`.ribbon-stripe[data-index="${drag.index}"]`)];
+            if (!copies.length) break;
+            const self = copies.reduce((best, el) => Math.abs(ribbonCentre(el) - x) < Math.abs(ribbonCentre(best) - x) ? el : best);
+            const right = self.nextElementSibling, left = self.previousElementSibling;
+            const target = right && x > ribbonCentre(right) ? right : left && x < ribbonCentre(left) ? left : null;
+            if (!target) break;
+            const j = Number(target.dataset.index);
+            if (j === drag.index) break;
+            const list = tartanStripes.map(s => ({ ...s }));
+            const [moving] = list.splice(drag.index, 1);
+            list.splice(j, 0, moving);
+            tartanStripes = list;
+            drag.index = j;
+            ribbonSelected = j;
+            ribbonFocusX = x;
+            updateGeneratedListUI();
+            redrawTartan();
+        }
+    });
+    const endDrag = (e) => {
+        if (!drag || e.pointerId !== drag.id) return;
+        const moved = drag.moved;
+        drag = null;
+        track.classList.remove('dragging');
+        if (!moved) return;
+        dragJustEnded = true;
+        const merged = mergeSameNeighbours(tartanStripes, domElements.sym?.checked || false, ribbonSelected);
+        if (merged.stripes.length >= 2) { tartanStripes = merged.stripes; ribbonSelected = merged.index; }
+        updateGeneratedListUI();
+        redrawTartan();
+        saveState();
+    };
+    track.addEventListener('pointerup', endDrag);
+    track.addEventListener('pointercancel', endDrag);
     track.addEventListener('click', (e) => {
+        if (dragJustEnded) { dragJustEnded = false; return; }
         const b = e.target.closest('.ribbon-stripe');
         if (b) selectRibbonStripe(Number(b.dataset.index), true, ribbonCentre(b));
     });
@@ -2637,7 +2725,9 @@ function bindStripeRibbon() {
     on('ribbon-right', i => ribbonMove(i, 1));
     on('ribbon-less', i => ribbonSetCount(i, tartanStripes[i].count - RIBBON_STEP, true));
     on('ribbon-more', i => ribbonSetCount(i, tartanStripes[i].count + RIBBON_STEP, true));
-    on('ribbon-dup', ribbonDuplicate);
+    on('ribbon-add', ribbonAdd);
+    on('ribbon-shade', ribbonShade);
+    on('ribbon-lock', i => editRibbon(list => { list[i] = { ...list[i], locked: !list[i].locked }; if (!list[i].locked) delete list[i].locked; }));
     on('ribbon-del', ribbonRemove);
     on('ribbon-close', () => { const i = ribbonSelected; ribbonSelected = null; renderStripeRibbon(); track.querySelector(`.ribbon-stripe[data-index="${i}"]`)?.focus(); });
     const count = domElements.ribbonCount;
@@ -2789,7 +2879,7 @@ function focusOpener(el) {
 }
 
 // Side panel tabs (Motif, Couleurs, Tissu): click, or arrows, Home and End on the tab row
-const PANEL_TABS = ['pattern', 'colors', 'fabric'];
+const PANEL_TABS = ['pattern', 'fabric'];
 
 function setupTabs() {
     PANEL_TABS.forEach((name, i) => {
@@ -2882,11 +2972,20 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
     }
 
     if (tartanStripes.length > 0) pushToHistory();
+    const kept = tartanStripes.map((stripe, index) => stripe.locked ? { stripe, index } : null).filter(Boolean);
 
     // If colors are NOT kept, the palette changes too, except for a settings update
     if (!keepColors && !isUpdateOnly) randomizeUserPalette();
 
     generateNewTartan(keepColors, keepStructure);
+    if (kept.length) {
+        // Their colours join the palette while there is room, so the next patterns can use them
+        paletteFromStripes(kept.map(k => k.stripe)).forEach(c => {
+            if (userPalette.length < 8 && !userPalette.some(p => p.hex.toUpperCase() === c.hex.toUpperCase())) userPalette.push(c);
+        });
+        tartanStripes = applyStripeLocks(tartanStripes, kept, userPalette);
+        updateUserPaletteUI();
+    }
     commitStructureSettings();
     showAppMessage(params?.noticeKey || null);
     redrawTartan();
@@ -2940,6 +3039,30 @@ function pickColorAvoiding(palette, previous, rand = Math.random) {
     if (choices.length === 0) choices = palette.filter(c => c.hex !== previous?.hex);
     if (choices.length === 0) choices = palette;
     return choices[Math.floor(rand() * choices.length)];
+}
+
+// Kept stripes come back at their place, with their colour and threads. A free neighbour of the
+// same colour takes another one from the palette, so that the two do not merge into one stripe.
+function applyStripeLocks(stripes, kept, palette, rand = Math.random) {
+    if (!kept.length) return stripes;
+    const out = stripes.map(s => ({ ...s }));
+    kept.forEach(({ stripe, index }) => {
+        const s = { ...stripe, locked: true };
+        if (index < out.length) out[index] = s;
+        else out.push(s);
+    });
+    const same = (a, b) => a.hex.toUpperCase() === b.hex.toUpperCase();
+    out.forEach((s, i) => {
+        if (s.locked) return;
+        const around = [out[i - 1], out[i + 1]].filter(Boolean);
+        if (!around.some(n => same(n, s))) return;
+        const choices = palette.filter(c => !around.some(n => same(n, c)));
+        if (choices.length) {
+            const c = choices[Math.floor(rand() * choices.length)];
+            out[i] = { ...s, code: c.code, hex: c.hex };
+        }
+    });
+    return out;
 }
 
 // Same widths, new colors from the palette.
@@ -4835,10 +4958,10 @@ function updateReadabilityUI() {
     }
     if (domElements.readabilityBadge) domElements.readabilityBadge.textContent = close.length > 0 ? '⚠' : '';
     // Seen from the other tabs too
-    const tabBadge = document.getElementById('tab-colors-badge');
+    const tabBadge = document.getElementById('tab-fabric-badge');
     if (tabBadge) tabBadge.textContent = close.length > 0 ? '⚠' : '';
-    const colorsTab = document.getElementById('tab-colors');
-    if (colorsTab) colorsTab.title = close.length > 0 ? t.read_close : '';
+    const fabricTab = document.getElementById('tab-fabric');
+    if (fabricTab) fabricTab.title = close.length > 0 ? t.read_close : '';
 }
 
 // The filters act on what is displayed, so the exports keep the true colors.

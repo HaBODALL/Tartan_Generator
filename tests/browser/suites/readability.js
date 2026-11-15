@@ -80,7 +80,7 @@ async function run() {
 
   // Contrast of every visible text, tab by tab and in the Planche
   const bad = [];
-  for (const tab of ['tab-pattern', 'tab-colors', 'tab-fabric']) { $(tab).click(); bad.push(...lowContrast(document.body)); }
+  for (const tab of ['tab-pattern', 'tab-fabric']) { $(tab).click(); bad.push(...lowContrast(document.body)); }
   generatePatchwork(); bad.push(...lowContrast(document.body)); closePatchworkBoard();
   check('every visible text at 4.5:1 or more', bad.length === 0, [...new Set(bad)].join(' ; '));
 
