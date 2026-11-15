@@ -523,6 +523,26 @@
 
     /* SRT bar under the pattern */
     /* Whole-pixel heights keep the pattern canvas on whole pixels */
+    /* Stripe ribbon, between the pattern and the SRT bar */
+    .stripe-ribbon { flex-shrink: 0; background: var(--bg-app); border-top: 1px solid var(--line); padding: 6px 10px 5px; }
+    .ribbon-track { display: flex; height: 28px; border: 1px solid var(--line-strong); border-radius: 4px; overflow: hidden; }
+    .ribbon-stripe { position: relative; flex: 1 1 0; min-width: 14px; border: none; padding: 0; margin: 0; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; overflow: hidden; white-space: nowrap; }
+    .ribbon-stripe:hover { filter: brightness(1.12); }
+    .ribbon-stripe:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .ribbon-stripe[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--text-strong), inset 0 0 0 4px var(--bg-app); }
+    .ribbon-stripe.pivot::before { content: ""; position: absolute; top: 0; left: 50%; margin-left: -4px; border: 4px solid transparent; border-top-color: currentColor; }
+    .ribbon-mirror { flex: 1 1 0; min-width: 3px; opacity: 0.4; }
+    .ribbon-mirror.first { box-shadow: inset 2px 0 0 var(--bg-app); }
+    .ribbon-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 6px; font-size: 12px; color: var(--text); }
+    .ribbon-editor[hidden] { display: none; }
+    .ribbon-which { color: var(--text-soft); margin-right: 4px; white-space: nowrap; }
+    .ribbon-count { width: 58px; background: var(--bg-stage); color: var(--text-strong); border: 1px solid var(--line-strong); border-radius: 4px; padding: 4px 6px; font-size: 13px; }
+    .ribbon-colors { display: inline-flex; flex-wrap: wrap; gap: 3px; margin: 0 4px; }
+    .ribbon-color { width: 20px; height: 20px; border: 1px solid var(--line-strong); border-radius: 3px; padding: 0; cursor: pointer; }
+    .ribbon-color[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--text-strong); }
+    .ribbon-color:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .ribbon-editor .srt-bar-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .ribbon-close { margin-left: auto; }
     .srt-bar { position: relative; display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 10px; background: var(--bg-app); border-top: 1px solid var(--line); flex-shrink: 0; }
     .srt-bar-label { color: var(--text-soft); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
     .srt-help { border-bottom: 1px dashed var(--line-strong); cursor: pointer; }
@@ -988,6 +1008,24 @@
                 <span id="patchwork-status" class="patchwork-status" aria-live="polite"></span>
             </div>
             <div id="patchwork-grid" class="patchwork-grid"></div>
+        </div>
+    </div>
+
+    <!-- Stripe ribbon: the stripes of the sett to scale; a click on one opens its editing bar -->
+    <div class="stripe-ribbon studio-only" id="stripe-ribbon">
+        <div class="ribbon-track" id="ribbon-track" role="group" data-i18n-label="ribbon_label" aria-label="Bandes du motif" aria-describedby="ribbon-hint"></div>
+        <p id="ribbon-hint" class="sr-only" data-i18n="ribbon_hint">Cliquez une bande pour la modifier. Clavier : flèches pour choisir, Maj et flèches pour déplacer, plus et moins pour les fils, Suppr pour retirer.</p>
+        <div class="ribbon-editor" id="ribbon-editor" role="group" aria-labelledby="ribbon-which" hidden>
+            <span class="ribbon-which" id="ribbon-which"></span>
+            <button type="button" class="srt-bar-btn" id="ribbon-left" data-i18n-title="ribbon_left" data-i18n-label="ribbon_left" title="Déplacer vers la gauche" aria-label="Déplacer vers la gauche"><span aria-hidden="true">◀</span></button>
+            <button type="button" class="srt-bar-btn" id="ribbon-less" data-i18n-title="ribbon_less" data-i18n-label="ribbon_less" title="2 fils de moins" aria-label="2 fils de moins"><span aria-hidden="true">−</span></button>
+            <input type="number" id="ribbon-count" class="ribbon-count" min="1" max="400" step="1" data-i18n-label="ribbon_count" aria-label="Fils">
+            <button type="button" class="srt-bar-btn" id="ribbon-more" data-i18n-title="ribbon_more" data-i18n-label="ribbon_more" title="2 fils de plus" aria-label="2 fils de plus"><span aria-hidden="true">+</span></button>
+            <button type="button" class="srt-bar-btn" id="ribbon-right" data-i18n-title="ribbon_right" data-i18n-label="ribbon_right" title="Déplacer vers la droite" aria-label="Déplacer vers la droite"><span aria-hidden="true">▶</span></button>
+            <span class="ribbon-colors" id="ribbon-colors" role="group" data-i18n-label="ribbon_colors" aria-label="Couleur"></span>
+            <button type="button" class="srt-bar-btn" id="ribbon-dup" data-i18n="ribbon_dup">Dupliquer</button>
+            <button type="button" class="srt-bar-btn" id="ribbon-del" data-i18n="ribbon_del">Retirer</button>
+            <button type="button" class="srt-bar-btn ribbon-close" id="ribbon-close" data-i18n-title="ribbon_close" data-i18n-label="ribbon_close" title="Fermer" aria-label="Fermer"><span aria-hidden="true">✕</span></button>
         </div>
     </div>
 

@@ -600,6 +600,20 @@ const TRANSLATIONS = {
         reg_todo_before_weaving: "Le Register conseille de déposer avant de faire tisser.",
         reg_todo_sample: "Une fois tissé, un échantillon d'au moins 18 × 23 cm peut lui être envoyé.",
         reg_disclaimer: "Cet outil ne vérifie pas l'originalité du motif et n'envoie rien : la demande se fait sur le site du Register.",
+        ribbon_label: "Bandes du motif",
+        ribbon_hint: "Cliquez une bande pour la modifier. Clavier : flèches pour choisir, Maj et flèches pour déplacer, plus et moins pour les fils, Suppr pour retirer.",
+        ribbon_stripe: "Bande %i sur %n : %c, %t fils",
+        ribbon_pivot: "pivot",
+        ribbon_which: "Bande %i sur %n · %c",
+        ribbon_left: "Déplacer vers la gauche",
+        ribbon_right: "Déplacer vers la droite",
+        ribbon_less: "2 fils de moins",
+        ribbon_more: "2 fils de plus",
+        ribbon_count: "Fils",
+        ribbon_colors: "Couleur",
+        ribbon_dup: "Dupliquer",
+        ribbon_del: "Retirer",
+        ribbon_close: "Fermer",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -978,6 +992,20 @@ const TRANSLATIONS = {
         reg_todo_before_weaving: "The Register advises applying before having the tartan woven.",
         reg_todo_sample: "Once woven, a sample of at least 18 × 23 cm can be sent to it.",
         reg_disclaimer: "This tool does not check whether the design is original and sends nothing: the application is made on the Register's site.",
+        ribbon_label: "Stripes of the sett",
+        ribbon_hint: "Click a stripe to change it. Keyboard: arrows to choose, Shift and arrows to move, plus and minus for threads, Delete to remove.",
+        ribbon_stripe: "Stripe %i of %n: %c, %t threads",
+        ribbon_pivot: "pivot",
+        ribbon_which: "Stripe %i of %n · %c",
+        ribbon_left: "Move left",
+        ribbon_right: "Move right",
+        ribbon_less: "2 threads fewer",
+        ribbon_more: "2 threads more",
+        ribbon_count: "Threads",
+        ribbon_colors: "Colour",
+        ribbon_dup: "Duplicate",
+        ribbon_del: "Remove",
+        ribbon_close: "Close",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -1178,6 +1206,11 @@ function cacheDomElements() {
     domElements.sheetBody = document.getElementById('sheet-body');
     domElements.btnSheetPrint = document.getElementById('btn-sheet-print');
     domElements.btnSheetClose = document.getElementById('btn-sheet-close');
+    domElements.ribbonTrack = document.getElementById('ribbon-track');
+    domElements.ribbonEditor = document.getElementById('ribbon-editor');
+    domElements.ribbonWhich = document.getElementById('ribbon-which');
+    domElements.ribbonCount = document.getElementById('ribbon-count');
+    domElements.ribbonColors = document.getElementById('ribbon-colors');
     domElements.btnRegisterGuide = document.getElementById('btn-register-guide');
     domElements.registerModal = document.getElementById('register-modal');
     domElements.registerBody = document.getElementById('register-body');
@@ -1490,6 +1523,7 @@ function bindEvents() {
     if (domElements.sheetModal) {
         domElements.sheetModal.addEventListener('click', (e) => { if (e.target === domElements.sheetModal) closeWeavingSheet(); });
     }
+    bindStripeRibbon();
     if (domElements.btnRegisterGuide) domElements.btnRegisterGuide.addEventListener('click', openRegisterGuide);
     if (domElements.btnRegisterPrint) domElements.btnRegisterPrint.addEventListener('click', () => window.print());
     if (domElements.btnRegisterClose) domElements.btnRegisterClose.addEventListener('click', closeRegisterGuide);
@@ -1775,6 +1809,7 @@ function setLanguage(lang) {
     if (isEstimateOpen()) selectProposal(estimateState.selected);
     if (isPatchworkOpen()) renderPatchworkBoard();
     if (isPreviewOpen()) renderObjectPreview();
+    renderStripeRibbon();
 }
 // ================= 4. Palette UI =================
 
@@ -2364,6 +2399,209 @@ function updateGeneratedListUI() {
 
     showSrtInBar();
     if (typeof matchSrtWithExamples === 'function') matchSrtWithExamples();
+    renderStripeRibbon();
+}
+
+// --- STRIPE RIBBON ---
+// The listed stripes to scale (the mirrored half faded when the sett is symmetric). A click selects one;
+// its bar changes the threads, the colour and the place, duplicates or removes it.
+const RIBBON_MAX_COUNT = 400;
+const RIBBON_STEP = 2;          // Tartan counts are usually even
+const RIBBON_BURST_MS = 1500;   // Quick repeated changes are undone in one go
+let ribbonSelected = null;
+let lastRibbonEdit = 0;
+
+// Black or white, whichever reads better on a stripe colour (WCAG contrast)
+function inkOn(hex) {
+    const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const n = parseInt(hex.slice(1), 16);
+    const L = 0.2126 * lin(n >> 16 & 255) + 0.7152 * lin(n >> 8 & 255) + 0.0722 * lin(n & 255);
+    return (L + 0.05) / 0.05 >= 1.05 / (L + 0.05) ? '#000000' : '#FFFFFF';
+}
+
+// The colours a stripe can take: those of the pattern, then the rest of the palette
+function ribbonColourChoices() {
+    const list = [];
+    [...paletteFromStripes(tartanStripes), ...userPalette].forEach(c => {
+        if (!list.some(o => o.hex.toUpperCase() === c.hex.toUpperCase())) list.push(c);
+    });
+    return list;
+}
+
+function renderStripeRibbon() {
+    const track = domElements.ribbonTrack;
+    if (!track) return;
+    const t = TRANSLATIONS[currentLang];
+    const symmetric = domElements.sym?.checked || false;
+    const n = tartanStripes.length;
+    if (ribbonSelected !== null && ribbonSelected >= n) ribbonSelected = null;
+    const hadFocus = track.contains(document.activeElement);
+    track.textContent = '';
+    tartanStripes.forEach((s, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ribbon-stripe';
+        b.dataset.index = i;
+        b.style.background = s.hex;
+        b.style.color = inkOn(s.hex);
+        b.style.flexGrow = s.count;
+        b.textContent = s.count;
+        const pivot = symmetric && (i === 0 || i === n - 1);
+        if (pivot) b.classList.add('pivot');
+        b.setAttribute('aria-pressed', String(i === ribbonSelected));
+        b.tabIndex = i === (ribbonSelected ?? 0) ? 0 : -1;
+        b.title = `${s.code} ${s.count}${pivot ? ' · ' + t.ribbon_pivot : ''}`;
+        b.setAttribute('aria-label', t.ribbon_stripe.replace('%i', i + 1).replace('%n', n).replace('%c', s.code).replace('%t', s.count) + (pivot ? ', ' + t.ribbon_pivot : ''));
+        track.appendChild(b);
+    });
+    // The mirrored half, faded: it follows the stripes and is not edited on its own
+    if (symmetric) {
+        for (let i = n - 2; i >= 1; i--) {
+            const m = document.createElement('span');
+            m.className = 'ribbon-mirror' + (i === n - 2 ? ' first' : '');
+            m.style.background = tartanStripes[i].hex;
+            m.style.flexGrow = tartanStripes[i].count;
+            m.setAttribute('aria-hidden', 'true');
+            track.appendChild(m);
+        }
+    }
+    if (hadFocus) track.querySelector('.ribbon-stripe[tabindex="0"]')?.focus();
+    renderRibbonEditor();
+}
+
+function renderRibbonEditor() {
+    const editor = domElements.ribbonEditor;
+    if (!editor) return;
+    const i = ribbonSelected;
+    editor.hidden = i === null;
+    if (i === null) return;
+    const t = TRANSLATIONS[currentLang];
+    const s = tartanStripes[i];
+    const n = tartanStripes.length;
+    domElements.ribbonWhich.textContent = t.ribbon_which.replace('%i', i + 1).replace('%n', n).replace('%c', s.code);
+    if (document.activeElement !== domElements.ribbonCount) domElements.ribbonCount.value = s.count;
+    document.getElementById('ribbon-left').disabled = i === 0;
+    document.getElementById('ribbon-right').disabled = i === n - 1;
+    document.getElementById('ribbon-less').disabled = s.count <= 1;
+    document.getElementById('ribbon-more').disabled = s.count >= RIBBON_MAX_COUNT;
+    document.getElementById('ribbon-del').disabled = n <= 2;
+
+    const colours = domElements.ribbonColors;
+    const hadFocus = colours.contains(document.activeElement);
+    colours.textContent = '';
+    ribbonColourChoices().forEach(c => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ribbon-color';
+        b.style.background = c.hex;
+        const on = c.hex.toUpperCase() === s.hex.toUpperCase();
+        b.setAttribute('aria-pressed', String(on));
+        b.title = `${c.code} · ${c.name}`;
+        b.setAttribute('aria-label', `${c.code} ${c.name}`);
+        b.addEventListener('click', () => {
+            if (on) return;
+            editRibbon(list => { list[i] = { ...list[i], code: c.code, hex: c.hex }; });
+            colours.querySelector('[aria-pressed="true"]')?.focus();
+        });
+        colours.appendChild(b);
+    });
+    if (hadFocus && !colours.contains(document.activeElement)) colours.querySelector('[aria-pressed="true"]')?.focus();
+}
+
+function selectRibbonStripe(i, focus = true) {
+    ribbonSelected = i === null ? null : Math.max(0, Math.min(tartanStripes.length - 1, i));
+    renderStripeRibbon();
+    if (focus && ribbonSelected !== null) domElements.ribbonTrack.querySelector(`.ribbon-stripe[data-index="${ribbonSelected}"]`)?.focus();
+}
+
+// One change of the stripes. Quick repeats (+, +, +) make a single step in the history.
+function editRibbon(change, burst = false) {
+    const now = Date.now();
+    if (!burst || now - lastRibbonEdit > RIBBON_BURST_MS) pushToHistory();
+    lastRibbonEdit = burst ? now : 0;
+    const next = tartanStripes.map(s => ({ ...s }));
+    change(next);
+    tartanStripes = next;
+    updateGeneratedListUI();
+    redrawTartan();
+    saveState();
+}
+
+function ribbonSetCount(i, value, burst) {
+    const v = Math.max(1, Math.min(RIBBON_MAX_COUNT, Math.round(value)));
+    if (!Number.isFinite(v) || v === tartanStripes[i].count) return;
+    editRibbon(list => { list[i].count = v; }, burst);
+}
+
+function ribbonMove(i, step) {
+    const j = i + step;
+    if (j < 0 || j >= tartanStripes.length) return;
+    editRibbon(list => { [list[i], list[j]] = [list[j], list[i]]; });
+    ribbonSelected = j;
+    renderStripeRibbon();
+}
+
+function ribbonDuplicate(i) {
+    editRibbon(list => { list.splice(i + 1, 0, { ...list[i] }); });
+    selectRibbonStripe(i + 1, false);
+}
+
+function ribbonRemove(i) {
+    if (tartanStripes.length <= 2) return;
+    editRibbon(list => { list.splice(i, 1); });
+    selectRibbonStripe(Math.min(i, tartanStripes.length - 1), false);
+}
+
+function bindStripeRibbon() {
+    const track = domElements.ribbonTrack;
+    if (!track) return;
+    track.addEventListener('click', (e) => {
+        const b = e.target.closest('.ribbon-stripe');
+        if (b) selectRibbonStripe(Number(b.dataset.index));
+    });
+    // The ribbon keeps its keys: the page shortcuts (zoom, pan) do not run under it
+    track.addEventListener('keydown', (e) => {
+        const b = e.target.closest('.ribbon-stripe');
+        if (!b) return;
+        const i = Number(b.dataset.index);
+        let handled = true;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            const step = e.key === 'ArrowLeft' ? -1 : 1;
+            if (e.shiftKey) { ribbonMove(i, step); selectRibbonStripe(ribbonSelected); }
+            else selectRibbonStripe(i + step);
+        } else if (e.key === 'Home') selectRibbonStripe(0);
+        else if (e.key === 'End') selectRibbonStripe(tartanStripes.length - 1);
+        else if (e.key === '+' || e.key === '=') { ribbonSelected = i; ribbonSetCount(i, tartanStripes[i].count + RIBBON_STEP, true); }
+        else if (e.key === '-' || e.key === '_') { ribbonSelected = i; ribbonSetCount(i, tartanStripes[i].count - RIBBON_STEP, true); }
+        else if (e.key === 'Delete' || e.key === 'Backspace') { ribbonSelected = i; ribbonRemove(i); selectRibbonStripe(ribbonSelected); }
+        else if (e.key === 'Escape' && ribbonSelected !== null) { ribbonSelected = null; renderStripeRibbon(); }
+        else handled = false;
+        if (handled) { e.preventDefault(); e.stopPropagation(); }
+    });
+    const on = (id, fn) => document.getElementById(id)?.addEventListener('click', () => { if (ribbonSelected !== null) fn(ribbonSelected); });
+    on('ribbon-left', i => ribbonMove(i, -1));
+    on('ribbon-right', i => ribbonMove(i, 1));
+    on('ribbon-less', i => ribbonSetCount(i, tartanStripes[i].count - RIBBON_STEP, true));
+    on('ribbon-more', i => ribbonSetCount(i, tartanStripes[i].count + RIBBON_STEP, true));
+    on('ribbon-dup', ribbonDuplicate);
+    on('ribbon-del', ribbonRemove);
+    on('ribbon-close', () => { const i = ribbonSelected; ribbonSelected = null; renderStripeRibbon(); track.querySelector(`.ribbon-stripe[data-index="${i}"]`)?.focus(); });
+    const count = domElements.ribbonCount;
+    count.addEventListener('input', () => {
+        const v = parseInt(count.value, 10);
+        if (ribbonSelected !== null && v >= 1 && v <= RIBBON_MAX_COUNT) ribbonSetCount(ribbonSelected, v, true);
+    });
+    count.addEventListener('change', () => { if (ribbonSelected !== null) count.value = tartanStripes[ribbonSelected].count; });
+    // Escape in the bar closes it, back on the stripe
+    domElements.ribbonEditor.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        e.preventDefault();
+        e.stopPropagation();
+        const i = ribbonSelected;
+        ribbonSelected = null;
+        renderStripeRibbon();
+        track.querySelector(`.ribbon-stripe[data-index="${i}"]`)?.focus();
+    });
 }
 
 // === OFFICIAL SRT CODE CONSTRUCTION ===
