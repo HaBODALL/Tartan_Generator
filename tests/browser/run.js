@@ -47,6 +47,7 @@ const SUITES = {
   'product-views': { widths: RESPONSIVE },
   'prepare-weaving': { widths: RESPONSIVE },
   'layout-fixes': { widths: RESPONSIVE },
+  'themes': { widths: RESPONSIVE },
 };
 
 function findChrome() {

@@ -49,6 +49,9 @@ Since there is no frontend framework, UI interactions are handled via standard J
 ### C. Bilingual System
 The UI text is handled dynamically via `data-i18n` attributes in the HTML. The JavaScript parses these attributes and replaces the text based on the selected language (`fr` or `en`) using the internal `TRANSLATIONS` dictionary.
 
+### D. Themes
+Every interface colour is a CSS variable declared at the top of the stylesheet in `index.html`: `:root` holds the default dark theme, `:root[data-theme="light"]` the light one. Do not write a colour directly in a rule, an inline style or a style set from the script: use a token (`--bg-panel`, `--text-soft`, `--accent`, `--on-accent`…), and `themeColor('--name')` for what is drawn on a canvas. The white weaving sheet (`.sheet-*`) is the exception: it is paper, the same in both themes. `applyTheme` and `toggleTheme` switch; the `themes` browser suite measures the contrast of every visible text in both.
+
 ## 4. Anatomy of an Action: Data Flow
 
 **Scenario: The user clicks the "GENERATE" button.**
@@ -169,6 +172,9 @@ En l'absence de framework, les interactions avec l'interface sont gérées en Ja
 
 ### C. Système Bilingue
 Le texte de l'interface est géré dynamiquement via des attributs `data-i18n` dans le HTML. Le JavaScript lit ces attributs et remplace le texte en fonction de la langue sélectionnée (`fr` ou `en`) en utilisant le dictionnaire interne `TRANSLATIONS`.
+
+### D. Thèmes
+Chaque couleur de l'interface est une variable CSS déclarée en tête de la feuille de style d'`index.html` : `:root` porte le thème sombre par défaut, `:root[data-theme="light"]` le thème clair. Ne pas écrire une couleur directement dans une règle, un style en ligne ou un style posé par le script : utiliser un jeton (`--bg-panel`, `--text-soft`, `--accent`, `--on-accent`…), et `themeColor('--nom')` pour ce qui est dessiné sur un canevas. La fiche de tissage blanche (`.sheet-*`) fait exception : c'est du papier, identique dans les deux thèmes. `applyTheme` et `toggleTheme` basculent ; la suite navigateur `themes` mesure le contraste de chaque texte visible dans les deux.
 
 ## 4. Flux de la Donnée : Anatomie d'une Action
 

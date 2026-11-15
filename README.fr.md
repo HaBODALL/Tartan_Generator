@@ -38,6 +38,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 * Sergé 2/2, Z ou S, avec relief des fils et irrégularité de la laine.
 * Zoom aux boutons posés sur le motif, au curseur, à la molette (autour du pointeur), aux touches `+` et `-` ou au pincement.
 * Déplacement du motif en le faisant glisser ou aux flèches ; un double-clic ou le bouton ⌖ revient au début.
+* Deux thèmes : un sombre adouci par défaut et un clair (bouton ☀ de la barre du haut), retenu sur votre appareil.
 
 **Enregistrer et partager** (menu *Enregistrer / partager* de la barre du haut)
 * PNG de la vue, SVG d'un motif complet raccordable à la taille réelle, détails en texte (codes SRT et Ink/Stitch), ZIP ou PNG du mood board.
