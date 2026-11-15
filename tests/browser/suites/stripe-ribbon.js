@@ -1,4 +1,4 @@
-// Stripe ribbon: the stripes to scale under the pattern, edited without the code.
+// Stripe ribbon: the stripes under the cloth, where the canvas shows them, edited without the code.
 window.alerts = [];
 window.alert = m => window.alerts.push(m);
 const results = [];
@@ -7,7 +7,8 @@ window.addEventListener('error', e => results.push('FAIL pageError ' + e.message
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const stripesEl = () => [...document.querySelectorAll('#ribbon-track .ribbon-stripe')];
-const mirrorEl = () => document.querySelectorAll('#ribbon-track .ribbon-mirror');
+const near = (a, b) => Math.abs(a - b) <= 1;
+const canvasLeft = () => drawingContext.canvas.getBoundingClientRect().left;
 const press = (el, k, shift = false) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, shiftKey: shift, bubbles: true, cancelable: true }));
 const code = () => buildSRTCode(tartanStripes, $('check-sym').checked);
 const visible = el => !!el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().height > 0;
@@ -16,19 +17,45 @@ async function run() {
   tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }, { code: 'W', hex: '#FFFFFF', count: 4 }];
   userPalette = paletteFromStripes(tartanStripes);
   $('check-sym').checked = true;
+  const zoomBefore = $('in-zoom').value;
+  $('in-zoom').value = '2';
+  viewX = 0; viewY = 0;
   updateGeneratedListUI();
   redrawTartan();
   await sleep(30);
 
   check('ribbon shown in the Atelier', visible($('stripe-ribbon')));
-  check('one block per stripe', stripesEl().length === 4, stripesEl().length);
-  check('mirrored half faded', mirrorEl().length === 2 && getComputedStyle(mirrorEl()[0]).opacity < 1);
-  check('to scale', stripesEl()[0].style.flexGrow === '48' && stripesEl()[3].style.flexGrow === '4');
-  check('counts written in', stripesEl().map(b => b.textContent).join() === '48,8,12,4');
-  check('pivots marked', stripesEl()[0].classList.contains('pivot') && stripesEl()[3].classList.contains('pivot') && !stripesEl()[1].classList.contains('pivot'));
-  check('readable ink', getComputedStyle(stripesEl()[3]).color === 'rgb(0, 0, 0)' && getComputedStyle(stripesEl()[2]).color === 'rgb(255, 255, 255)');
+  // A ruler under the cloth: same start, same zoom, every repeat and the mirror
+  const blocks = stripesEl();
+  check('starts under the canvas edge', near(blocks[0].getBoundingClientRect().left, canvasLeft()), blocks[0].getBoundingClientRect().left + ' vs ' + canvasLeft());
+  check('widths follow the zoom', near(blocks[0].getBoundingClientRect().width, 48 * 2) && near(blocks[1].getBoundingClientRect().width, 8 * 2));
+  check('weaving order with the mirror', blocks.slice(0, 7).map(b => b.dataset.index).join() === '0,1,2,3,2,1,0', blocks.slice(0, 7).map(b => b.dataset.index).join());
+  check('repeats fill the width', blocks.length > 7 && near(blocks[blocks.length - 1].getBoundingClientRect().right, drawingContext.canvas.getBoundingClientRect().right));
+  check('counts written when wide enough', blocks[0].textContent === '48' && blocks[3].textContent === '' && blocks[1].textContent === '8');
+  check('pivots marked', blocks[0].classList.contains('pivot') && blocks[3].classList.contains('pivot') && !blocks[1].classList.contains('pivot'));
+  check('readable ink', getComputedStyle(blocks[3]).color === 'rgb(0, 0, 0)' && getComputedStyle(blocks[2]).color === 'rgb(255, 255, 255)');
   check('editor closed at first', $('ribbon-editor').hidden);
   check('one tab stop', stripesEl().filter(b => b.tabIndex === 0).length === 1);
+
+  // Pan and zoom: the ribbon follows
+  viewX = 10;
+  redrawTartan();
+  check('pan cuts the first stripe', near(stripesEl()[0].getBoundingClientRect().width, 38 * 2) && near(stripesEl()[0].getBoundingClientRect().left, canvasLeft()));
+  $('in-zoom').value = '4';
+  redrawTartan();
+  check('zoom widens', near(stripesEl()[1].getBoundingClientRect().width, 8 * 4));
+  viewX = 0;
+  $('in-zoom').value = '2';
+  redrawTartan();
+
+  // A click on a mirrored copy selects the stripe of the list
+  const mirrorCopy = stripesEl()[5];
+  mirrorCopy.click();
+  check('mirror copy selects its stripe', ribbonSelected === 1);
+  check('every copy marked', stripesEl().filter(b => b.dataset.index === '1').every(b => b.getAttribute('aria-pressed') === 'true'));
+  check('focus stays on the clicked copy', document.activeElement === stripesEl()[5]);
+  ribbonSelected = null;
+  renderStripeRibbon();
 
   // Select and change threads
   stripesEl()[1].click();
@@ -79,6 +106,8 @@ async function run() {
 
   // Keyboard
   const zoom = $('in-zoom') ? $('in-zoom').value : null;
+  document.activeElement?.blur();
+  ribbonFocusX = null;
   selectRibbonStripe(0);
   const first = stripesEl()[0];
   check('focus on the stripe', document.activeElement === first);
@@ -97,7 +126,7 @@ async function run() {
   // Symmetry off: no mirror, no pivot
   $('check-sym').click();
   await sleep(20);
-  check('asymmetric: no mirror', mirrorEl().length === 0 && !document.querySelector('.ribbon-stripe.pivot'));
+  check('asymmetric: repeats without mirror', stripesEl().slice(0, 4).map(b => b.dataset.index).join() === '0,1,2,0' && !document.querySelector('.ribbon-stripe.pivot'), stripesEl().slice(0, 4).map(b => b.dataset.index).join());
   $('check-sym').click();
   await sleep(20);
 
@@ -129,6 +158,8 @@ async function run() {
   ribbonSelected = null;
   tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'K', hex: '#101010', count: 12 }];
   updateGeneratedListUI();
+  $('in-zoom').value = zoomBefore;
+  redrawTartan();
   check('no alert', alerts.length === 0);
   const p = document.createElement('pre'); p.id = 'bench-out'; p.style.display = 'none'; p.textContent = results.join('\n'); document.body.appendChild(p);
 }

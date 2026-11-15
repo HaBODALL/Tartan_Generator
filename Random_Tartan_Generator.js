@@ -2403,12 +2403,15 @@ function updateGeneratedListUI() {
 }
 
 // --- STRIPE RIBBON ---
-// The listed stripes to scale (the mirrored half faded when the sett is symmetric). A click selects one;
+// The stripes under the cloth, where the canvas shows them. A click selects one;
 // its bar changes the threads, the colour and the place, duplicates or removes it.
 const RIBBON_MAX_COUNT = 400;
 const RIBBON_STEP = 2;          // Tartan counts are usually even
 const RIBBON_BURST_MS = 1500;   // Quick repeated changes are undone in one go
+const RIBBON_MAX_BLOCKS = 600;    // At a very small zoom, the rest of the ribbon stays empty
+const RIBBON_LABEL_MIN_PX = 16;   // Narrower copies show no number
 let ribbonSelected = null;
+let ribbonFocusX = null;          // Where the keyboard focus was on the ribbon, to keep it there
 let lastRibbonEdit = 0;
 
 // Black or white, whichever reads better on a stripe colour (WCAG contrast)
@@ -2428,6 +2431,17 @@ function ribbonColourChoices() {
     return list;
 }
 
+// The stripes in weaving order, as indexes of the list: the mirror comes back when symmetric
+function ribbonSequence(symmetric) {
+    const n = tartanStripes.length;
+    const seq = [];
+    for (let i = 0; i < n; i++) seq.push(i);
+    if (symmetric) for (let i = n - 2; i >= 1; i--) seq.push(i);
+    return seq;
+}
+
+// Every stripe where the canvas shows it, with its zoom and its shift: the ribbon is a ruler under
+// the cloth. A click on any copy (a repeat, the mirror) selects the stripe of the list it comes from.
 function renderStripeRibbon() {
     const track = domElements.ribbonTrack;
     if (!track) return;
@@ -2435,37 +2449,70 @@ function renderStripeRibbon() {
     const symmetric = domElements.sym?.checked || false;
     const n = tartanStripes.length;
     if (ribbonSelected !== null && ribbonSelected >= n) ribbonSelected = null;
-    const hadFocus = track.contains(document.activeElement);
+    const focused = track.contains(document.activeElement) ? document.activeElement : null;
+    if (focused) ribbonFocusX = parseFloat(focused.style.left) + parseFloat(focused.style.width) / 2;
     track.textContent = '';
-    tartanStripes.forEach((s, i) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'ribbon-stripe';
-        b.dataset.index = i;
-        b.style.background = s.hex;
-        b.style.color = inkOn(s.hex);
-        b.style.flexGrow = s.count;
-        b.textContent = s.count;
+    const canvas = typeof drawingContext !== 'undefined' && drawingContext ? drawingContext.canvas : null;
+    const seqLen = n ? countSettThreads(tartanStripes, symmetric) : 0;
+    if (!canvas || seqLen <= 0 || track.clientWidth === 0) { renderRibbonEditor(); return; }
+
+    const zoom = parseFloat(domElements.zoom?.value) || 2.0;
+    const offset = canvas.getBoundingClientRect().left - track.getBoundingClientRect().left;
+    const shown = canvas.getBoundingClientRect().width;
+    const lastThread = viewX + shown / zoom;
+    const seq = ribbonSequence(symmetric);
+    const labels = tartanStripes.map((s, i) => {
         const pivot = symmetric && (i === 0 || i === n - 1);
-        if (pivot) b.classList.add('pivot');
-        b.setAttribute('aria-pressed', String(i === ribbonSelected));
-        b.tabIndex = i === (ribbonSelected ?? 0) ? 0 : -1;
-        b.title = `${s.code} ${s.count}${pivot ? ' · ' + t.ribbon_pivot : ''}`;
-        b.setAttribute('aria-label', t.ribbon_stripe.replace('%i', i + 1).replace('%n', n).replace('%c', s.code).replace('%t', s.count) + (pivot ? ', ' + t.ribbon_pivot : ''));
-        track.appendChild(b);
+        return {
+            pivot,
+            title: `${s.code} ${s.count}${pivot ? ' · ' + t.ribbon_pivot : ''}`,
+            aria: t.ribbon_stripe.replace('%i', i + 1).replace('%n', n).replace('%c', s.code).replace('%t', s.count) + (pivot ? ', ' + t.ribbon_pivot : ''),
+            ink: inkOn(s.hex),
+        };
     });
-    // The mirrored half, faded: it follows the stripes and is not edited on its own
-    if (symmetric) {
-        for (let i = n - 2; i >= 1; i--) {
-            const m = document.createElement('span');
-            m.className = 'ribbon-mirror' + (i === n - 2 ? ' first' : '');
-            m.style.background = tartanStripes[i].hex;
-            m.style.flexGrow = tartanStripes[i].count;
-            m.setAttribute('aria-hidden', 'true');
-            track.appendChild(m);
+    const fragment = document.createDocumentFragment();
+    let blocks = 0;
+    for (let p = Math.floor(viewX / seqLen) * seqLen; p < lastThread && blocks < RIBBON_MAX_BLOCKS;) {
+        for (const i of seq) {
+            const s = tartanStripes[i];
+            const from = p, to = p + s.count;
+            p = to;
+            if (to <= viewX) continue;
+            if (from >= lastThread || blocks >= RIBBON_MAX_BLOCKS) break;
+            const left = offset + Math.max(0, (from - viewX) * zoom);
+            const right = offset + Math.min(shown, (to - viewX) * zoom);
+            if (right - left < 0.5) continue;
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'ribbon-stripe' + (labels[i].pivot ? ' pivot' : '');
+            b.dataset.index = i;
+            b.style.left = left.toFixed(1) + 'px';
+            b.style.width = (right - left).toFixed(1) + 'px';
+            b.style.background = s.hex;
+            b.style.color = labels[i].ink;
+            if (right - left >= RIBBON_LABEL_MIN_PX) b.textContent = s.count;
+            b.title = labels[i].title;
+            b.setAttribute('aria-label', labels[i].aria);
+            b.setAttribute('aria-pressed', String(i === ribbonSelected));
+            b.tabIndex = -1;
+            fragment.appendChild(b);
+            blocks++;
         }
     }
-    if (hadFocus) track.querySelector('.ribbon-stripe[tabindex="0"]')?.focus();
+    track.appendChild(fragment);
+
+    // One tab stop: the copy of the chosen stripe nearest to where the focus was, or the first one
+    const all = [...track.children];
+    const near = (list) => ribbonFocusX === null ? list[0] : list.reduce((best, el) => {
+        const d = Math.abs(parseFloat(el.style.left) + parseFloat(el.style.width) / 2 - ribbonFocusX);
+        return !best || d < best.d ? { el, d } : best;
+    }, null)?.el;
+    const chosen = all.filter(el => Number(el.dataset.index) === ribbonSelected);
+    const stop = (chosen.length ? near(chosen) : near(all)) || all[0];
+    if (stop) {
+        stop.tabIndex = 0;
+        if (focused) stop.focus({ preventScroll: true });
+    }
     renderRibbonEditor();
 }
 
@@ -2508,11 +2555,13 @@ function renderRibbonEditor() {
     if (hadFocus && !colours.contains(document.activeElement)) colours.querySelector('[aria-pressed="true"]')?.focus();
 }
 
-function selectRibbonStripe(i, focus = true) {
+function selectRibbonStripe(i, focus = true, x = null) {
     ribbonSelected = i === null ? null : Math.max(0, Math.min(tartanStripes.length - 1, i));
+    if (x !== null) ribbonFocusX = x;
     renderStripeRibbon();
-    if (focus && ribbonSelected !== null) domElements.ribbonTrack.querySelector(`.ribbon-stripe[data-index="${ribbonSelected}"]`)?.focus();
+    if (focus && ribbonSelected !== null) domElements.ribbonTrack.querySelector('.ribbon-stripe[tabindex="0"]')?.focus({ preventScroll: true });
 }
+const ribbonCentre = el => parseFloat(el.style.left) + parseFloat(el.style.width) / 2;
 
 // One change of the stripes. Quick repeats (+, +, +) make a single step in the history.
 function editRibbon(change, burst = false) {
@@ -2557,7 +2606,7 @@ function bindStripeRibbon() {
     if (!track) return;
     track.addEventListener('click', (e) => {
         const b = e.target.closest('.ribbon-stripe');
-        if (b) selectRibbonStripe(Number(b.dataset.index));
+        if (b) selectRibbonStripe(Number(b.dataset.index), true, ribbonCentre(b));
     });
     // The ribbon keeps its keys: the page shortcuts (zoom, pan) do not run under it
     track.addEventListener('keydown', (e) => {
@@ -2565,12 +2614,17 @@ function bindStripeRibbon() {
         if (!b) return;
         const i = Number(b.dataset.index);
         let handled = true;
+        const all = [...track.children];
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
             const step = e.key === 'ArrowLeft' ? -1 : 1;
-            if (e.shiftKey) { ribbonMove(i, step); selectRibbonStripe(ribbonSelected); }
-            else selectRibbonStripe(i + step);
-        } else if (e.key === 'Home') selectRibbonStripe(0);
-        else if (e.key === 'End') selectRibbonStripe(tartanStripes.length - 1);
+            if (e.shiftKey) { ribbonFocusX = ribbonCentre(b); ribbonMove(i, step); selectRibbonStripe(ribbonSelected); }
+            else {
+                // The neighbour on screen, which can be a repeat or the mirror
+                const next = all[all.indexOf(b) + step];
+                if (next) selectRibbonStripe(Number(next.dataset.index), true, ribbonCentre(next));
+            }
+        } else if (e.key === 'Home' && all.length) selectRibbonStripe(Number(all[0].dataset.index), true, ribbonCentre(all[0]));
+        else if (e.key === 'End' && all.length) selectRibbonStripe(Number(all[all.length - 1].dataset.index), true, ribbonCentre(all[all.length - 1]));
         else if (e.key === '+' || e.key === '=') { ribbonSelected = i; ribbonSetCount(i, tartanStripes[i].count + RIBBON_STEP, true); }
         else if (e.key === '-' || e.key === '_') { ribbonSelected = i; ribbonSetCount(i, tartanStripes[i].count - RIBBON_STEP, true); }
         else if (e.key === 'Delete' || e.key === 'Backspace') { ribbonSelected = i; ribbonRemove(i); selectRibbonStripe(ribbonSelected); }
@@ -3266,6 +3320,7 @@ function redrawTartan() {
     updateScaleInfo(seqLen);
     updateActualValues();
     updateReadabilityUI();
+    renderStripeRibbon();
     if (isPreviewOpen()) renderObjectPreview();
 }
 
