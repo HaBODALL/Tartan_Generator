@@ -49,6 +49,7 @@ const SUITES = {
   'layout-fixes': { widths: RESPONSIVE },
   'themes': { widths: RESPONSIVE },
   'register-guide': { widths: RESPONSIVE },
+  'stripe-ribbon': { widths: RESPONSIVE },
 };
 
 function findChrome() {
