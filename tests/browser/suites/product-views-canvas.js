@@ -1,4 +1,4 @@
-// Product views drawn on the canvas (Tissu, Écharpe, Métrage, Échantillon), through the real page.
+// Product views drawn on the canvas (Tissu, Écharpe, Plaid, Coussin, Kilt), through the real page.
 window.alerts = [];
 window.alert = m => window.alerts.push(m);
 const results = [];
@@ -21,7 +21,7 @@ async function run() {
   $('in-threadmm').value = '0.3';
   updateGeneratedListUI();
   check('cloth view at load', pressed() === 'cloth' && !isPreviewOpen(), pressed());
-  check('four views', ['cloth', 'scarf', 'yardage', 'sample'].every(v => viewBtn(v)));
+  check('four views', ['cloth', 'scarf', 'cushion', 'kilt'].every(v => viewBtn(v)));
   const sw = document.querySelector('.view-switch').getBoundingClientRect(), cont = $('canvas-container').getBoundingClientRect();
   check('switch on the canvas', sw.left >= cont.left && sw.top >= cont.top && sw.right <= cont.right, JSON.stringify(sw));
 
@@ -41,16 +41,16 @@ async function run() {
   const mid = c.getContext('2d').getImageData(Math.round(c.width / 2), Math.round(c.height * 0.45), 1, 1).data;
   check('scarf pixels are colored', mid[3] === 255 && mid[0] + mid[2] > 60, [...mid].join());
 
-  viewBtn('yardage').click();
-  const yardage = snap();
-  check('yardage view', pressed() === 'yardage' && differs(scarf, yardage) > 1000 && painted(yardage) > 0.05, painted(yardage));
-  viewBtn('sample').click();
-  const sample = snap();
-  check('sample view', pressed() === 'sample' && differs(yardage, sample) > 1000 && painted(sample) > 0.05, painted(sample));
+  viewBtn('cushion').click();
+  const cushion = snap();
+  check('cushion view', pressed() === 'cushion' && differs(scarf, cushion) > 1000 && painted(cushion) > 0.05, painted(cushion));
+  viewBtn('kilt').click();
+  const kilt = snap();
+  check('kilt view', pressed() === 'kilt' && differs(cushion, kilt) > 1000 && painted(kilt) > 0.05, painted(kilt));
 
   // Follows the thread size and the pattern, settings stay usable beside it
   $('in-threadmm').value = '3'; fire($('in-threadmm'), 'input');
-  check('follows the thread size', differs(sample, snap()) > 1000);
+  check('follows the thread size', differs(kilt, snap()) > 1000);
   const b = snap();
   $('check-sym').checked = true; fire($('check-sym'), 'change');
   tartanStripes = [{ code: 'K', hex: '#101010', count: 96 }, { code: 'W', hex: '#FFFFFF', count: 96 }];
@@ -64,8 +64,8 @@ async function run() {
   check('wheel, + and arrows do nothing behind', $('in-zoom').value === zoom && viewX === vx);
   const id = generationID, before = snap();
   key('g');
-  check('G generates and the sample follows', generationID !== id && isPreviewOpen() && differs(before, snap()) > 1000);
-  viewBtn('sample').focus();
+  check('G generates and the kilt follows', generationID !== id && isPreviewOpen() && differs(before, snap()) > 1000);
+  viewBtn('kilt').focus();
   key('Escape');
   check('Escape goes back to the cloth', !isPreviewOpen() && pressed() === 'cloth');
   check('focus on Tissu', document.activeElement === viewBtn('cloth'));
@@ -82,7 +82,7 @@ async function run() {
   check('Tissu closes the view', !isPreviewOpen() && pressed() === 'cloth');
 
   // Resize
-  viewBtn('yardage').click();
+  viewBtn('cushion').click();
   const w = c.width;
   stage.style.width = '500px'; stage.style.flex = 'none';
   await sleep(200);
@@ -92,7 +92,7 @@ async function run() {
 
   // Huge imported counts stay fast
   tartanStripes = [{ code: 'K', hex: '#101010', count: 999999 }, { code: 'W', hex: '#FFFFFF', count: 999999 }];
-  for (const v of ['scarf', 'yardage', 'sample']) {
+  for (const v of ['scarf', 'cushion', 'kilt']) {
     viewBtn(v).click();
     const t0 = performance.now(); renderObjectPreview();
     check('huge counts stay fast: ' + v, performance.now() - t0 < 2000, Math.round(performance.now() - t0) + ' ms');
@@ -100,7 +100,7 @@ async function run() {
   tartanStripes = [{ code: 'K', hex: '#101010', count: 96 }, { code: 'W', hex: '#FFFFFF', count: 96 }];
 
   setLanguage('en');
-  check('English', viewBtn('cloth').textContent === 'Cloth' && viewBtn('scarf').textContent === 'Scarf' && c.getAttribute('aria-label').startsWith('Sample'), viewBtn('cloth').textContent + ' ' + c.getAttribute('aria-label'));
+  check('English', viewBtn('cloth').textContent === 'Cloth' && viewBtn('scarf').textContent === 'Scarf' && c.getAttribute('aria-label').startsWith('Kilt'), viewBtn('cloth').textContent + ' ' + c.getAttribute('aria-label'));
   setLanguage('fr');
   viewBtn('cloth').click();
   check('no alert', alerts.length === 0);
