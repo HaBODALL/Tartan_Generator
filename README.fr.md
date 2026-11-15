@@ -30,7 +30,6 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 **Explorer** (mode *Planche*, à côté d'*Atelier* dans la barre du haut)
 * Mood board de 10 à 100 motifs, avec épingles et variantes autour d'une tuile.
 * Mode par critères : une grille dont les colonnes et les lignes font varier chacune un réglage (couleurs, bandes, largeur max, sett, symétrie).
-* **Le motif sur des objets**, à l'échelle : Écharpe, Plaid, Coussin et Kilt, dimensionnés d'après la densité. Une loupe sous le pointeur montre le vrai tissage, et *Comparer les tailles du motif* met côte à côte le même motif deux fois plus fin, tel quel et deux fois plus large ; un clic en prend un. Les réglages restent utilisables pendant ce temps.
 * Lisibilité des couleurs : alerte sur les bandes voisines difficiles à distinguer, et simulation du daltonisme (à l'écran seulement).
 
 **Rendu**
@@ -42,7 +41,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 
 **Enregistrer et partager** (menu *Enregistrer / partager* de la barre du haut)
 * PNG de la vue, SVG d'un motif complet raccordable à la taille réelle, détails en texte (codes SRT et Ink/Stitch), ZIP ou PNG du mood board.
-* **Préparer le tissage** : une fiche imprimable pour la pièce choisie (depuis la vue produit ou le menu *Enregistrer / partager*). Pièce et dimensions, longueur de chaîne par fil, plan d'ourdissage d'une lisière à l'autre avec le cumul, la trame, et le fil par couleur en mètres. La tisserande peut saisir sa perte au métier par fil de chaîne, une marge et le métrage au kilo de chaque fil pour obtenir le poids ; ces valeurs restent sur son appareil.
+* **Préparer le tissage** : une fiche imprimable pour la pièce choisie (menu *Enregistrer / partager*). Pièce et dimensions, longueur de chaîne par fil, plan d'ourdissage d'une lisière à l'autre avec le cumul, la trame, et le fil par couleur en mètres. La tisserande peut saisir sa perte au métier par fil de chaîne, une marge et le métrage au kilo de chaque fil pour obtenir le poids ; ces valeurs restent sur son appareil.
 * **Préparer une demande d'enregistrement** au Scottish Register of Tartans (menu *Enregistrer / partager*) : le code dans l'ordre du Register et à la taille de 6 à 7 pouces qu'il demande, les couleurs et une palette prête à coller dans sa page *Compare Designs*, une image JPEG d'un motif complet, les champs à remplir (nom, catégorie, création, explication) avec les règles du Register à côté, et une liste de vérification avant l'envoi. Imprimable. L'outil ne vérifie pas l'originalité et n'envoie rien : la demande se fait sur le site du Register.
 * Lien qui rouvre exactement le motif, sans aucun serveur.
 

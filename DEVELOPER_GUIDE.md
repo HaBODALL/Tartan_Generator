@@ -110,7 +110,7 @@ If the application shows a blank screen or a button does not work:
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
 | Weaving sheet | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
 | Register application | `REGISTER` (the Register's figures and links, read on 15 November 2026: update them there), `registerOrder`, `prepareRegisterPattern`, `registerColours`, `comparePalette`, `openRegisterGuide`, `renderRegisterGuide`, draft in localStorage `tartanRegisterDraft` |
-| Product views | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
+| Product views (set aside: `PRODUCT_VIEWS = false` hides the view switch; `setProductViews(true)` shows it, as the browser suites do) | `setProductViews`, `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` |
 | SRT bar | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Readability | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Photo estimate | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |
@@ -235,7 +235,7 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Mood board | `createPatchworkBatch`, `createCriteriaBatch`, `renderPatchworkBoard`, `mergePinnedTiles` |
 | Fiche de tissage | `buildWeavingSheetData`, `openWeavingSheet`, `renderSheetPiece`, `buildWarpPlan`, `pieceYarnWithPrefs`, `weavingPrefs` (localStorage `tartanWeavingPrefs`) |
 | Demande au Register | `REGISTER` (chiffres et liens du Register, lus le 15 novembre 2026 : les mettre à jour là), `registerOrder`, `prepareRegisterPattern`, `registerColours`, `comparePalette`, `openRegisterGuide`, `renderRegisterGuide`, brouillon en localStorage `tartanRegisterDraft` |
-| Vues produit | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` | `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `renderObjectPreview`, `updatePiecePanel`, `drawLoupe` |
+| Vues produit (mises de côté : `PRODUCT_VIEWS = false` masque le sélecteur de vue ; `setProductViews(true)` le montre, comme le font les suites navigateur) | `setProductViews`, `setObjectView`, `OBJECT_VIEWS`, `buildPieceData`, `walkSequence`, `drawObjectLayer`, `renderObjectPreview`, `scaleStripes`, `applyPatternScale`, `drawLoupe` |
 | Barre SRT | `currentSrtCode`, `showSrtInBar`, `applySrtBar`, `importSRT(keepShades)` |
 | Lisibilité | `findCloseNeighbors`, `VISION_MATRICES`, `installVisionFilters` |
 | Estimation depuis une photo | `estimateTartan`, `prepareAxis`, `readAxis`, `segmentsToStripes` |

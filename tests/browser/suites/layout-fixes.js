@@ -11,6 +11,7 @@ const box = el => el.getBoundingClientRect();
 const overlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
 async function run() {
+  setProductViews(true); // Set aside in the page; these checks keep them working
   const vw = document.documentElement.clientWidth, wide = vw > 768;
   check('viewport ' + vw, true);
   const cont = $('canvas-container'), canvas = cont.querySelector(':scope > canvas');

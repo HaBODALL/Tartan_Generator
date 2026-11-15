@@ -14,6 +14,7 @@ const fact = term => { const dt = [...document.querySelectorAll('.sheet-piece-fa
 const set = (id, v, type = 'input') => { $(id).value = v; fire($(id), type); };
 
 async function run() {
+  setProductViews(true); // Set aside in the page; these checks keep them working
   const vw = document.documentElement.clientWidth;
   check('viewport ' + vw, true);
   localStorage.removeItem('tartanWeavingPrefs');

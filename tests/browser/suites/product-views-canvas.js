@@ -15,6 +15,7 @@ const pressed = () => [...document.querySelectorAll('.view-btn')].filter(b => b.
 const painted = a => { let n = 0; for (let i = 3; i < a.length; i += 4) if (a[i]) n++; return n / (a.length / 4); };
 
 async function run() {
+  setProductViews(true); // Set aside in the page; these checks keep them working
   tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 48 }];
   userPalette = paletteFromStripes(tartanStripes);
   $('check-sym').checked = false;
