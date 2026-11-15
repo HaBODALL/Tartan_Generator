@@ -100,7 +100,7 @@ If the application shows a blank screen or a button does not work:
 | Generation | `readGenerationParams`, `createStripes`, `recolorStripes` |
 | Rendering | `redrawTartan`, `buildThreadColors`, `fillTwillPixels`, `fillTwillRelief` |
 | View | `setZoom`, `zoomViewAt`, `panView`, `resetView`, `viewX` / `viewY` |
-| Top bar menus (New pattern, Import, Save / share) | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener`, `pendingImageMode` |
+| Top bar: Generate and its arrow, Import, Save / share | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener`, `pendingImageMode` |
 | Studio / Board modes | `syncModeSwitch`, `generatePatchwork`, `closePatchworkBoard` |
 | Side panel tabs (Motif, Couleurs, Tissu) | `setupTabs`, `selectTab`, `currentTab`, `PANEL_TABS` |
 | Saving and history | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |
@@ -224,7 +224,7 @@ Si l'application affiche un écran blanc ou si un bouton ne réagit pas :
 | Génération | `readGenerationParams`, `createStripes`, `recolorStripes` |
 | Rendu | `redrawTartan`, `buildThreadColors`, `fillTwillPixels`, `fillTwillRelief` |
 | Vue | `setZoom`, `zoomViewAt`, `panView`, `resetView`, `viewX` / `viewY` |
-| Menus de la barre du haut (Nouveau motif, Importer, Enregistrer / partager) | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener`, `pendingImageMode` |
+| Barre du haut : Générer et sa flèche, Importer, Enregistrer / partager | `setupMenus`, `closeMenus`, `revealInPanel`, `focusOpener`, `pendingImageMode` |
 | Modes Atelier / Planche | `syncModeSwitch`, `generatePatchwork`, `closePatchworkBoard` |
 | Onglets du panneau (Motif, Couleurs, Tissu) | `setupTabs`, `selectTab`, `currentTab`, `PANEL_TABS` |
 | Sauvegarde et historique | `saveState`, `loadState`, `pushToHistory`, `applyHistoryEntry` |

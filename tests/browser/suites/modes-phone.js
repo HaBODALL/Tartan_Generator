@@ -24,7 +24,7 @@ async function run() {
   const depth = historyStack.length, code = buildSRTCode(tartanStripes, $('check-sym').checked);
   board.focus(); board.click();
   check('Planche opens the board', isPatchworkOpen() && document.body.classList.contains('board-mode') && board.getAttribute('aria-pressed') === 'true');
-  check('panel: board settings and Nouveau lot', shown($('panel-board')) && shown($('btn-patchwork-new')) && shown($('patchwork-qty')) && !shown($('btn-generate')) && !shown($('tab-pattern')));
+  check('panel: board settings and Nouveau lot', shown($('panel-board')) && shown($('btn-patchwork-new')) && shown($('patchwork-qty')) && !shown($('tab-pattern')) && !shown($('lock-colors')));
   check('pattern and history kept', historyStack.length === depth && buildSRTCode(tartanStripes, $('check-sym').checked) === code);
   check('board exports only', visibleItems('menu-export').join() === 'btn-patchwork-png,btn-generate-patchwork-zip', visibleItems('menu-export').join());
   const exp = $('btn-menu-export');
@@ -45,7 +45,7 @@ async function run() {
   studio.click();
   check('Atelier closes the board', !isPatchworkOpen() && !document.body.classList.contains('board-mode') && studio.getAttribute('aria-pressed') === 'true');
   check('focus on Atelier', document.activeElement === studio);
-  check('panel back', shown($('btn-generate')) && !shown($('panel-board')));
+  check('panel back', shown($('tab-pattern')) && !shown($('panel-board')));
   board.click();
   key(document.body, 'Escape');
   check('Escape goes back to the Atelier', !isPatchworkOpen() && studio.getAttribute('aria-pressed') === 'true');
@@ -55,7 +55,7 @@ async function run() {
   check('picking a tile goes back to the Atelier', !isPatchworkOpen() && studio.getAttribute('aria-pressed') === 'true' && historyStack.length === depth + 1, historyStack.length - depth);
   board.click();
   const id = generationID;
-  $('btn-menu-new').click(); $('menu-new-random').click();
+  $('btn-generate').click();
   check('Nouveau from the Planche: back to the Atelier, new pattern', !isPatchworkOpen() && generationID !== id && !document.body.classList.contains('board-mode'));
 
   // Phones: the ⋯ menu, Générer under the thumb
@@ -84,8 +84,8 @@ async function run() {
     for (const where of ['top', 'bottom']) {
       sb.scrollTop = where === 'top' ? 0 : sb.scrollHeight; await sleep(50);
       const gr = g.getBoundingClientRect(), sr = sb.getBoundingClientRect(), tr = tabs.getBoundingClientRect();
-      check('Générer at the bottom of the panel, scrolled ' + where, gr.bottom <= sr.bottom + 1 && gr.bottom >= sr.bottom - 110 && document.elementFromPoint(gr.left + gr.width / 2, gr.top + gr.height / 2)?.closest('#btn-generate') !== null, JSON.stringify([gr.top, gr.bottom, sr.bottom]));
-      check('tabs just above Générer, scrolled ' + where, tr.bottom <= gr.top + 1 && tr.top >= sr.top, JSON.stringify([tr.top, tr.bottom, gr.top]));
+      check('Générer in the bottom bar, scrolled ' + where, gr.bottom <= window.innerHeight + 1 && gr.top >= window.innerHeight - 60 && gr.top >= sr.bottom - 1 && document.elementFromPoint(gr.left + gr.width / 2, gr.top + gr.height / 2)?.closest('#btn-generate') !== null, JSON.stringify([gr.top, gr.bottom, sr.bottom]));
+      check('tabs at the bottom of the panel, above the bar, scrolled ' + where, tr.bottom <= gr.top + 1 && tr.top >= sr.top && tr.bottom <= sr.bottom + 1, JSON.stringify([tr.top, tr.bottom, gr.top]));
     }
     sb.scrollTop = 0;
     $('tab-fabric').click();

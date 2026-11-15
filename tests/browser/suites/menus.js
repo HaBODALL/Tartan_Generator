@@ -1,4 +1,4 @@
-// Redesign phase 1: top bar menus, zoom on the canvas, Générer first.
+// Top bar: Générer and its arrow, the menus, zoom on the canvas.
 window.alerts = [];
 window.alert = m => window.alerts.push(m);
 const results = [];
@@ -14,7 +14,7 @@ async function run() {
   // Layout
   check('no horizontal overflow', document.documentElement.scrollWidth <= vw, document.documentElement.scrollWidth + ' > ' + vw);
   const narrow = vw <= 600;
-  for (const id of narrow ? ['btn-menu-new', 'btn-menu-import', 'btn-menu-export', 'btn-menu-more', 'btn-generate-patchwork'] : ['btn-menu-new', 'btn-menu-import', 'btn-menu-export', 'btn-about', 'lang-btn-en', 'btn-generate-patchwork']) {
+  for (const id of narrow ? ['btn-menu-import', 'btn-menu-export', 'btn-menu-more', 'btn-generate-patchwork'] : ['btn-menu-new', 'btn-menu-import', 'btn-menu-export', 'btn-about', 'lang-btn-en', 'btn-generate-patchwork']) {
     const r = $(id).getBoundingClientRect();
     check(id + ' visible in the bar', r.width > 0 && r.left >= 0 && r.right <= vw && r.bottom <= 50, JSON.stringify([r.left, r.right, r.bottom]));
   }
@@ -25,7 +25,9 @@ async function run() {
   const first = $('sidebar').querySelector('button, input, select, summary');
   if (narrow) check('about and language move to ⋯ on phones', ['btn-about', 'lang-btn-en'].every(id => $(id).getClientRects().length === 0));
   else check('no ⋯ menu on wide screens', $('btn-menu-more').getClientRects().length === 0);
-  check('Générer first in the panel', first === $('btn-generate'), first && first.id);
+  check('Générer is not in the panel any more', !$('sidebar').contains($('btn-generate')) && first === $('lock-colors'), first && first.id);
+  { const g = $('btn-generate').getBoundingClientRect();
+    check('Générer in the top bar, or in the bottom bar on phones', g.width > 0 && g.left >= 0 && g.right <= vw && (narrow ? g.bottom <= window.innerHeight + 1 && g.top >= window.innerHeight - 60 : g.bottom <= 50), JSON.stringify([g.left, g.right, g.top, g.bottom])); }
   check('Export section gone from the panel', ![...document.querySelectorAll('#sidebar summary')].some(s => s.textContent.trim() === 'Export'));
   check('section renamed', [...document.querySelectorAll('#sidebar summary')].some(s => s.textContent.trim() === 'Fil et rendu'));
   check('menus closed at load', $('menu-new').hidden && $('menu-export').hidden);
@@ -45,17 +47,17 @@ async function run() {
 
   // Keyboard
   nw.focus(); key(nw, 'ArrowDown');
-  check('ArrowDown opens on the first choice', !$('menu-new').hidden && document.activeElement === $('menu-new-random'));
+  check('ArrowDown opens on the first choice', !$('menu-new').hidden && document.activeElement === $('menu-new-image'));
   key(document.activeElement, 'ArrowUp');
   check('ArrowUp wraps to the last', document.activeElement === $('menu-new-image'), document.activeElement.id);
   key(document.activeElement, 'Home');
-  check('Home', document.activeElement === $('menu-new-random'));
+  check('Home', document.activeElement === $('menu-new-image'));
   key(document.activeElement, 'Escape');
   check('Escape closes and gives the focus back', $('menu-new').hidden && document.activeElement === nw);
 
   // Nouveau choices
   const id = generationID;
-  nw.click(); $('menu-new-random').click();
+  $('btn-generate').click();
   check('random pattern', generationID !== id && $('menu-new').hidden);
   toggleSidebar(); await sleep(400);
   check('panel collapsed', $('sidebar').classList.contains('collapsed'));
@@ -88,7 +90,7 @@ async function run() {
 
   // English
   setLanguage('en');
-  check('English menus', nw.textContent.includes('New') && $('btn-menu-import').textContent.includes('Import') && $('btn-menu-export').textContent.includes('Save') && $('menu-new-image').textContent === 'From an image (drawing, photo or other)' && $('btn-import-photo').textContent === 'A photo of a tartan');
+  check('English menus', $('btn-generate').textContent.trim() === 'Generate' && nw.getAttribute('aria-label') === 'Other ways to create a pattern' && $('btn-menu-import').textContent.includes('Import') && $('btn-menu-export').textContent.includes('Save') && $('menu-new-image').textContent === 'From an image (drawing, photo or other)' && $('btn-import-photo').textContent === 'A photo of a tartan');
   check('English about', $('btn-about').getAttribute('aria-label') === 'About' && $('btn-about').textContent.includes('About'));
   check('English reset', $('btn-reset-view').getAttribute('aria-label') === 'Back to the start of the pattern');
   check('English section', [...document.querySelectorAll('#sidebar summary')].some(s => s.textContent.trim() === 'Yarn & rendering'));
