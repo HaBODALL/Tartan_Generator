@@ -86,15 +86,15 @@ async function run() {
   check('colour changes', tartanStripes[1].code === 'W' && tartanStripes[1].hex === '#FFFFFF');
   undo();
 
-  // Move, duplicate, remove
+  // Move, add, remove
   selectRibbonStripe(1);
   $('ribbon-right').click();
   check('move right', code() === 'R/48 K12 B20 W/4', code());
   check('selection follows the stripe', ribbonSelected === 2 && $('ribbon-which').textContent.includes('B'));
   selectRibbonStripe(3);
   check('right disabled at the end', $('ribbon-right').disabled && !$('ribbon-left').disabled);
-  $('ribbon-dup').click();
-  check('duplicate', tartanStripes.length === 5 && tartanStripes[4].code === 'W' && ribbonSelected === 4);
+  $('ribbon-add').click();
+  check('add a stripe of another colour', tartanStripes.length === 5 && ribbonSelected === 4 && tartanStripes[4].hex !== tartanStripes[3].hex, code());
   $('ribbon-del').click();
   check('remove', tartanStripes.length === 4);
   tartanStripes = tartanStripes.slice(0, 2);
@@ -123,6 +123,65 @@ async function run() {
   press(document.activeElement, 'Escape');
   check('Escape closes the bar', $('ribbon-editor').hidden && ribbonSelected === null);
 
+  // Neighbours of one colour merge
+  tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }, { code: 'W', hex: '#FFFFFF', count: 4 }];
+  userPalette = paletteFromStripes(tartanStripes);
+  updateGeneratedListUI();
+  selectRibbonStripe(2, false);
+  [...document.querySelectorAll('#ribbon-colors .ribbon-color')].find(c => c.style.background === 'rgb(0, 0, 100)').click();
+  check('same colour as a neighbour: they merge', code() === 'R/48 B20 W/4' && ribbonSelected === 1, code() + ' @' + ribbonSelected);
+  undo();
+  selectRibbonStripe(1, false);
+  tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'R', hex: '#C80000', count: 12 }, { code: 'W', hex: '#FFFFFF', count: 4 }];
+  updateGeneratedListUI();
+  selectRibbonStripe(1, false);
+  $('ribbon-del').click();
+  check('removing between two of one colour merges them, the pivot twice', code() === 'R/72 W/4', code());
+  check('threads of the cloth kept, less the removed stripe', countSettThreads(tartanStripes, true) === 92 - 16, countSettThreads(tartanStripes, true));
+
+  // Drag a stripe along the ribbon
+  tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }, { code: 'W', hex: '#FFFFFF', count: 4 }];
+  updateGeneratedListUI();
+  ribbonSelected = null;
+  renderStripeRibbon();
+  {
+    const track = $('ribbon-track');
+    const blue = stripesEl()[1];
+    const r = blue.getBoundingClientRect(), y = r.top + r.height / 2, x0 = r.left + r.width / 2;
+    const ev = (el, type, x) => el.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: 9, button: 0, bubbles: true }));
+    const historyBefore = historyStack.length;
+    ev(blue, 'pointerdown', x0);
+    for (let x = x0; x <= x0 + 30; x += 5) ev(track, 'pointermove', x);
+    ev(track, 'pointerup', x0 + 30);
+    track.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    check('drag moves the stripe past a neighbour', code() === 'R/48 K12 B8 W/4', code());
+    check('drag is one step in the history', historyStack.length === historyBefore + 1);
+    check('the dragged stripe stays chosen', ribbonSelected === 2);
+    ev(stripesEl()[0], 'pointerdown', stripesEl()[0].getBoundingClientRect().left + 5);
+    ev(track, 'pointermove', stripesEl()[0].getBoundingClientRect().left + 7);
+    ev(track, 'pointerup', stripesEl()[0].getBoundingClientRect().left + 7);
+    check('a small slip is not a drag', code() === 'R/48 K12 B8 W/4' && historyStack.length === historyBefore + 1);
+    undo();
+    check('undo puts it back', code() === 'R/48 B8 K12 W/4', code());
+  }
+
+  // The palette under the ribbon, the shades for a stripe
+  ribbonSelected = null;
+  renderStripeRibbon();
+  check('palette shown when no stripe is chosen', !$('ribbon-palette').hidden && $('color-list').querySelectorAll('.palette-chip').length === userPalette.length);
+  selectRibbonStripe(1, false);
+  check('palette gives way to the bar', $('ribbon-palette').hidden && !$('ribbon-editor').hidden);
+  $('ribbon-shade').click();
+  const picker = $('picker-modal');
+  check('shades of the Register', !!picker && picker.querySelectorAll('.picker-chip').length === SRT_PALETTE.length);
+  const yellow = SRT_PALETTE.findIndex(c => c.code === 'Y');
+  picker.querySelectorAll('.picker-chip')[yellow].click();
+  check('the stripe takes the shade', tartanStripes[1].hex === SRT_PALETTE[yellow].hex && !$('picker-modal'));
+  check('the shade joins the palette', userPalette.some(c => c.hex === SRT_PALETTE[yellow].hex) || userPalette.length >= 8);
+  undo();
+  ribbonSelected = null;
+  renderStripeRibbon();
+
   // Lock: Générer keeps the stripe at its place
   tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'Y', hex: '#E8C000', count: 6 }, { code: 'K', hex: '#101010', count: 12 }, { code: 'W', hex: '#FFFFFF', count: 4 }];
   updateGeneratedListUI();
@@ -142,8 +201,8 @@ async function run() {
   check('its colour joins the palette', userPalette.some(c => c.hex.toUpperCase() === '#E8C000') || userPalette.length >= 8);
   check('code shows it', $('import-text').value.includes('Y6'), $('import-text').value);
   selectRibbonStripe(1, false);
-  $('ribbon-dup').click();
-  check('a copy starts free', !tartanStripes[2].locked && tartanStripes[1].locked);
+  $('ribbon-add').click();
+  check('a new stripe starts free', !tartanStripes[2].locked && tartanStripes[1].locked);
   undo();
   selectRibbonStripe(1, false);
   $('ribbon-lock').click();
@@ -182,7 +241,7 @@ async function run() {
   check('codes are text', !document.querySelector('#stripe-ribbon img') && $('ribbon-which').textContent.includes('<img>'));
 
   setLanguage('en');
-  check('English', $('ribbon-which').textContent === 'Stripe 1 of 2 · <img>' && $('ribbon-dup').textContent === 'Duplicate');
+  check('English', $('ribbon-which').textContent === 'Stripe 1 of 2 · <img>' && $('ribbon-add').textContent === 'Add');
   setLanguage('fr');
   ribbonSelected = null;
   tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'K', hex: '#101010', count: 12 }];

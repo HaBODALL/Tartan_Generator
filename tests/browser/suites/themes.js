@@ -40,7 +40,7 @@ function lowContrast(root) {
 }
 async function scanEverything() {
   const bad = [];
-  for (const tab of ['tab-pattern', 'tab-colors', 'tab-fabric']) { $(tab).click(); bad.push(...lowContrast(document.body)); }
+  for (const tab of ['tab-pattern', 'tab-fabric']) { $(tab).click(); bad.push(...lowContrast(document.body)); }
   for (const menu of ['btn-menu-new', 'btn-menu-import', 'btn-menu-export']) { $(menu).click(); bad.push(...lowContrast(document.body)); closeMenus(); }
   document.querySelector('.view-btn[data-view="scarf"]').click(); await sleep(40);
   $('btn-compare-scales').click(); bad.push(...lowContrast(document.body)); $('btn-compare-scales').click();
