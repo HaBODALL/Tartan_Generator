@@ -606,6 +606,27 @@ function runTests() {
             }
             assertSilent(widths.size > 5, 'Damier: the width varies');
             console.info('✅ Damier keeps the width range');
+        },
+        () => {
+            const R = (c, n, h) => ({ code: c, hex: h || '#000000', count: n });
+            // Symmetric: the pivot earliest in the alphabet comes first
+            const sym = [R('W', 4, '#FFFFFF'), R('K', 24, '#101010'), R('B', 8, '#000064')];
+            assertEqual(buildSRTCode(registerOrder(sym, true), true), 'B/8 K24 W/4', 'register order reverses a symmetric sett');
+            assertEqual(buildSRTCode(registerOrder(sym.slice().reverse(), true), true), 'B/8 K24 W/4', 'register order keeps a symmetric sett already in order');
+            // Repeating: turned to start at the earliest colour; a colour split over the loop is one stripe
+            const rep = [R('K', 10, '#101010'), R('B', 6, '#000064'), R('W', 2, '#FFFFFF'), R('K', 4, '#101010')];
+            assertEqual(buildSRTCode(registerOrder(rep, false), false), '...B6 W2 K14...', 'register order turns a repeating sett');
+            assertEqual(countSettThreads(registerOrder(rep, false), false), 22, 'register order keeps the thread count');
+            // Size: brought near 250 threads only when outside 240 to 260
+            const small = [R('B', 20, '#000064'), R('K', 40, '#101010'), R('W', 4, '#FFFFFF')];
+            const p = prepareRegisterPattern(small, true, true);
+            assertSilent(!p.inRange && p.threads >= 240 && p.threads <= 260, 'register size brought into 240-260: ' + p.threads);
+            assertEqual(prepareRegisterPattern(small, true, false).threads, 104, 'register size left alone when not asked');
+            const fine = rescaleStripes(small, true, 250);
+            assertEqual(prepareRegisterPattern(fine, true, true).code, buildSRTCode(fine, true), 'register size kept when already right');
+            // Palette for Compare Designs, one entry per code
+            const colours = [{ code: 'K', name: 'Black', hex: '#101010' }, { code: 'DR', name: 'Dark Red', hex: '#8B0000' }, { code: 'K', name: 'Black', hex: '#000000' }];
+            assertEqual(comparePalette(colours), 'K=#101010#BLACK;DR=#8B0000#DARK RED;', 'compare palette format');
         }
     ];
 

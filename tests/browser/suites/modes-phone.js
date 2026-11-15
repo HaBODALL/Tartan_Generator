@@ -17,7 +17,7 @@ async function run() {
   const studio = $('btn-patchwork-close'), board = $('btn-generate-patchwork');
   check('Atelier at load', studio.getAttribute('aria-pressed') === 'true' && board.getAttribute('aria-pressed') === 'false' && !document.body.classList.contains('board-mode'));
   check('mode switch in the top bar', inScreen(studio) && inScreen(board) && studio.getBoundingClientRect().bottom <= 50);
-  check('Atelier exports only', visibleItems('menu-export').join() === 'btn-share-link,btn-export-png,btn-export-svg,btn-export-txt,btn-weaving-sheet,btn-export-all', visibleItems('menu-export').join());
+  check('Atelier exports only', visibleItems('menu-export').join() === 'btn-share-link,btn-export-png,btn-export-svg,btn-export-txt,btn-weaving-sheet,btn-register-guide,btn-export-all', visibleItems('menu-export').join());
   check('board settings hidden in the Atelier', !shown($('panel-board')));
 
   // Planche

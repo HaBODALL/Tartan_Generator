@@ -167,6 +167,23 @@ const INVENT_MAX_RUNS = 12;         // Most stripes read along a line of the ima
 const INVENT_MERGE_DISTANCE = 10;   // Color groups closer than this are one color
 const ESTIMATE_BLEND_LENGTH = 480;  // Positions of a repeat when several proposals are averaged
 const ESTIMATE_DARK_FLOOR = 0.015;  // Under this linear level, differences are only noise
+// --- APPLICATION TO THE SCOTTISH REGISTER OF TARTANS ---
+// What the Register asks, as read on tartanregister.gov.uk on 15 November 2026.
+// The application itself is made on the Register's site; nothing here is sent anywhere.
+const REGISTER = {
+    settMin: 240, settMax: 260, settTarget: 250,  // Threads in a 6 to 7 inch sett, the size the Register asks for
+    nameMax: 200,
+    rationaleMax: 1000,
+    categories: ['clan', 'name', 'district', 'corporate', 'commemorative', 'military', 'royal', 'fashion', 'other'],
+    url: {
+        guide: 'https://www.tartanregister.gov.uk/registerGuidance.aspx',
+        compare: 'https://www.tartanregister.gov.uk/searchDesigns.aspx',
+        name: 'https://www.tartanregister.gov.uk/name.aspx',
+        fees: 'https://www.tartanregister.gov.uk/fees.aspx',
+    },
+};
+const REGISTER_DRAFT_KEY = 'tartanRegisterDraft';
+
 let srtLabTable = null;
 // Thread shown at the top left corner of the canvas (not whole while moving)
 let viewX = 0;
@@ -510,6 +527,75 @@ const TRANSLATIONS = {
         locks_label: "Garder",
         title_keep_colors: "Le prochain motif garde ces couleurs",
         title_keep_struct: "Le prochain motif garde ces bandes",
+        menu_register: "Demande d'enregistrement (Register)",
+        title_register: "Ce que demande le Scottish Register of Tartans, prêt à copier ou à imprimer",
+        reg_title: "Préparer une demande d'enregistrement",
+        reg_intro: "Le Scottish Register of Tartans enregistre les nouveaux tartans. Cette page rassemble ce qu'il demande ; la demande se fait sur son site, en anglais (%l). Trois conditions :",
+        reg_link_guide: "guide officiel",
+        reg_crit_def: "le motif répond à la définition du tartan de la loi de 2008 ;",
+        reg_crit_new: "c'est un motif nouveau, unique dans le Register ;",
+        reg_crit_name: "vous avez un lien clair avec le nom proposé.",
+        reg_s1: "1. Le code de fils",
+        reg_threads: "Fils par motif",
+        reg_size_ok: "Le motif fait %n fils : c'est la taille que demande le Register (240 à 260 fils, un motif de 6 à 7 pouces).",
+        reg_resize: "Ramener le motif à environ 250 fils (il en fait %n) : le Register demande le code d'un motif de 6 à 7 pouces, soit 240 à 260 fils.",
+        reg_reordered: "Le code commence par la couleur qui vient en premier dans l'alphabet, comme le demande le Register. Le motif ne change pas.",
+        reg_code_final: "Relisez le code : il ne pourra plus être corrigé une fois le tartan enregistré.",
+        reg_copy: "Copier",
+        reg_copied: "Copié ✓",
+        reg_s2: "2. Les couleurs",
+        reg_col_code: "Code",
+        reg_col_name: "Nom",
+        reg_col_hex: "Hex",
+        reg_shared: "Plusieurs nuances portent le code %c : le Register lit une lettre comme une seule couleur. Précisez les nuances dans votre explication.",
+        reg_compare: "Pour chercher les tartans proches, collez cette palette puis le code dans « Compare Designs » (%l).",
+        reg_link_compare: "page du Register",
+        reg_compare_limit: "Agrandir, réduire ou changer les nuances d'un tartan existant ne crée pas un nouveau tartan. Le Register prévient que sa comparaison automatique ne repère pas tout.",
+        reg_s3: "3. L'image",
+        reg_download: "Télécharger l'image (JPEG)",
+        reg_image_note: "Un motif complet, en couleur, %s × %s pixels, sans effet de relief ni de fil irrégulier. Le Register accepte le GIF et le JPEG, et vérifie que l'image correspond au code.",
+        reg_s4: "4. Votre partie",
+        reg_name: "Nom du tartan",
+        reg_name_hint: "En anglais, unique dans le Register, 200 caractères au plus. Il faut un lien personnel avec ce nom ; pour celui d'une personne, d'un clan, d'un lieu ou d'une organisation, une autorisation écrite est nécessaire (%l).",
+        reg_link_name: "règles du nom",
+        reg_count: "%n / %m caractères",
+        reg_category: "Catégorie",
+        reg_cat_clan: "Clan / Famille (Clan/Family)",
+        reg_cat_name: "Nom (Name)",
+        reg_cat_district: "District",
+        reg_cat_corporate: "Entreprise (Corporate)",
+        reg_cat_commemorative: "Commémoratif (Commemorative)",
+        reg_cat_military: "Militaire (Military)",
+        reg_cat_royal: "Royal",
+        reg_cat_fashion: "Mode (Fashion)",
+        reg_cat_other: "Autre (Other)",
+        reg_cat_clan_hint: "Pour les membres d'un clan ou d'une famille écossaise reconnus par la Cour du Lord Lyon ; il faut l'accord écrit du chef.",
+        reg_cat_name_hint: "Au nom d'une personne ou d'une famille, sous la forme « Nom, Prénom (Personal) ».",
+        reg_cat_district_hint: "Lié à un lieu : ville, paroisse, comté ou pays. Il faut l'accord de l'autorité locale.",
+        reg_cat_corporate_hint: "Pour une entreprise ou une organisation.",
+        reg_cat_commemorative_hint: "Pour commémorer un événement public ou une personne.",
+        reg_cat_military_hint: "Lié à une branche des forces armées.",
+        reg_cat_royal_hint: "Avec un lien direct avec une famille royale.",
+        reg_cat_fashion_hint: "Pour la mode ou la vente, en général sans lien personnel particulier.",
+        reg_cat_other_hint: "Quand aucune autre catégorie ne convient.",
+        reg_designer: "Création",
+        reg_designer_hint: "La ou les personnes qui ont créé le motif, avec leur accord.",
+        reg_date: "Date de création",
+        reg_rationale: "Explication (rationale)",
+        reg_rationale_hint: "Pourquoi ce tartan, pourquoi ce nom. Des faits, sans abréviation ni message politique. Le texte sera publié et le Register peut le retoucher.",
+        reg_restrictions: "Restrictions (facultatif)",
+        reg_restrictions_hint: "Qui peut le porter, si vous voulez être consulté avant qu'il soit tissé, un tissage préféré. Le Register ne les fait pas respecter.",
+        reg_draft_local: "Ce que vous écrivez reste sur cet appareil, pour la prochaine fois.",
+        reg_s5: "5. Avant d'envoyer",
+        reg_todo_compare: "Comparer le motif aux tartans enregistrés (%l).",
+        reg_todo_authority: "Réunir la preuve d'autorisation pour le nom, s'il s'agit d'une personne, d'un clan, d'un lieu ou d'une organisation.",
+        reg_todo_account: "Créer un compte gratuit sur le site du Register, puis remplir le formulaire en ligne avec cette page.",
+        reg_todo_fee: "Frais : 150 £ par demande, non remboursables, payés en ligne. Tarif lu le 15 novembre 2026 : vérifiez-le (%l).",
+        reg_link_fees: "page des frais",
+        reg_todo_delay: "Compter environ quatre semaines de traitement.",
+        reg_todo_before_weaving: "Le Register conseille de déposer avant de faire tisser.",
+        reg_todo_sample: "Une fois tissé, un échantillon d'au moins 18 × 23 cm peut lui être envoyé.",
+        reg_disclaimer: "Cet outil ne vérifie pas l'originalité du motif et n'envoie rien : la demande se fait sur le site du Register.",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -819,6 +905,75 @@ const TRANSLATIONS = {
         locks_label: "Keep",
         title_keep_colors: "The next pattern keeps these colors",
         title_keep_struct: "The next pattern keeps these stripes",
+        menu_register: "Registration application (Register)",
+        title_register: "What the Scottish Register of Tartans asks for, ready to copy or print",
+        reg_title: "Prepare a registration application",
+        reg_intro: "The Scottish Register of Tartans records new tartans. This page gathers what it asks for; the application is made on its site (%l). Three conditions:",
+        reg_link_guide: "official guidance",
+        reg_crit_def: "the design meets the definition of tartan in the 2008 Act;",
+        reg_crit_new: "it is a new design, unique to the Register;",
+        reg_crit_name: "you have a clear link with the proposed name.",
+        reg_s1: "1. The threadcount",
+        reg_threads: "Threads per sett",
+        reg_size_ok: "The sett has %n threads: the size the Register asks for (240 to 260 threads, a 6 to 7 inch sett).",
+        reg_resize: "Bring the sett to about 250 threads (it has %n): the Register asks for the threadcount of a 6 to 7 inch sett, 240 to 260 threads.",
+        reg_reordered: "The code starts with the colour that comes first in the alphabet, as the Register asks. The pattern does not change.",
+        reg_code_final: "Check the code: it cannot be amended once the tartan is registered.",
+        reg_copy: "Copy",
+        reg_copied: "Copied ✓",
+        reg_s2: "2. The colours",
+        reg_col_code: "Code",
+        reg_col_name: "Name",
+        reg_col_hex: "Hex",
+        reg_shared: "Several shades share the code %c: the Register reads one letter as one colour. Describe the shades in your rationale.",
+        reg_compare: "To look for similar tartans, paste this palette then the code into \"Compare Designs\" (%l).",
+        reg_link_compare: "Register page",
+        reg_compare_limit: "Enlarging, reducing or changing the shades of an existing tartan does not make a new tartan. The Register warns that its automatic comparison does not catch everything.",
+        reg_s3: "3. The image",
+        reg_download: "Download the image (JPEG)",
+        reg_image_note: "One full sett, in colour, %s × %s pixels, with no relief or irregular yarn. The Register accepts GIF and JPEG, and checks that the image matches the code.",
+        reg_s4: "4. Your part",
+        reg_name: "Tartan name",
+        reg_name_hint: "In English, unique to the Register, 200 characters at most. You need a personal link with the name; for that of a person, clan, place or organisation, written authority is needed (%l).",
+        reg_link_name: "naming rules",
+        reg_count: "%n / %m characters",
+        reg_category: "Category",
+        reg_cat_clan: "Clan/Family",
+        reg_cat_name: "Name",
+        reg_cat_district: "District",
+        reg_cat_corporate: "Corporate",
+        reg_cat_commemorative: "Commemorative",
+        reg_cat_military: "Military",
+        reg_cat_royal: "Royal",
+        reg_cat_fashion: "Fashion",
+        reg_cat_other: "Other",
+        reg_cat_clan_hint: "For members of a Scottish clan or family recognised by the Court of the Lord Lyon; the written approval of the chief is needed.",
+        reg_cat_name_hint: "Named for a person or family, in the form 'Surname, Forename (Personal)'.",
+        reg_cat_district_hint: "Linked to a place: town, parish, county or country. The authority of the local governing body is needed.",
+        reg_cat_corporate_hint: "For a company or organisation.",
+        reg_cat_commemorative_hint: "To commemorate a specific public event or person.",
+        reg_cat_military_hint: "Linked to a branch of the armed forces.",
+        reg_cat_royal_hint: "With a direct connection to royalty.",
+        reg_cat_fashion_hint: "For fashion or retail, usually without any particular personal association.",
+        reg_cat_other_hint: "When no other category fits.",
+        reg_designer: "Designer",
+        reg_designer_hint: "The person or people who created the sett, with their permission.",
+        reg_date: "Date created",
+        reg_rationale: "Rationale",
+        reg_rationale_hint: "Why this tartan, why this name. Facts only, no abbreviations or political statements. The text will be published and the Register may edit it.",
+        reg_restrictions: "Restrictions (optional)",
+        reg_restrictions_hint: "Who may wear it, whether you want to be consulted before it is woven, a preferred mill. The Register does not enforce them.",
+        reg_draft_local: "What you write stays on this device, for next time.",
+        reg_s5: "5. Before sending",
+        reg_todo_compare: "Compare the design with registered tartans (%l).",
+        reg_todo_authority: "Gather the evidence of authority for the name, if it is that of a person, clan, place or organisation.",
+        reg_todo_account: "Create a free account on the Register's site, then fill in the online form with this page.",
+        reg_todo_fee: "Fee: £150 per application, non-refundable, paid online. Read on 15 November 2026: check it (%l).",
+        reg_link_fees: "fees page",
+        reg_todo_delay: "Allow about four weeks for processing.",
+        reg_todo_before_weaving: "The Register advises applying before having the tartan woven.",
+        reg_todo_sample: "Once woven, a sample of at least 18 × 23 cm can be sent to it.",
+        reg_disclaimer: "This tool does not check whether the design is original and sends nothing: the application is made on the Register's site.",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -1019,6 +1174,11 @@ function cacheDomElements() {
     domElements.sheetBody = document.getElementById('sheet-body');
     domElements.btnSheetPrint = document.getElementById('btn-sheet-print');
     domElements.btnSheetClose = document.getElementById('btn-sheet-close');
+    domElements.btnRegisterGuide = document.getElementById('btn-register-guide');
+    domElements.registerModal = document.getElementById('register-modal');
+    domElements.registerBody = document.getElementById('register-body');
+    domElements.btnRegisterPrint = document.getElementById('btn-register-print');
+    domElements.btnRegisterClose = document.getElementById('btn-register-close');
     domElements.patchworkMode = document.getElementById('patchwork-mode');
     domElements.patchworkAxisX = document.getElementById('patchwork-axis-x');
     domElements.patchworkAxisY = document.getElementById('patchwork-axis-y');
@@ -1325,6 +1485,12 @@ function bindEvents() {
     if (domElements.sheetModal) {
         domElements.sheetModal.addEventListener('click', (e) => { if (e.target === domElements.sheetModal) closeWeavingSheet(); });
     }
+    if (domElements.btnRegisterGuide) domElements.btnRegisterGuide.addEventListener('click', openRegisterGuide);
+    if (domElements.btnRegisterPrint) domElements.btnRegisterPrint.addEventListener('click', () => window.print());
+    if (domElements.btnRegisterClose) domElements.btnRegisterClose.addEventListener('click', closeRegisterGuide);
+    if (domElements.registerModal) {
+        domElements.registerModal.addEventListener('click', (e) => { if (e.target === domElements.registerModal) closeRegisterGuide(); });
+    }
     // A link pasted in the address bar of an open page only changes the hash
     window.addEventListener('hashchange', openSharedLink);
 
@@ -1420,6 +1586,15 @@ document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             e.preventDefault();
             closeWeavingSheet();
+        }
+        return;
+    }
+
+    // The fields of the application keep their keys; only Escape closes it
+    if (isRegisterGuideOpen()) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeRegisterGuide();
         }
         return;
     }
@@ -5160,6 +5335,323 @@ function closeWeavingSheet() {
     weavingSheetOpener = null;
 }
 
+// --- APPLICATION TO THE SCOTTISH REGISTER OF TARTANS (its figures: REGISTER, at the top) ---
+
+// The Register wants the code to start with the colour that comes first in the alphabet:
+// the first pivot of a symmetric sett, the first stripe of a repeating one.
+function registerOrder(stripes, symmetric) {
+    let list = stripes.map(s => ({ ...s }));
+    if (list.length < 2) return list;
+    const key = s => String(s.code).toUpperCase();
+    if (symmetric) return key(list[list.length - 1]) < key(list[0]) ? list.reverse() : list;
+
+    // A repeating sett is a loop: a colour split between the end and the start is one stripe
+    if (list.length > 2 && list[0].hex.toUpperCase() === list[list.length - 1].hex.toUpperCase()) {
+        list[0].count += list.pop().count;
+    }
+    const first = list.map(key).sort()[0];
+    let best = list, bestSig = null;
+    list.forEach((s, i) => {
+        if (key(s) !== first) return;
+        const turn = list.slice(i).concat(list.slice(0, i));
+        const sig = turn.map(t => key(t) + String(t.count).padStart(6, '0')).join(' ');
+        if (bestSig === null || sig < bestSig) { best = turn; bestSig = sig; }
+    });
+    return best;
+}
+
+// The pattern as the Register wants it: its order, and if asked a 6 to 7 inch sett
+function prepareRegisterPattern(stripes, symmetric, resize) {
+    let list = registerOrder(stripes, symmetric);
+    const reordered = buildSRTCode(list, symmetric) !== buildSRTCode(stripes, symmetric);
+    const before = countSettThreads(list, symmetric);
+    const inRange = before >= REGISTER.settMin && before <= REGISTER.settMax;
+    if (resize && !inRange) list = rescaleStripes(list, symmetric, REGISTER.settTarget);
+    return {
+        stripes: list,
+        symmetric,
+        before,
+        inRange,
+        threads: countSettThreads(list, symmetric),
+        reordered,
+        code: buildSRTCode(list, symmetric),
+    };
+}
+
+// The colours of the code with their name and hex; "shared" when two shades carry one letter
+function registerColours(stripes) {
+    const palette = paletteFromStripes(stripes);
+    const perCode = new Map();
+    palette.forEach(c => perCode.set(c.code.toUpperCase(), (perCode.get(c.code.toUpperCase()) || 0) + 1));
+    return palette.map(c => ({ code: c.code, name: c.name, hex: c.hex.toUpperCase(), shared: perCode.get(c.code.toUpperCase()) > 1 }));
+}
+
+// The palette in the format of the Register's "Compare Designs" page: K=#101010#BLACK;
+function comparePalette(colours) {
+    const seen = new Set();
+    return colours.filter(c => {
+        const k = c.code.toUpperCase();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+    }).map(c => `${c.code}=${c.hex}#${String(c.name).toUpperCase()};`).join('');
+}
+
+let registerOpener = null;
+let registerDraft = null;
+
+function isRegisterGuideOpen() {
+    return !!domElements.registerModal && !domElements.registerModal.hidden;
+}
+
+function loadRegisterDraft() {
+    const empty = { name: '', category: 'fashion', designer: '', date: new Date().toISOString().slice(0, 10), rationale: '', restrictions: '', resize: true };
+    try {
+        const saved = JSON.parse(localStorage.getItem(REGISTER_DRAFT_KEY) || 'null');
+        if (saved && typeof saved === 'object') {
+            for (const k of Object.keys(empty)) if (typeof saved[k] === typeof empty[k]) empty[k] = saved[k];
+            if (!REGISTER.categories.includes(empty.category)) empty.category = 'fashion';
+        }
+    } catch (e) { /* Private mode or blocked storage: the page still works */ }
+    return empty;
+}
+function saveRegisterDraft() {
+    try { localStorage.setItem(REGISTER_DRAFT_KEY, JSON.stringify(registerDraft)); } catch (e) { /* see above */ }
+}
+
+function registerLink(text, href) {
+    const a = sheetElement('a', text);
+    a.href = href;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    return a;
+}
+
+// A sentence with one link in it: "%l" in the text marks where the link goes
+function registerSentence(tag, text, linkText, href, className) {
+    const el = sheetElement(tag, undefined, className);
+    const [before, after = ''] = text.split('%l');
+    el.append(before, registerLink(linkText, href), after);
+    return el;
+}
+
+function registerCopyButton(getText) {
+    const t = TRANSLATIONS[currentLang];
+    const btn = sheetElement('button', t.reg_copy, 'reg-copy');
+    btn.type = 'button';
+    btn.addEventListener('click', () => {
+        const text = getText();
+        const done = () => { btn.textContent = TRANSLATIONS[currentLang].reg_copied; setTimeout(() => { btn.textContent = TRANSLATIONS[currentLang].reg_copy; }, 1500); };
+        const manual = () => window.prompt(TRANSLATIONS[currentLang].msg_link_manual, text);
+        if (!navigator.clipboard) { manual(); return; }
+        navigator.clipboard.writeText(text).then(done).catch(manual);
+    });
+    return btn;
+}
+
+// One full sett, square, about 1500 pixels, an exact number of pixels per thread
+function registerImageSide(threads) {
+    return threads * Math.max(1, Math.round(1500 / threads));
+}
+function registerImageCanvas(pattern) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = registerImageSide(countSettThreads(pattern.stripes, pattern.symmetric));
+    renderPatternCanvas(canvas, pattern, 'fit', true);
+    return canvas;
+}
+
+function downloadRegisterImage(pattern) {
+    const canvas = registerImageCanvas(pattern);
+    canvas.toBlob(blob => { if (blob) downloadBlob(blob, getFilename('jpg')); }, 'image/jpeg', 0.95);
+}
+
+// A text field with its counter, its hint and a copy of its text for printing
+function registerTextField(id, labelKey, hintKey, value, max, multiline, onInput) {
+    const t = TRANSLATIONS[currentLang];
+    const control = document.createElement(multiline ? 'textarea' : 'input');
+    if (!multiline) control.type = 'text';
+    if (max) control.maxLength = max;
+    control.value = value;
+    const field = sheetField(id, labelKey, control);
+    const printed = sheetElement('div', value, 'reg-print-text');
+    if (multiline) field.appendChild(printed);
+    let count = null;
+    if (max) {
+        count = sheetElement('div', '', 'reg-count');
+        field.appendChild(count);
+    }
+    const update = () => {
+        if (count) {
+            count.textContent = t.reg_count.replace('%n', control.value.length).replace('%m', max);
+            count.classList.toggle('over', control.value.length > max);
+        }
+        printed.textContent = control.value;
+    };
+    control.addEventListener('input', () => { update(); onInput(control.value); });
+    update();
+    if (hintKey) field.appendChild(sheetElement('div', t[hintKey], 'reg-hint'));
+    return field;
+}
+
+function openRegisterGuide() {
+    if (tartanStripes.length === 0 || !domElements.registerBody) return;
+    registerDraft = loadRegisterDraft();
+    renderRegisterGuide();
+    registerOpener = document.activeElement;
+    domElements.registerModal.hidden = false;
+    domElements.btnRegisterPrint?.focus();
+}
+
+function renderRegisterGuide() {
+    const t = TRANSLATIONS[currentLang];
+    const isSymmetric = domElements.sym?.checked || false;
+    const pattern = prepareRegisterPattern(tartanStripes, isSymmetric, registerDraft.resize);
+    const colours = registerColours(pattern.stripes);
+    const body = domElements.registerBody;
+    body.textContent = '';
+    const section = (titleKey) => {
+        const s = sheetElement('div', undefined, 'reg-section');
+        s.appendChild(sheetElement('h3', t[titleKey]));
+        body.appendChild(s);
+        return s;
+    };
+
+    const title = sheetElement('h2', t.reg_title);
+    title.id = 'register-title';
+    body.appendChild(title);
+    body.appendChild(sheetElement('p', `ID ${String(generationID).padStart(6, '0')} · ${getFormattedDate().replace(/_/g, '-')}`, 'sheet-meta'));
+    body.appendChild(registerSentence('p', t.reg_intro, t.reg_link_guide, REGISTER.url.guide, 'reg-intro'));
+    const criteria = sheetElement('ul');
+    ['reg_crit_def', 'reg_crit_new', 'reg_crit_name'].forEach(k => criteria.appendChild(sheetElement('li', t[k])));
+    body.appendChild(criteria);
+
+    // 1. The threadcount
+    const s1 = section('reg_s1');
+    const head = sheetElement('div', undefined, 'sheet-head');
+    const swatch = document.createElement('canvas');
+    swatch.width = swatch.height = 360;
+    swatch.className = 'sheet-swatch';
+    renderPatternCanvas(swatch, pattern, 'fit', true);
+    const facts = sheetElement('div');
+    facts.style.flex = '1';
+    facts.style.minWidth = '220px';
+    const codeRow = sheetElement('div', undefined, 'reg-row');
+    const code = sheetElement('div', pattern.code, 'reg-code');
+    code.id = 'register-code';
+    codeRow.append(code, registerCopyButton(() => pattern.code));
+    facts.appendChild(codeRow);
+    const dl = sheetElement('dl', undefined, 'sheet-facts');
+    [
+        [t.reg_threads, String(pattern.threads)],
+        [t.sheet_structure, isSymmetric ? t.crit_sym : t.crit_asym],
+    ].forEach(([term, value]) => dl.append(sheetElement('dt', term), sheetElement('dd', value)));
+    facts.appendChild(dl);
+    head.append(swatch, facts);
+    s1.appendChild(head);
+    if (pattern.inRange) {
+        s1.appendChild(sheetElement('p', t.reg_size_ok.replace('%n', pattern.before), 'sheet-note'));
+    } else {
+        const label = sheetElement('label', undefined, 'reg-check');
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.id = 'register-resize';
+        box.checked = registerDraft.resize;
+        box.addEventListener('change', () => { registerDraft.resize = box.checked; saveRegisterDraft(); renderRegisterGuide(); document.getElementById('register-resize')?.focus(); });
+        label.append(box, sheetElement('span', t.reg_resize.replace('%n', pattern.before)));
+        s1.appendChild(label);
+    }
+    if (pattern.reordered) s1.appendChild(sheetElement('p', t.reg_reordered, 'sheet-note'));
+    s1.appendChild(sheetElement('p', t.reg_code_final, 'sheet-note'));
+
+    // 2. The colours
+    const s2 = section('reg_s2');
+    const table = sheetElement('table', undefined, 'sheet-table');
+    const thead = sheetElement('thead');
+    const hr = sheetElement('tr');
+    [t.reg_col_code, t.reg_col_name, t.reg_col_hex].forEach(h => hr.appendChild(sheetElement('th', h)));
+    thead.appendChild(hr);
+    const tbody = sheetElement('tbody');
+    colours.forEach(c => {
+        const tr = sheetElement('tr');
+        const first = sheetElement('td');
+        const chip = sheetElement('span', undefined, 'sheet-chip');
+        chip.style.background = c.hex;
+        first.append(chip, c.code);
+        tr.append(first, sheetElement('td', c.name), sheetElement('td', c.hex));
+        tbody.appendChild(tr);
+    });
+    table.append(thead, tbody);
+    s2.appendChild(table);
+    const shared = [...new Set(colours.filter(c => c.shared).map(c => c.code))];
+    if (shared.length) s2.appendChild(sheetElement('p', t.reg_shared.replace('%c', shared.join(', ')), 'sheet-note reg-warn'));
+    s2.appendChild(registerSentence('p', t.reg_compare, t.reg_link_compare, REGISTER.url.compare, 'sheet-note'));
+    const paletteText = comparePalette(colours);
+    const paletteRow = sheetElement('div', undefined, 'reg-row');
+    const paletteCode = sheetElement('div', paletteText, 'reg-code');
+    paletteCode.id = 'register-palette';
+    paletteRow.append(paletteCode, registerCopyButton(() => paletteText));
+    s2.appendChild(paletteRow);
+    s2.appendChild(sheetElement('p', t.reg_compare_limit, 'sheet-note'));
+
+    // 3. The image
+    const s3 = section('reg_s3');
+    const download = sheetElement('button', t.reg_download, 'reg-download');
+    download.type = 'button';
+    download.id = 'register-download';
+    download.addEventListener('click', () => downloadRegisterImage(pattern));
+    s3.appendChild(download);
+    const side = registerImageSide(pattern.threads);
+    s3.appendChild(sheetElement('p', t.reg_image_note.replace(/%s/g, side), 'sheet-note'));
+
+    // 4. What the designer writes
+    const s4 = section('reg_s4');
+    const fields = sheetElement('div', undefined, 'reg-fields');
+    const keep = (k) => (v) => { registerDraft[k] = v; saveRegisterDraft(); };
+    const nameField = registerTextField('register-name', 'reg_name', null, registerDraft.name, REGISTER.nameMax, false, keep('name'));
+    nameField.appendChild(registerSentence('div', t.reg_name_hint, t.reg_link_name, REGISTER.url.name, 'reg-hint'));
+    fields.appendChild(nameField);
+
+    const category = sheetSelect(REGISTER.categories.map(c => [c, t['reg_cat_' + c]]), registerDraft.category);
+    const categoryField = sheetField('register-category', 'reg_category', category);
+    const categoryHint = sheetElement('div', t['reg_cat_' + registerDraft.category + '_hint'], 'reg-hint');
+    categoryField.appendChild(categoryHint);
+    category.addEventListener('change', () => {
+        registerDraft.category = category.value;
+        categoryHint.textContent = TRANSLATIONS[currentLang]['reg_cat_' + category.value + '_hint'];
+        saveRegisterDraft();
+    });
+    fields.appendChild(categoryField);
+
+    fields.appendChild(registerTextField('register-designer', 'reg_designer', 'reg_designer_hint', registerDraft.designer, 0, false, keep('designer')));
+    const date = document.createElement('input');
+    date.type = 'date';
+    date.value = registerDraft.date;
+    date.addEventListener('input', () => { registerDraft.date = date.value; saveRegisterDraft(); });
+    fields.appendChild(sheetField('register-date', 'reg_date', date));
+    fields.appendChild(registerTextField('register-rationale', 'reg_rationale', 'reg_rationale_hint', registerDraft.rationale, REGISTER.rationaleMax, true, keep('rationale')));
+    fields.appendChild(registerTextField('register-restrictions', 'reg_restrictions', 'reg_restrictions_hint', registerDraft.restrictions, 0, true, keep('restrictions')));
+    s4.appendChild(fields);
+    s4.appendChild(sheetElement('p', t.reg_draft_local, 'sheet-note'));
+
+    // 5. Before sending
+    const s5 = section('reg_s5');
+    const list = sheetElement('ul');
+    list.id = 'register-checklist';
+    list.appendChild(registerSentence('li', t.reg_todo_compare, t.reg_link_compare, REGISTER.url.compare));
+    ['reg_todo_authority', 'reg_todo_account'].forEach(k => list.appendChild(sheetElement('li', t[k])));
+    list.appendChild(registerSentence('li', t.reg_todo_fee, t.reg_link_fees, REGISTER.url.fees));
+    ['reg_todo_delay', 'reg_todo_before_weaving', 'reg_todo_sample'].forEach(k => list.appendChild(sheetElement('li', t[k])));
+    s5.appendChild(list);
+    s5.appendChild(sheetElement('p', t.reg_disclaimer, 'sheet-note'));
+}
+
+function closeRegisterGuide() {
+    if (!isRegisterGuideOpen()) return;
+    domElements.registerModal.hidden = true;
+    focusOpener(registerOpener);
+    registerOpener = null;
+}
+
 // --- EXPORT SVG ---
 // One full weave repeat, which tiles without seams, sized in mm from the thread diameter.
 // Warp: one rectangle per stripe. Weft: one rectangle per stripe, filled with a 4 x 4 twill
@@ -5705,7 +6197,7 @@ function mergePinnedTiles(previous, fresh, qty) {
 }
 
 // Draws a pattern into a square canvas. "fit" shows one full repeat; "zoom" uses the main zoom.
-function renderPatternCanvas(canvas, entry, scaleMode) {
+function renderPatternCanvas(canvas, entry, scaleMode, plain = false) {
     const size = canvas.width;
     const ctx = canvas.getContext('2d');
     const settThreads = countSettThreads(entry.stripes, entry.symmetric);
@@ -5724,9 +6216,9 @@ function renderPatternCanvas(canvas, entry, scaleMode) {
         for (let i = 0; i < drawn; i++) sampled[i] = threadColors[Math.floor(i * threadColors.length / drawn)];
         threadColors = sampled;
     }
-    if (domElements.yarnIrregular?.checked) threadColors = varyYarnColors(threadColors);
+    if (!plain && domElements.yarnIrregular?.checked) threadColors = varyYarnColors(threadColors);
 
-    const relief = getEffectType() === 'relief' && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
+    const relief = !plain && getEffectType() === 'relief' && drawn === threads && threadPx >= RELIEF_MIN_PIXELS;
     const k = relief ? Math.min(16, Math.round(threadPx)) : 1;
 
     const tile = document.createElement('canvas');

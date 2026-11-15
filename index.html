@@ -738,12 +738,39 @@
     .sheet-plan th:nth-child(2), .sheet-plan td:nth-child(2) { text-align: left; }
     .sheet-perkg { width: 70px !important; }
     .sheet-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    /* Application to the Register: same paper as the weaving sheet */
+    .register-paper a { color: #1a4f8b; }
+    .register-paper ul { margin: 4px 0 0 18px; }
+    .register-paper li { margin: 2px 0; }
+    .reg-intro { margin: 6px 0 4px; }
+    .reg-code { font-family: monospace; font-size: 12px; overflow-wrap: anywhere; background: #f3f3f3; padding: 6px 8px; border-radius: 3px; margin: 4px 0; }
+    .reg-row { display: flex; align-items: flex-start; gap: 8px; }
+    .reg-row .reg-code { flex: 1; min-width: 0; }
+    .reg-copy, .reg-download { background: #fff; color: #111; border: 1px solid #888; border-radius: 3px; padding: 4px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .reg-copy:hover, .reg-download:hover { background: #eee; }
+    .reg-check { display: flex; gap: 6px; align-items: flex-start; margin: 6px 0; font-size: 12px; color: #222; }
+    .reg-warn { color: #8a4b00; }
+    .reg-fields { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .reg-fields .sheet-field { color: #222; }
+    .reg-fields label { font-weight: 600; }
+    .register-paper input[type=text], .register-paper input[type=date], .register-paper textarea, .register-paper .reg-fields select { background: #fff; color: #111; border: 1px solid #aaa; border-radius: 3px; padding: 4px 6px; font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box; }
+    .register-paper input[type=date] { width: auto; }
+    .register-paper .reg-fields select { width: auto; max-width: 100%; }
+    .register-paper textarea { min-height: 90px; resize: vertical; }
+    .reg-hint { color: #555; font-size: 11px; }
+    .reg-count { color: #555; font-size: 11px; text-align: right; }
+    .reg-count.over { color: #a00; font-weight: 600; }
+    .reg-print-text { display: none; white-space: pre-wrap; font-weight: 600; }
     .sheet-actions [hidden] { display: none; }
     @media (max-width: 768px) { .import-box { flex-wrap: wrap; } .import-input { flex-basis: 100%; } }
     @media print {
       html, body { height: auto; width: auto; overflow: visible; background: #fff; }
-      body > :not(#sheet-modal) { display: none !important; }
-      #sheet-modal { position: static; width: auto; height: auto; background: none; display: block; }
+      body > :not(#sheet-modal):not(#register-modal) { display: none !important; }
+      #sheet-modal:not([hidden]), #register-modal:not([hidden]) { position: static; width: auto; height: auto; background: none; display: block; }
+      .register-paper textarea, .register-paper .reg-copy, .register-paper .reg-download { display: none; }
+      .reg-print-text { display: block; }
+      .register-paper input[type=text], .register-paper input[type=date] { border: none; padding: 0; font-weight: 600; }
+      .reg-section { break-inside: avoid; }
       .sheet-paper { width: auto; max-width: none; max-height: none; overflow: visible; padding: 0; }
       .sheet-actions { display: none; }
       .sheet-paper input[type=number], .sheet-paper select { border: none; padding: 0; appearance: none; -webkit-appearance: none; font-weight: 600; }
@@ -881,6 +908,7 @@
           <button type="button" class="menu-item studio-only" id="btn-export-svg" data-i18n="menu_export_svg" data-i18n-title="title_export_svg" title="Un motif complet en vectoriel, raccordable, à la taille réelle du tissu">Vectoriel SVG (un motif raccordable)</button>
           <button type="button" class="menu-item studio-only" id="btn-export-txt" data-i18n="menu_export_txt">Détails (.txt, à rouvrir)</button>
           <button type="button" class="menu-item studio-only" id="btn-weaving-sheet" data-i18n="menu_export_sheet" data-i18n-title="title_weaving_sheet" title="Une fiche imprimable : ordre des fils et quantité de fil par couleur">Fiche de tissage (à imprimer)</button>
+          <button type="button" class="menu-item studio-only" id="btn-register-guide" data-i18n="menu_register" data-i18n-title="title_register" title="Ce que demande le Scottish Register of Tartans, prêt à copier ou à imprimer">Demande d'enregistrement (Register)</button>
           <button type="button" class="menu-item studio-only" id="btn-export-all" data-i18n="menu_export_all">Tout : PNG, SVG et détails</button>
         </div>
       </div>
@@ -1270,6 +1298,16 @@
       <div class="sheet-actions">
         <button type="button" class="btn-secondary" id="btn-sheet-print" data-i18n="btn_print">Imprimer</button>
         <button type="button" class="btn-secondary" id="btn-sheet-close" data-i18n="btn_close">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="register-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="register-title" hidden>
+    <div class="sheet-paper register-paper">
+      <div id="register-body"></div>
+      <div class="sheet-actions">
+        <button type="button" class="btn-secondary" id="btn-register-print" data-i18n="btn_print">Imprimer</button>
+        <button type="button" class="btn-secondary" id="btn-register-close" data-i18n="btn_close">Fermer</button>
       </div>
     </div>
   </div>
