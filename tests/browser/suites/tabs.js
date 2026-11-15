@@ -1,4 +1,4 @@
-// The side panel in three tabs; Générer stays reachable from any of them.
+// The side panel in two tabs (the colours live under the ribbon); Générer stays reachable from any of them.
 window.alerts = [];
 window.alert = m => window.alerts.push(m);
 const results = [];
@@ -8,38 +8,36 @@ const $ = id => document.getElementById(id);
 const key = (el, k) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const shown = id => !$(id).closest('[hidden]') && $(id).getClientRects().length > 0;
-const tabs = ['pattern', 'colors', 'fabric'];
+const tabs = ['pattern', 'fabric'];
 const state = () => tabs.map(n => $('tab-' + n).getAttribute('aria-selected') === 'true' ? 1 : 0).join('') + '/' + tabs.map(n => $('panel-' + n).hidden ? 0 : 1).join('');
 
 async function run() {
   const vw = document.documentElement.clientWidth;
   check('viewport ' + vw, true);
-  check('Motif open at load', state() === '100/100', state());
-  check('tab roles', $('tab-colors').getAttribute('role') === 'tab' && $('panel-colors').getAttribute('role') === 'tabpanel' && $('tab-colors').getAttribute('aria-controls') === 'panel-colors');
-  check('only the selected tab in the Tab order', $('tab-pattern').tabIndex === 0 && $('tab-colors').tabIndex === -1);
+  check('Motif open at load', state() === '10/10', state());
+  check('two tabs, no Couleurs', document.querySelectorAll('.panel-tab').length === 2 && !$('tab-colors') && !$('panel-colors'));
+  check('tab roles', $('tab-fabric').getAttribute('role') === 'tab' && $('panel-fabric').getAttribute('role') === 'tabpanel' && $('tab-fabric').getAttribute('aria-controls') === 'panel-fabric');
+  check('only the selected tab in the Tab order', $('tab-pattern').tabIndex === 0 && $('tab-fabric').tabIndex === -1);
   // Contents
   check('Motif: examples, structure', ['srt-examples', 'in-stripes'].every(id => $('panel-pattern').contains($(id))));
-  check('Couleurs: palette, readability', ['color-list', 'readability-list', 'vision-select'].every(id => $('panel-colors').contains($(id))));
-  check('Tissu: yarn, relief, irregularity, width', ['thread-type', 'effect-relief', 'yarn-irregular', 'real-width'].every(id => $('panel-fabric').contains($(id))));
+  check('palette under the ribbon', $('stripe-ribbon').contains($('color-list')) && shown('color-list') && $('color-list').querySelectorAll('.palette-chip').length === userPalette.length);
+  check('Tissu: yarn, relief, irregularity, width, readability', ['thread-type', 'effect-relief', 'yarn-irregular', 'real-width', 'readability-list', 'vision-select'].every(id => $('panel-fabric').contains($(id))));
   check('locks above the tabs, Générer out of the panel', !$('sidebar').contains($('btn-generate')) && !$('lock-colors').closest('.tab-panel') && $('lock-colors').closest('.panel-top') !== null);
   // Mouse
-  $('tab-colors').click();
-  check('Couleurs selected', state() === '010/010', state());
-  check('palette section open in its tab', $('color-list').closest('details').open && shown('color-list'));
   $('tab-fabric').click();
-  check('Tissu selected', state() === '001/001' && shown('thread-type'), state());
+  check('Tissu selected', state() === '01/01' && shown('thread-type'), state());
   // Keyboard
   $('tab-fabric').focus();
   const vx = viewX;
   key($('tab-fabric'), 'ArrowRight');
-  check('ArrowRight wraps to Motif with the focus', state() === '100/100' && document.activeElement === $('tab-pattern'), state());
+  check('ArrowRight wraps to Motif with the focus', state() === '10/10' && document.activeElement === $('tab-pattern'), state());
   check('arrows on the tabs do not move the pattern', viewX === vx);
   key($('tab-pattern'), 'ArrowLeft');
-  check('ArrowLeft wraps to Tissu', state() === '001/001' && document.activeElement === $('tab-fabric'));
+  check('ArrowLeft wraps to Tissu', state() === '01/01' && document.activeElement === $('tab-fabric'));
   key($('tab-fabric'), 'Home');
-  check('Home', state() === '100/100');
+  check('Home', state() === '10/10');
   key($('tab-pattern'), 'End');
-  check('End', state() === '001/001');
+  check('End', state() === '01/01');
   // Générer stays visible from any tab, even scrolled down
   const sb = $('sidebar');
   sb.scrollTop = sb.scrollHeight;
@@ -48,26 +46,25 @@ async function run() {
   check('Générer visible after scrolling', g.width > 0 && g.top >= 0 && g.bottom <= window.innerHeight + 1 && document.elementFromPoint(g.left + g.width / 2, g.top + g.height / 2)?.closest('#btn-generate') !== null, JSON.stringify([g.top, s.top]));
   const id = generationID;
   $('btn-generate').click();
-  check('Générer works from Tissu', generationID !== id && state() === '001/001');
+  check('Générer works from Tissu', generationID !== id && state() === '01/01');
   sb.scrollTop = 0;
   // The menus reach controls in other tabs
   $('btn-menu-import').click(); $('menu-new-srt').click();
-  check('Nouveau > code SRT goes to the bar, tab unchanged', state() === '001/001' && document.activeElement === $('import-text'), state());
-  $('tab-colors').click();
+  check('Nouveau > code SRT goes to the bar, tab unchanged', state() === '01/01' && document.activeElement === $('import-text'), state());
   $('btn-menu-import').click(); $('menu-new-example').click();
-  check('Nouveau > exemple switches to Motif', state() === '100/100' && document.activeElement === $('srt-examples'));
+  check('Nouveau > exemple switches to Motif', state() === '10/10' && document.activeElement === $('srt-examples'));
   // Readability warning seen from another tab
-  check('no warning badge on a readable pattern, or a warning matches the section', $('tab-colors-badge').textContent === $('readability-badge').textContent);
+  check('no warning badge on a readable pattern, or a warning matches the section', $('tab-fabric-badge').textContent === $('readability-badge').textContent);
   tartanStripes = [['K', '#101010', 48], ['DG', '#141414', 8], ['W', '#FFFFFF', 20]].map(([code, hex, count]) => ({ code, hex, count }));
   userPalette = paletteFromStripes(tartanStripes); redrawTartan();
-  check('warning on the Couleurs tab', $('tab-colors-badge').textContent === '⚠' && $('tab-colors').title.length > 0, $('tab-colors-badge').textContent);
+  check('warning on the Tissu tab', $('tab-fabric-badge').textContent === '⚠' && $('tab-fabric').title.length > 0, $('tab-fabric-badge').textContent);
   // Collapsed panel
   toggleSidebar(); await sleep(400);
   check('collapsed panel hides the top block', getComputedStyle(document.querySelector('.panel-top')).display === 'none');
   toggleSidebar(); await sleep(400);
   // English
   setLanguage('en');
-  check('English tabs', $('tab-pattern').textContent.trim() === 'Pattern' && $('tab-colors').textContent.includes('Colors') && $('tab-fabric').textContent.trim() === 'Fabric');
+  check('English tabs', $('tab-pattern').textContent.trim() === 'Pattern' && $('tab-fabric').textContent.includes('Fabric'));
   check('English tab list name', document.querySelector('.panel-tabs').getAttribute('aria-label') === 'Panel sections');
   setLanguage('fr');
   check('no horizontal overflow', document.documentElement.scrollWidth <= vw && sb.scrollWidth <= sb.clientWidth + 1, sb.scrollWidth + ' / ' + sb.clientWidth);
