@@ -21,6 +21,12 @@ function backdropOf(el) {
 const contrast = el => { const a = lumOf(toRgba(getComputedStyle(el).color)), b = lumOf(backdropOf(el)); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
 
 async function run() {
+  // Set aside by default: no view switch, and asking for a view keeps the cloth
+  check('set aside: no view switch', getComputedStyle(document.querySelector('.view-switch')).display === 'none');
+  setObjectView('scarf');
+  check('set aside: the cloth stays', !isPreviewOpen());
+  setProductViews(true); // These checks keep them working for when they come back
+  check('back on: the switch shows', getComputedStyle(document.querySelector('.view-switch')).display !== 'none');
   const vw = document.documentElement.clientWidth;
   check('viewport ' + vw, true);
   tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }];

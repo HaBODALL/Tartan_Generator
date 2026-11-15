@@ -30,7 +30,6 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 **Explore** (*Board* mode, next to *Studio* in the top bar)
 * Mood board of 10 to 100 patterns, with pins and variants around a tile.
 * Criteria mode: a grid whose columns and rows each vary one setting (colors, stripes, maximum width, sett, symmetry).
-* **The pattern on objects**, to scale: Scarf, Throw, Cushion and Kilt, sized from the density. A magnifier under the pointer shows the real weave, and *Compare pattern sizes* puts the same pattern twice as fine, as it is and twice as bold side by side; a click takes one. The settings stay usable meanwhile.
 * Color readability: warning on neighboring stripes that are hard to tell apart, and color blindness simulation (on screen only).
 
 **Render**
@@ -42,7 +41,7 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 
 **Save and share** (*Save / share* menu in the top bar)
 * PNG of the current view, SVG of one seamless repeat at real size, text details (SRT and Ink/Stitch codes), ZIP or PNG of the mood board.
-* **Prepare the weaving**: a printable sheet for the chosen piece (from the product view or the *Save / share* menu). Piece and size, warp length per end, the warping plan from selvedge to selvedge with a running total, the weft, and the yarn per colour in metres. The weaver can enter her loom waste per warp end, a margin and the metres per kilo of each yarn to get the weight; these figures stay on her device.
+* **Prepare the weaving**: a printable sheet for the chosen piece (*Save / share* menu). Piece and size, warp length per end, the warping plan from selvedge to selvedge with a running total, the weft, and the yarn per colour in metres. The weaver can enter her loom waste per warp end, a margin and the metres per kilo of each yarn to get the weight; these figures stay on her device.
 * **Prepare a registration application** to the Scottish Register of Tartans (*Save / share* menu): the code in the Register's order and at the 6 to 7 inch size it asks for, the colours and a palette ready to paste into its *Compare Designs* page, a JPEG of one sett, the fields to fill in (name, category, designer, rationale) with the Register's rules beside them, and a checklist before sending. Printable. The tool does not check originality and sends nothing: the application is made on the Register's site.
 * Link that reopens exactly the pattern, with no server involved.
 

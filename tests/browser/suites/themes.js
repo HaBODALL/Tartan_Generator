@@ -52,6 +52,7 @@ async function scanEverything() {
 }
 
 async function run() {
+  setProductViews(true); // Set aside in the page; these checks keep them working
   const vw = document.documentElement.clientWidth, narrow = vw <= 600;
   check('viewport ' + vw, true);
   localStorage.removeItem('tartanTheme');

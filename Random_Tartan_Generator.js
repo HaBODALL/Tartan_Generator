@@ -167,6 +167,10 @@ const INVENT_MAX_RUNS = 12;         // Most stripes read along a line of the ima
 const INVENT_MERGE_DISTANCE = 10;   // Color groups closer than this are one color
 const ESTIMATE_BLEND_LENGTH = 480;  // Positions of a repeat when several proposals are averaged
 const ESTIMATE_DARK_FLOOR = 0.015;  // Under this linear level, differences are only noise
+// Product views (scarf, throw, cushion, kilt) are set aside for now: their code stays,
+// the view switch is hidden. true brings them back.
+const PRODUCT_VIEWS = false;
+
 // --- APPLICATION TO THE SCOTTISH REGISTER OF TARTANS ---
 // What the Register asks, as read on tartanregister.gov.uk on 15 November 2026.
 // The application itself is made on the Register's site; nothing here is sent anywhere.
@@ -1477,6 +1481,7 @@ function bindEvents() {
     }
     document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => setObjectView(btn.dataset.view)));
     bindProductView();
+    setProductViews(PRODUCT_VIEWS);
     watchPreviewStage();
     watchCanvasContainer();
     if (domElements.btnWeavingSheet) domElements.btnWeavingSheet.addEventListener('click', openWeavingSheet);
@@ -4978,8 +4983,17 @@ function bindProductView() {
 }
 
 // The canvas shows the cloth, or one object made of it: a view, not a window, so the settings stay usable
+let productViewsOn = false;
+// Shows or hides the view switch; hidden, only the cloth can be seen
+function setProductViews(on) {
+    productViewsOn = !!on;
+    const viewSwitch = document.querySelector('.view-switch');
+    if (viewSwitch) viewSwitch.hidden = !productViewsOn;
+    if (!productViewsOn) closeObjectPreview();
+}
+
 function setObjectView(view) {
-    if (view === 'cloth' || !OBJECT_VIEWS[view]) {
+    if (view === 'cloth' || !OBJECT_VIEWS[view] || !productViewsOn) {
         closeObjectPreview();
         return;
     }
