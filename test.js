@@ -638,6 +638,16 @@ function runTests() {
             assertSilent(out[1].hex !== out[0].hex, 'a free neighbour does not take the colour of a kept stripe');
             assertEqual(out.filter(s => s.locked).length, 2, 'kept stripes stay locked');
             assertEqual(applyStripeLocks(fresh, [], [K]), fresh, 'no lock, no change');
+        },
+        () => {
+            const S = (code, hex, count) => ({ code, hex, count });
+            const r1 = mergeSameNeighbours([S('R', '#C80000', 10), S('B', '#000064', 4), S('B', '#000064', 6), S('K', '#101010', 8)], false, 2);
+            assertEqual(buildSRTCode(r1.stripes, false) + ' @' + r1.index, '...R10 B10 K8... @1', 'neighbours of one colour merge, the index follows');
+            const r2 = mergeSameNeighbours([S('R', '#C80000', 48), S('R', '#C80000', 8), S('K', '#101010', 12)], true);
+            assertEqual(buildSRTCode(r2.stripes, true), 'R/64 K/12', 'a pivot takes its neighbour twice');
+            const r3 = mergeSameNeighbours([S('R', '#C80000', 48), S('K', '#101010', 10), S('K', '#101010', 12)], true);
+            assertEqual(buildSRTCode(r3.stripes, true), 'R/48 K/32', 'the last pivot takes its neighbour twice');
+            assertEqual(countSettThreads(r2.stripes, true), countSettThreads([S('R', '#C80000', 48), S('R', '#C80000', 8), S('K', '#101010', 12)], true), 'merging keeps the threads of the sett');
         }
     ];
 
