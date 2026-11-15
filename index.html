@@ -530,6 +530,9 @@
     .ribbon-stripe:hover { filter: brightness(1.12); }
     .ribbon-stripe:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     .ribbon-stripe[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--text-strong), inset 0 0 0 4px var(--bg-app); }
+    /* A kept stripe: a bar along its foot, in its ink */
+    .ribbon-stripe.locked::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: currentColor; }
+    .ribbon-lock[aria-pressed="true"] { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--on-accent); }
     .ribbon-stripe.pivot::before { content: ""; position: absolute; top: 0; left: 50%; margin-left: -4px; border: 4px solid transparent; border-top-color: currentColor; }
     .ribbon-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 6px; padding: 0 10px; font-size: 12px; color: var(--text); }
     .ribbon-editor[hidden] { display: none; }
@@ -1021,6 +1024,7 @@
             <button type="button" class="srt-bar-btn" id="ribbon-more" data-i18n-title="ribbon_more" data-i18n-label="ribbon_more" title="2 fils de plus" aria-label="2 fils de plus"><span aria-hidden="true">+</span></button>
             <button type="button" class="srt-bar-btn" id="ribbon-right" data-i18n-title="ribbon_right" data-i18n-label="ribbon_right" title="Déplacer vers la droite" aria-label="Déplacer vers la droite"><span aria-hidden="true">▶</span></button>
             <span class="ribbon-colors" id="ribbon-colors" role="group" data-i18n-label="ribbon_colors" aria-label="Couleur"></span>
+            <button type="button" class="srt-bar-btn ribbon-lock" id="ribbon-lock" aria-pressed="false" data-i18n-title="ribbon_lock_title" title="Générer garde cette bande : sa place, sa couleur et ses fils"><span aria-hidden="true">🔒</span> <span data-i18n="ribbon_lock">Garder</span></button>
             <button type="button" class="srt-bar-btn" id="ribbon-dup" data-i18n="ribbon_dup">Dupliquer</button>
             <button type="button" class="srt-bar-btn" id="ribbon-del" data-i18n="ribbon_del">Retirer</button>
             <button type="button" class="srt-bar-btn ribbon-close" id="ribbon-close" data-i18n-title="ribbon_close" data-i18n-label="ribbon_close" title="Fermer" aria-label="Fermer"><span aria-hidden="true">✕</span></button>

@@ -18,7 +18,7 @@ An interactive web-based tool built with [p5.js](https://p5js.org/) to design an
 * Generate random tartans from constraints: number of stripes, stripe width (raising the minimum past the maximum raises the maximum, and the other way round), threads per repeat, symmetric or asymmetric, check mode (every stripe the same width, drawn between the two limits).
 * Keep the colors or the structure while generating.
 * Choose up to 8 colors from the 137 SRT shades.
-* **Stripe ribbon** under the pattern: each stripe right under the columns where the pattern shows it, following the zoom and the panning, repeats and mirror included, with the pivots marked. Click any copy of a stripe to change its threads, its colour or its place, duplicate it or remove it, without typing the code. Keyboard: arrows choose, Shift and arrows move, `+` and `-` change the threads, `Delete` removes.
+* **Stripe ribbon** under the pattern: each stripe right under the columns where the pattern shows it, following the zoom and the panning, repeats and mirror included, with the pivots marked. Click any copy of a stripe to change its threads, its colour or its place, duplicate it or remove it, without typing the code. *Keep* (🔒) locks a stripe: *Generate* then leaves it at its place, with its colour and threads, and changes the rest. Keyboard: arrows choose, Shift and arrows move, `+` and `-` change the threads, `Delete` removes.
 * History of the last 50 patterns in a strip under the pattern, and undo.
 
 **Bring a pattern in** (*Import* menu in the top bar; *Generate* creates a random one, and its arrow starts from an image)

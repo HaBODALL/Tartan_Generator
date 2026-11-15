@@ -627,6 +627,17 @@ function runTests() {
             // Palette for Compare Designs, one entry per code
             const colours = [{ code: 'K', name: 'Black', hex: '#101010' }, { code: 'DR', name: 'Dark Red', hex: '#8B0000' }, { code: 'K', name: 'Black', hex: '#000000' }];
             assertEqual(comparePalette(colours), 'K=#101010#BLACK;DR=#8B0000#DARK RED;', 'compare palette format');
+        },
+        () => {
+            const K = { code: 'K', hex: '#101010' }, R = { code: 'R', hex: '#C80000' }, B = { code: 'B', hex: '#000064' };
+            const fresh = [{ ...K, count: 10 }, { ...R, count: 20 }, { ...K, count: 30 }];
+            const kept = [{ stripe: { ...R, count: 44, locked: true }, index: 0 }, { stripe: { ...B, count: 6, locked: true }, index: 5 }];
+            const out = applyStripeLocks(fresh, kept, [K, R, B], () => 0);
+            assertEqual(out[0].count + out[0].code, '44R', 'a kept stripe comes back at its place');
+            assertEqual(out[3].count + out[3].code, '6B', 'a kept stripe past the end is added');
+            assertSilent(out[1].hex !== out[0].hex, 'a free neighbour does not take the colour of a kept stripe');
+            assertEqual(out.filter(s => s.locked).length, 2, 'kept stripes stay locked');
+            assertEqual(applyStripeLocks(fresh, [], [K]), fresh, 'no lock, no change');
         }
     ];
 
