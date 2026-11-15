@@ -18,7 +18,7 @@ Un outil web interactif conçu avec [p5.js](https://p5js.org/) pour créer et g�
 * Génération aléatoire sous contraintes : nombre de bandes, largeur des bandes (monter le minimum au-delà du maximum monte le maximum, et inversement), fils par motif, symétrique ou asymétrique, mode damier (toutes les bandes de la même largeur, tirée entre les deux limites).
 * Conservation des couleurs ou de la structure pendant la génération.
 * Choix de 8 couleurs au plus parmi les 137 nuances SRT.
-* **Ruban des bandes** sous le motif : chaque bande juste sous les colonnes où le motif la montre, en suivant le zoom et le déplacement, répétitions et miroir compris, avec les pivots marqués. Un clic sur n'importe quelle copie d'une bande permet de changer ses fils, sa couleur ou sa place, de la dupliquer ou de la retirer, sans taper le code. Au clavier : les flèches choisissent, Maj et flèches déplacent, `+` et `-` changent les fils, `Suppr` retire.
+* **Ruban des bandes** sous le motif : chaque bande juste sous les colonnes où le motif la montre, en suivant le zoom et le déplacement, répétitions et miroir compris, avec les pivots marqués. Un clic sur n'importe quelle copie d'une bande permet de changer ses fils, sa couleur ou sa place, de la dupliquer ou de la retirer, sans taper le code. *Garder* (🔒) verrouille une bande : *Générer* la laisse alors à sa place, avec sa couleur et ses fils, et change le reste. Au clavier : les flèches choisissent, Maj et flèches déplacent, `+` et `-` changent les fils, `Suppr` retire.
 * Historique des 50 derniers motifs en bande sous le motif, et annulation.
 
 **Reprendre un motif** (menu *Importer* de la barre du haut ; *Générer* en crée un au hasard, et sa flèche part d'une image)

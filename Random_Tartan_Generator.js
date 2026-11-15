@@ -614,6 +614,9 @@ const TRANSLATIONS = {
         ribbon_dup: "Dupliquer",
         ribbon_del: "Retirer",
         ribbon_close: "Fermer",
+        ribbon_lock: "Garder",
+        ribbon_lock_title: "Générer garde cette bande : sa place, sa couleur et ses fils",
+        ribbon_locked: "gardée",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -1006,6 +1009,9 @@ const TRANSLATIONS = {
         ribbon_dup: "Duplicate",
         ribbon_del: "Remove",
         ribbon_close: "Close",
+        ribbon_lock: "Keep",
+        ribbon_lock_title: "Generate keeps this stripe: its place, colour and threads",
+        ribbon_locked: "kept",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -2465,8 +2471,8 @@ function renderStripeRibbon() {
         const pivot = symmetric && (i === 0 || i === n - 1);
         return {
             pivot,
-            title: `${s.code} ${s.count}${pivot ? ' · ' + t.ribbon_pivot : ''}`,
-            aria: t.ribbon_stripe.replace('%i', i + 1).replace('%n', n).replace('%c', s.code).replace('%t', s.count) + (pivot ? ', ' + t.ribbon_pivot : ''),
+            title: `${s.code} ${s.count}${pivot ? ' · ' + t.ribbon_pivot : ''}${s.locked ? ' · ' + t.ribbon_locked : ''}`,
+            aria: t.ribbon_stripe.replace('%i', i + 1).replace('%n', n).replace('%c', s.code).replace('%t', s.count) + (pivot ? ', ' + t.ribbon_pivot : '') + (s.locked ? ', ' + t.ribbon_locked : ''),
             ink: inkOn(s.hex),
         };
     });
@@ -2484,7 +2490,7 @@ function renderStripeRibbon() {
             if (right - left < 0.5) continue;
             const b = document.createElement('button');
             b.type = 'button';
-            b.className = 'ribbon-stripe' + (labels[i].pivot ? ' pivot' : '');
+            b.className = 'ribbon-stripe' + (labels[i].pivot ? ' pivot' : '') + (s.locked ? ' locked' : '');
             b.dataset.index = i;
             b.style.left = left.toFixed(1) + 'px';
             b.style.width = (right - left).toFixed(1) + 'px';
@@ -2532,6 +2538,7 @@ function renderRibbonEditor() {
     document.getElementById('ribbon-less').disabled = s.count <= 1;
     document.getElementById('ribbon-more').disabled = s.count >= RIBBON_MAX_COUNT;
     document.getElementById('ribbon-del').disabled = n <= 2;
+    document.getElementById('ribbon-lock').setAttribute('aria-pressed', String(!!s.locked));
 
     const colours = domElements.ribbonColors;
     const hadFocus = colours.contains(document.activeElement);
@@ -2591,7 +2598,7 @@ function ribbonMove(i, step) {
 }
 
 function ribbonDuplicate(i) {
-    editRibbon(list => { list.splice(i + 1, 0, { ...list[i] }); });
+    editRibbon(list => { const copy = { ...list[i] }; delete copy.locked; list.splice(i + 1, 0, copy); });
     selectRibbonStripe(i + 1, false);
 }
 
@@ -2638,6 +2645,7 @@ function bindStripeRibbon() {
     on('ribbon-less', i => ribbonSetCount(i, tartanStripes[i].count - RIBBON_STEP, true));
     on('ribbon-more', i => ribbonSetCount(i, tartanStripes[i].count + RIBBON_STEP, true));
     on('ribbon-dup', ribbonDuplicate);
+    on('ribbon-lock', i => editRibbon(list => { list[i] = { ...list[i], locked: !list[i].locked }; if (!list[i].locked) delete list[i].locked; }));
     on('ribbon-del', ribbonRemove);
     on('ribbon-close', () => { const i = ribbonSelected; ribbonSelected = null; renderStripeRibbon(); track.querySelector(`.ribbon-stripe[data-index="${i}"]`)?.focus(); });
     const count = domElements.ribbonCount;
@@ -2882,11 +2890,20 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
     }
 
     if (tartanStripes.length > 0) pushToHistory();
+    const kept = tartanStripes.map((stripe, index) => stripe.locked ? { stripe, index } : null).filter(Boolean);
 
     // If colors are NOT kept, the palette changes too, except for a settings update
     if (!keepColors && !isUpdateOnly) randomizeUserPalette();
 
     generateNewTartan(keepColors, keepStructure);
+    if (kept.length) {
+        // Their colours join the palette while there is room, so the next patterns can use them
+        paletteFromStripes(kept.map(k => k.stripe)).forEach(c => {
+            if (userPalette.length < 8 && !userPalette.some(p => p.hex.toUpperCase() === c.hex.toUpperCase())) userPalette.push(c);
+        });
+        tartanStripes = applyStripeLocks(tartanStripes, kept, userPalette);
+        updateUserPaletteUI();
+    }
     commitStructureSettings();
     showAppMessage(params?.noticeKey || null);
     redrawTartan();
@@ -2940,6 +2957,30 @@ function pickColorAvoiding(palette, previous, rand = Math.random) {
     if (choices.length === 0) choices = palette.filter(c => c.hex !== previous?.hex);
     if (choices.length === 0) choices = palette;
     return choices[Math.floor(rand() * choices.length)];
+}
+
+// Kept stripes come back at their place, with their colour and threads. A free neighbour of the
+// same colour takes another one from the palette, so that the two do not merge into one stripe.
+function applyStripeLocks(stripes, kept, palette, rand = Math.random) {
+    if (!kept.length) return stripes;
+    const out = stripes.map(s => ({ ...s }));
+    kept.forEach(({ stripe, index }) => {
+        const s = { ...stripe, locked: true };
+        if (index < out.length) out[index] = s;
+        else out.push(s);
+    });
+    const same = (a, b) => a.hex.toUpperCase() === b.hex.toUpperCase();
+    out.forEach((s, i) => {
+        if (s.locked) return;
+        const around = [out[i - 1], out[i + 1]].filter(Boolean);
+        if (!around.some(n => same(n, s))) return;
+        const choices = palette.filter(c => !around.some(n => same(n, c)));
+        if (choices.length) {
+            const c = choices[Math.floor(rand() * choices.length)];
+            out[i] = { ...s, code: c.code, hex: c.hex };
+        }
+    });
+    return out;
 }
 
 // Same widths, new colors from the palette.
