@@ -123,6 +123,35 @@ async function run() {
   press(document.activeElement, 'Escape');
   check('Escape closes the bar', $('ribbon-editor').hidden && ribbonSelected === null);
 
+  // Lock: Générer keeps the stripe at its place
+  tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'Y', hex: '#E8C000', count: 6 }, { code: 'K', hex: '#101010', count: 12 }, { code: 'W', hex: '#FFFFFF', count: 4 }];
+  updateGeneratedListUI();
+  selectRibbonStripe(1, false);
+  $('ribbon-lock').click();
+  check('lock button pressed', $('ribbon-lock').getAttribute('aria-pressed') === 'true' && tartanStripes[1].locked === true);
+  check('kept stripe marked on the ribbon', stripesEl().filter(b => b.dataset.index === '1').every(b => b.classList.contains('locked') && b.title.includes('gardée')));
+  let keptEveryTime = true;
+  for (let k = 0; k < 4; k++) {
+    $('btn-generate').click();
+    await sleep(20);
+    const s1 = tartanStripes[1];
+    if (!(s1 && s1.locked && s1.code === 'Y' && s1.count === 6 && s1.hex === '#E8C000')) keptEveryTime = false;
+    if (tartanStripes[0].hex === '#E8C000' || tartanStripes[2]?.hex === '#E8C000') keptEveryTime = false;
+  }
+  check('Générer keeps it, neighbours differ', keptEveryTime, JSON.stringify(tartanStripes.slice(0, 3)));
+  check('its colour joins the palette', userPalette.some(c => c.hex.toUpperCase() === '#E8C000') || userPalette.length >= 8);
+  check('code shows it', $('import-text').value.includes('Y6'), $('import-text').value);
+  selectRibbonStripe(1, false);
+  $('ribbon-dup').click();
+  check('a copy starts free', !tartanStripes[2].locked && tartanStripes[1].locked);
+  undo();
+  selectRibbonStripe(1, false);
+  $('ribbon-lock').click();
+  check('unlock', !tartanStripes[1].locked && $('ribbon-lock').getAttribute('aria-pressed') === 'false' && !document.querySelector('.ribbon-stripe.locked'));
+  ribbonSelected = null;
+  tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }];
+  updateGeneratedListUI();
+
   // Symmetry off: no mirror, no pivot
   $('check-sym').click();
   await sleep(20);
