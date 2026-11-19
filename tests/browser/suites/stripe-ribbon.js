@@ -234,6 +234,46 @@ async function run() {
   }
   check('back in the Atelier', visible($('stripe-ribbon')));
 
+  // A palette colour can be removed from its picker (touch screens have no small cross)
+  {
+    const pal = userPalette;
+    userPalette = [{ code: 'K', hex: '#101010', name: 'Black' }, { code: 'R', hex: '#C80000', name: 'Red' }, { code: 'B', hex: '#000064', name: 'Blue' }];
+    updateUserPaletteUI();
+    document.querySelectorAll('#color-list .palette-chip')[2].click();
+    const rm = $('picker-remove');
+    check('picker of a palette colour offers to remove it', !!rm);
+    rm?.click();
+    check('removed from the picker', userPalette.length === 2 && !$('picker-modal'));
+    document.querySelectorAll('#color-list .palette-chip')[0].click();
+    check('never fewer than two colours', !$('picker-remove'));
+    document.querySelector('#picker-modal .btn-del')?.click();
+    userPalette = pal;
+    updateUserPaletteUI();
+  }
+
+  // A repeating sett: dragging the last stripe past the edge does not turn the pattern round
+  $('check-sym').click();
+  await sleep(20);
+  tartanStripes = [{ code: 'R', hex: '#C80000', count: 20 }, { code: 'B', hex: '#000064', count: 20 }, { code: 'K', hex: '#101010', count: 20 }];
+  viewX = 0;
+  updateGeneratedListUI();
+  redrawTartan();
+  {
+    const track = $('ribbon-track');
+    const last = stripesEl().find(b => b.dataset.index === '2');
+    const r = last.getBoundingClientRect();
+    const at = (type, x) => track.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 9, button: 0, clientX: x, clientY: r.top + 4 }));
+    last.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, button: 0, clientX: r.left + r.width / 2, clientY: r.top + 4 }));
+    for (let dx = 10; dx <= r.width * 1.5; dx += 10) at('pointermove', r.left + r.width / 2 + dx);
+    at('pointerup', r.left + r.width * 2);
+    check('drag stops at the edge of a repeating sett', tartanStripes.map(s => s.code).join() === 'R,B,K', tartanStripes.map(s => s.code).join());
+  }
+  $('check-sym').click();
+  await sleep(20);
+  ribbonSelected = null;
+  tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }];
+  updateGeneratedListUI();
+
   // Hostile codes stay text
   tartanStripes = [{ code: '<img>', hex: '#C80000', count: 8 }, { code: 'K', hex: '#101010', count: 8 }];
   updateGeneratedListUI();

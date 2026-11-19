@@ -453,7 +453,7 @@ const TRANSLATIONS = {
         lbl_density: "Densité",
         unit_density: "fils/cm",
         note_thread_mm: "soit % mm par fil",
-        actual_value: "obtenu : %",
+        actual_value: "actuel : %",
         title_sett: "Le nombre de fils à répartir entre les bandes. Avec la symétrie, le motif repasse par les bandes en miroir : le motif entier compte plus de fils, indiqués à côté.",
         title_weave_dir: "Le sens des diagonales du sergé",
         sheet_density: "%d fils/cm (%m mm par fil)",
@@ -624,6 +624,9 @@ const TRANSLATIONS = {
         ribbon_shade_title: "Une des 137 nuances du Register pour cette bande",
         ribbon_add: "Ajouter",
         ribbon_add_title: "Une nouvelle bande à droite, d'une autre couleur",
+        actual_title: "Ce que compte le motif affiché. Il peut venir de Générer, d'un exemple, d'un code ou du ruban.",
+        palette_remove_btn: "Retirer de la palette",
+        title_gen_id: "Le numéro du dernier motif généré",
         msg_err_check_mode_forced: "Mode Damier activé : Les limites Min et Max ont été égalisées à la valeur inférieure pour créer des bandes égales."
     },
     en: {
@@ -855,7 +858,7 @@ const TRANSLATIONS = {
         lbl_density: "Density",
         unit_density: "threads/cm",
         note_thread_mm: "that is % mm per thread",
-        actual_value: "got: %",
+        actual_value: "current: %",
         title_sett: "The number of threads shared between the stripes. With symmetry the repeat runs back through the stripes: the full repeat has more threads, shown beside.",
         title_weave_dir: "The direction of the twill lines",
         sheet_density: "%d threads/cm (%m mm per thread)",
@@ -1026,6 +1029,9 @@ const TRANSLATIONS = {
         ribbon_shade_title: "One of the 137 Register shades for this stripe",
         ribbon_add: "Add",
         ribbon_add_title: "A new stripe on the right, in another colour",
+        actual_title: "What the pattern shown has. It can come from Generate, an example, a code or the ribbon.",
+        palette_remove_btn: "Remove from the palette",
+        title_gen_id: "The number of the last generated pattern",
         msg_err_check_mode_forced: "Checkers Mode active: Min and Max limits have been set to the lower value to create equal stripes."
     }
 };
@@ -2022,6 +2028,7 @@ function updateActualStripes() {
     const display = domElements.stripesActual;
 
     if (display) {
+        display.title = TRANSLATIONS[currentLang].actual_title;
         if (actual !== target) {
             display.textContent = TRANSLATIONS[currentLang].actual_value.replace('%', actual);
         } else {
@@ -2047,6 +2054,7 @@ function updateActualSett() {
     let targetSett = parseInt(domElements.sett?.value) || 260;
 
     const t = TRANSLATIONS[currentLang];
+    display.title = t.actual_title;
     const isSymmetric = domElements.sym?.checked || false;
     const parts = [];
     if (actualSett !== targetSett) parts.push(t.actual_value.replace('%', actualSett));
@@ -2294,7 +2302,18 @@ function openColorPicker(editIndex = -1, onPick = null) {
     closeBtn.className = "btn-del";
     closeBtn.style.marginTop = "10px";
     closeBtn.onclick = () => document.body.removeChild(modal);
-    modal.appendChild(closeBtn);
+    if (editIndex >= 0 && !onPick && userPalette.length > 2) {
+        const actions = document.createElement('div');
+        actions.className = 'picker-actions';
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.id = 'picker-remove';
+        removeBtn.className = 'btn-del';
+        removeBtn.textContent = t.palette_remove_btn;
+        removeBtn.onclick = () => { document.body.removeChild(modal); removeFromPalette(editIndex); };
+        actions.append(removeBtn, closeBtn);
+        modal.appendChild(actions);
+    } else modal.appendChild(closeBtn);
 
     document.body.appendChild(modal);
 }
@@ -2665,6 +2684,8 @@ function bindStripeRibbon() {
             if (!target) break;
             const j = Number(target.dataset.index);
             if (j === drag.index) break;
+            // Past the edge of a repeating sett the stripe would only turn the whole pattern round
+            if (!(domElements.sym?.checked) && Math.abs(j - drag.index) !== 1) break;
             const list = tartanStripes.map(s => ({ ...s }));
             const [moving] = list.splice(drag.index, 1);
             list.splice(j, 0, moving);

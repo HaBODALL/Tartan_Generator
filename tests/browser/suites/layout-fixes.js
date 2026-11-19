@@ -46,7 +46,7 @@ async function run() {
   tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }];
   userPalette = paletteFromStripes(tartanStripes);
   $('in-sett').value = 260; $('check-sym').checked = true; fire($('check-sym'), 'change');
-  check('mirrored: obtained and full repeat', $('sett-actual').textContent === 'obtenu : 68 · motif entier : 76 fils', $('sett-actual').textContent);
+  check('mirrored: obtained and full repeat', $('sett-actual').textContent === 'actuel : 68 · motif entier : 76 fils', $('sett-actual').textContent);
   check('same count as the SRT bar', $('srt-bar-size').textContent.includes('76 fils'), $('srt-bar-size').textContent);
   $('in-sett').value = 68; updateActualValues();
   check('on target, mirrored: only the full repeat', $('sett-actual').textContent === 'motif entier : 76 fils', $('sett-actual').textContent);
