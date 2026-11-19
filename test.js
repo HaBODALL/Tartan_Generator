@@ -638,6 +638,8 @@ function runTests() {
             assertSilent(out[1].hex !== out[0].hex, 'a free neighbour does not take the colour of a kept stripe');
             assertEqual(out.filter(s => s.locked).length, 2, 'kept stripes stay locked');
             assertEqual(applyStripeLocks(fresh, [], [K]), fresh, 'no lock, no change');
+            const two = applyStripeLocks([{ ...K, count: 4 }, { ...K, count: 4 }, { ...K, count: 4 }, { ...R, count: 4 }], [{ stripe: { ...K, count: 6, locked: true }, index: 1 }], [K, R], () => 0);
+            assertSilent(two[0].hex !== K.hex && two[2].hex !== K.hex, 'two colours only: free neighbours still leave the kept colour');
         },
         () => {
             const S = (code, hex, count) => ({ code, hex, count });
