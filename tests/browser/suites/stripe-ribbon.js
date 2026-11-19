@@ -261,6 +261,21 @@ async function run() {
   }
   check('back in the Atelier', visible($('stripe-ribbon')));
 
+  // Phone: the stripe bar holds on one line, colours first, ✕ in reach; the tabs alone at the bottom of the panel
+  if (innerWidth <= 600) {
+    selectRibbonStripe(0, false);
+    const ed = $('ribbon-editor');
+    check('phone: bar on one line', ed.getBoundingClientRect().height < 44, ed.getBoundingClientRect().height);
+    check('phone: colours first', $('ribbon-colors').getBoundingClientRect().left < $('ribbon-less').getBoundingClientRect().left);
+    check('phone: ✕ in view', $('ribbon-close').getBoundingClientRect().right <= innerWidth);
+    check('phone: no zoom slider', !visible($('zoom-slider')) && visible($('btn-zoom-in')));
+    const side = document.querySelector('.sidebar');
+    const tabs = document.querySelector('.panel-tabs').getBoundingClientRect(), locks = document.querySelector('.locks-container').getBoundingClientRect();
+    check('phone: locks above the settings, tabs below', locks.top < tabs.top && locks.top < $('panel-pattern').getBoundingClientRect().top, side.scrollTop);
+    ribbonSelected = null;
+    renderStripeRibbon();
+  }
+
   // Hostile codes stay text
   tartanStripes = [{ code: '<img>', hex: '#C80000', count: 8 }, { code: 'K', hex: '#101010', count: 8 }];
   updateGeneratedListUI();
