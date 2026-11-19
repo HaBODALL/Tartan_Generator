@@ -347,12 +347,15 @@
       .menu-btn { padding: 5px 7px; }
       .menu { position: static; }
       .menu-list, .menu-list.align-right { position: fixed; top: 52px; left: 8px; right: 8px; min-width: 0; max-width: none; }
-      /* Générer and the tabs stay under the thumb, at the bottom of the panel */
+      /* The tabs stay under the thumb, at the bottom of the panel; the locks go with the settings,
+         so the fixed bottom is the tabs alone */
       .sidebar { display: flex; flex-direction: column; padding-bottom: 0; }
       .sidebar > * { flex-shrink: 0; }
-      .panel-top { order: 10; position: sticky; top: auto; bottom: 0; margin: 12px -16px 0; padding: 8px 16px 10px; box-shadow: 0 -6px 10px -8px var(--shadow-ui); display: flex; flex-direction: column; }
-      .panel-top .panel-tabs { order: -1; margin: -8px -16px 8px; border-bottom: none; border-top: 1px solid var(--line); }
-      .panel-top .panel-tab { border-bottom: none; border-top: 2px solid transparent; }
+      .panel-top { display: contents; }
+      .panel-top .app-message { order: -2; }
+      .panel-top .locks-container { order: -1; }
+      .panel-top .panel-tabs { order: 10; position: sticky; bottom: 0; z-index: 50; margin: auto -16px 0; background: var(--bg-panel); border-bottom: none; border-top: 1px solid var(--line); box-shadow: 0 -6px 10px -8px var(--shadow-ui); }
+      .panel-top .panel-tab { padding: 8px 6px 7px; border-bottom: none; border-top: 2px solid transparent; }
       .panel-top .panel-tab[aria-selected="true"] { border-top-color: var(--accent); }
       /* Générer stays under the thumb: its group becomes a bar at the bottom of the screen */
       body { padding-bottom: 56px; }
@@ -361,11 +364,22 @@
       .create-group .create-more, .create-group .btn-undo { padding: 10px 12px; font-size: 15px; }
       .create-group .menu { position: static; }
       #menu-new { top: auto; bottom: 62px; }
-      .panel-top .locks-container { margin-bottom: 0; }
       .header-menus { margin-left: 0; gap: 5px; }
       .narrow-hide { display: none; }
       .app-header { gap: 5px; }
       .btn-about-header { margin-left: auto; margin-right: 5px; padding: 3px 7px; }
+      /* The pattern keeps its height: the zoom keeps − + ⌖ (the slider and the number give way;
+         two fingers or the buttons zoom), the stripe bar holds on one line that scrolls sideways */
+      .canvas-tools #zoom-slider, .canvas-tools .field-with-unit { display: none; }
+      .canvas-tools { left: 8px; bottom: 8px; padding: 3px; gap: 3px; }
+      .canvas-tools .zoom-btn { width: 30px; height: 30px; }
+      /* Prefixed: the base ribbon rules come later in the sheet */
+      .stripe-ribbon .ribbon-palette-note { display: none; }
+      .stripe-ribbon .ribbon-editor { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
+      .stripe-ribbon .ribbon-editor > * { flex-shrink: 0; }
+      .stripe-ribbon .ribbon-colors { flex-wrap: nowrap; margin-left: 0; }
+      .stripe-ribbon .ribbon-editor .ribbon-which { display: none; }
+      .stripe-ribbon .ribbon-close { position: sticky; right: 0; margin-left: auto; background: var(--bg-control); box-shadow: -8px 0 8px var(--bg-app); }
     }
 
     h2 { font-size: 12px; margin-top: 20px; margin-bottom: 10px; color: var(--text-soft); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; border-bottom: 1px solid var(--line); padding-bottom: 3px;}
@@ -1035,12 +1049,12 @@
         <p id="ribbon-hint" class="sr-only" data-i18n="ribbon_hint">Cliquez une bande pour la modifier, ou faites-la glisser pour la déplacer. Clavier : flèches pour choisir, Maj et flèches pour déplacer, plus et moins pour les fils, Suppr pour retirer.</p>
         <div class="ribbon-editor" id="ribbon-editor" role="group" aria-labelledby="ribbon-which" hidden>
             <span class="ribbon-which" id="ribbon-which"></span>
+            <span class="ribbon-colors" id="ribbon-colors" role="group" data-i18n-label="ribbon_colors" aria-label="Couleur"></span>
             <button type="button" class="srt-bar-btn" id="ribbon-left" data-i18n-title="ribbon_left" data-i18n-label="ribbon_left" title="Déplacer vers la gauche" aria-label="Déplacer vers la gauche"><span aria-hidden="true">◀</span></button>
             <button type="button" class="srt-bar-btn" id="ribbon-less" data-i18n-title="ribbon_less" data-i18n-label="ribbon_less" title="2 fils de moins" aria-label="2 fils de moins"><span aria-hidden="true">−</span></button>
             <input type="number" id="ribbon-count" class="ribbon-count" min="1" max="400" step="1" data-i18n-label="ribbon_count" aria-label="Fils">
             <button type="button" class="srt-bar-btn" id="ribbon-more" data-i18n-title="ribbon_more" data-i18n-label="ribbon_more" title="2 fils de plus" aria-label="2 fils de plus"><span aria-hidden="true">+</span></button>
             <button type="button" class="srt-bar-btn" id="ribbon-right" data-i18n-title="ribbon_right" data-i18n-label="ribbon_right" title="Déplacer vers la droite" aria-label="Déplacer vers la droite"><span aria-hidden="true">▶</span></button>
-            <span class="ribbon-colors" id="ribbon-colors" role="group" data-i18n-label="ribbon_colors" aria-label="Couleur"></span>
             <button type="button" class="srt-bar-btn ribbon-lock" id="ribbon-lock" aria-pressed="false" data-i18n-title="ribbon_lock_title" title="Générer garde cette bande : sa place, sa couleur et ses fils"><span aria-hidden="true">🔒</span> <span data-i18n="ribbon_lock">Garder</span></button>
             <button type="button" class="srt-bar-btn" id="ribbon-shade" data-i18n="ribbon_shade" data-i18n-title="ribbon_shade_title" title="Une des 137 nuances du Register pour cette bande">Nuances…</button>
             <button type="button" class="srt-bar-btn" id="ribbon-add" data-i18n="ribbon_add" data-i18n-title="ribbon_add_title" title="Une nouvelle bande à droite, d'une autre couleur">Ajouter</button>
