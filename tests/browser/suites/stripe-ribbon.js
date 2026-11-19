@@ -211,29 +211,6 @@ async function run() {
   tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }];
   updateGeneratedListUI();
 
-  // Symmetry off: no mirror, no pivot
-  $('check-sym').click();
-  await sleep(20);
-  check('asymmetric: repeats without mirror', stripesEl().slice(0, 4).map(b => b.dataset.index).join() === '0,1,2,0' && !document.querySelector('.ribbon-stripe.pivot'), stripesEl().slice(0, 4).map(b => b.dataset.index).join());
-  $('check-sym').click();
-  await sleep(20);
-
-  // A new pattern closes a selection out of range
-  selectRibbonStripe(2);
-  tartanStripes = tartanStripes.slice(0, 2);
-  updateGeneratedListUI();
-  check('selection out of range dropped', ribbonSelected === null && $('ribbon-editor').hidden);
-
-  // Planche: the ribbon goes
-  $('btn-generate-patchwork')?.click();
-  await sleep(200);
-  if (isPatchworkOpen()) {
-    check('hidden on the Planche', !visible($('stripe-ribbon')));
-    closePatchworkBoard();
-    await sleep(50);
-  }
-  check('back in the Atelier', visible($('stripe-ribbon')));
-
   // A palette colour can be removed from its picker (touch screens have no small cross)
   {
     const pal = userPalette;
@@ -273,6 +250,29 @@ async function run() {
   ribbonSelected = null;
   tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }];
   updateGeneratedListUI();
+
+  // Symmetry off: no mirror, no pivot
+  $('check-sym').click();
+  await sleep(20);
+  check('asymmetric: repeats without mirror', stripesEl().slice(0, 4).map(b => b.dataset.index).join() === '0,1,2,0' && !document.querySelector('.ribbon-stripe.pivot'), stripesEl().slice(0, 4).map(b => b.dataset.index).join());
+  $('check-sym').click();
+  await sleep(20);
+
+  // A new pattern closes a selection out of range
+  selectRibbonStripe(2);
+  tartanStripes = tartanStripes.slice(0, 2);
+  updateGeneratedListUI();
+  check('selection out of range dropped', ribbonSelected === null && $('ribbon-editor').hidden);
+
+  // Planche: the ribbon goes
+  $('btn-generate-patchwork')?.click();
+  await sleep(200);
+  if (isPatchworkOpen()) {
+    check('hidden on the Planche', !visible($('stripe-ribbon')));
+    closePatchworkBoard();
+    await sleep(50);
+  }
+  check('back in the Atelier', visible($('stripe-ribbon')));
 
   // Hostile codes stay text
   tartanStripes = [{ code: '<img>', hex: '#C80000', count: 8 }, { code: 'K', hex: '#101010', count: 8 }];
