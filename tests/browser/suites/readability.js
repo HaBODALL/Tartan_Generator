@@ -72,7 +72,7 @@ async function run() {
   check('labels', label('in-stripes') === 'Nombre de bandes' && label('in-sett') === 'Fils des bandes' && $('lbl-limits').textContent === 'Fils par bande (min. et max.)' && $('lbl-weave-dir').textContent === 'Diagonale du sergé', [label('in-stripes'), label('in-sett')].join(' | '));
   check('Z and S', label('weave-z').startsWith('Z') && label('weave-s').startsWith('S') && !document.body.textContent.includes('Twist'));
   $('in-sett').value = 151; tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'K', hex: '#101010', count: 12 }]; updateActualValues();
-  check('value obtained said in words', $('sett-actual').textContent.startsWith('obtenu : 60') && !$('sett-actual').textContent.includes('→'), $('sett-actual').textContent);
+  check('value obtained said in words', $('sett-actual').textContent.startsWith('actuel : 60') && !$('sett-actual').textContent.includes('→'), $('sett-actual').textContent);
   check('value obtained not in red', getComputedStyle($('sett-actual')).color !== 'rgb(231, 76, 60)');
   $('in-sett').value = 260; handleGenerateClick();
   check('number fields in the page font', getComputedStyle($('in-sett')).fontFamily === getComputedStyle(document.body).fontFamily);
