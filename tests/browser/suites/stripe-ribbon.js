@@ -224,6 +224,33 @@ async function run() {
   updateGeneratedListUI();
   check('selection out of range dropped', ribbonSelected === null && $('ribbon-editor').hidden);
 
+  // A quick change after another kind of change is its own step: undo does not skip the pattern between
+  tartanStripes = [{ code: 'R', hex: '#C80000', count: 20 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }];
+  updateGeneratedListUI();
+  ribbonSetCount(1, 10, true);
+  pushToHistory();
+  tartanStripes = [{ code: 'K', hex: '#101010', count: 6 }, { code: 'R', hex: '#C80000', count: 6 }, { code: 'B', hex: '#000064', count: 6 }];
+  updateGeneratedListUI();
+  ribbonSetCount(1, 30, true);
+  undo();
+  check('burst after another change: one step back', tartanStripes.map(s => s.code + s.count).join() === 'K6,R6,B6', tartanStripes.map(s => s.code + s.count).join());
+
+  // Add at the end of a repeating sett: the new stripe differs from the first one too
+  $('check-sym').click();
+  await sleep(20);
+  const paletteBefore = userPalette;
+  userPalette = [{ code: 'K', hex: '#101010' }, { code: 'R', hex: '#C80000' }, { code: 'B', hex: '#000064' }];
+  tartanStripes = [{ code: 'K', hex: '#101010', count: 10 }, { code: 'R', hex: '#C80000', count: 20 }];
+  updateGeneratedListUI();
+  ribbonAdd(1);
+  check('add at the end of a repeating sett', tartanStripes.map(s => s.code).join() === 'K,R,B', tartanStripes.map(s => s.code + s.count).join());
+  userPalette = paletteBefore;
+  $('check-sym').click();
+  await sleep(20);
+  ribbonSelected = null;
+  tartanStripes = [{ code: 'R', hex: '#C80000', count: 48 }, { code: 'B', hex: '#000064', count: 8 }, { code: 'K', hex: '#101010', count: 12 }];
+  updateGeneratedListUI();
+
   // Planche: the ribbon goes
   $('btn-generate-patchwork')?.click();
   await sleep(200);

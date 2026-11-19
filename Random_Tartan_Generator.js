@@ -2394,6 +2394,7 @@ const RIBBON_LABEL_MIN_PX = 16;   // Narrower copies show no number
 let ribbonSelected = null;
 let ribbonFocusX = null;          // Where the keyboard focus was on the ribbon, to keep it there
 let lastRibbonEdit = 0;
+let lastRibbonStripes = null;     // The stripes the last quick change left: anything else in between starts a new step
 
 // Black or white, whichever reads better on a stripe colour (WCAG contrast)
 function inkOn(hex) {
@@ -2580,13 +2581,14 @@ function mergeSameNeighbours(stripes, symmetric, index = null) {
 // One change of the stripes. Quick repeats (+, +, +) make a single step in the history.
 function editRibbon(change, burst = false) {
     const now = Date.now();
-    if (!burst || now - lastRibbonEdit > RIBBON_BURST_MS) pushToHistory();
+    if (!burst || now - lastRibbonEdit > RIBBON_BURST_MS || tartanStripes !== lastRibbonStripes) pushToHistory();
     lastRibbonEdit = burst ? now : 0;
     let next = tartanStripes.map(s => ({ ...s }));
     change(next);
     const merged = mergeSameNeighbours(next, domElements.sym?.checked || false, ribbonSelected);
     if (merged.stripes.length >= 2) { next = merged.stripes; ribbonSelected = merged.index; }
     tartanStripes = next;
+    lastRibbonStripes = next;
     updateGeneratedListUI();
     redrawTartan();
     saveState();
@@ -2607,7 +2609,9 @@ function ribbonMove(i, step) {
 
 function ribbonAdd(i) {
     const choices = ribbonColourChoices();
-    const around = [tartanStripes[i], tartanStripes[i + 1]].filter(Boolean).map(s => s.hex.toUpperCase());
+    // A repeating sett loops: after its last stripe comes its first one
+    const after = tartanStripes[i + 1] || (domElements.sym?.checked ? null : tartanStripes[0]);
+    const around = [tartanStripes[i], after].filter(Boolean).map(s => s.hex.toUpperCase());
     const colour = choices.find(c => !around.includes(c.hex.toUpperCase()));
     if (!colour) { showAppMessage('msg_palette_min', true); return; }
     ribbonSelected = i + 1;
@@ -2984,6 +2988,9 @@ window.handleGenerateClick = function(isUpdateOnly = false) {
             if (userPalette.length < 8 && !userPalette.some(p => p.hex.toUpperCase() === c.hex.toUpperCase())) userPalette.push(c);
         });
         tartanStripes = applyStripeLocks(tartanStripes, kept, userPalette);
+        // Two free stripes that now share a colour become one; a kept stripe never takes another's threads
+        const merged = mergeSameNeighbours(tartanStripes, domElements.sym?.checked || false);
+        if (merged.stripes.length >= 2) tartanStripes = merged.stripes;
         updateUserPaletteUI();
     }
     commitStructureSettings();
@@ -3056,7 +3063,9 @@ function applyStripeLocks(stripes, kept, palette, rand = Math.random) {
         if (s.locked) return;
         const around = [out[i - 1], out[i + 1]].filter(Boolean);
         if (!around.some(n => same(n, s))) return;
-        const choices = palette.filter(c => !around.some(n => same(n, c)));
+        // A colour unlike both neighbours, or at least unlike the one it would merge with
+        let choices = palette.filter(c => !around.some(n => same(n, c)));
+        if (!choices.length) choices = palette.filter(c => !same(c, s));
         if (choices.length) {
             const c = choices[Math.floor(rand() * choices.length)];
             out[i] = { ...s, code: c.code, hex: c.hex };
